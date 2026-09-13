@@ -13,8 +13,8 @@ reason: null
 
 ### REQUIREMENTS
 
-- **ADD** - Exigir que a criação inicial de um Semantic Namespace inexistente, quando realizada sob o Semantic Git, seja governada por um único `CHANGE-INIT` localizado no namespace que será criado, ainda que esse namespace não exista no AS-IS do `base_commit`.
-- **ADD** - Reconhecer que a criação inicial de um Semantic Namespace também pode ocorrer manualmente ou fora do Semantic Git; nessa modalidade não existe CHANGE de inicialização e o AS-IS resultante é reconhecido sem invalidação ou reconstrução retroativa.
+- **ADD** - Exigir que a criação inicial, quando realizada sob o Semantic Git, seja governada por um único `CHANGE-INIT`. Nesse caso, o namespace alvo pode estar ausente do AS-IS registrado no `base_commit`, pois o CHANGE cria seu primeiro AS-IS.
+- **ADD** - Reconhecer a modalidade alternativa: quando a criação inicial não for realizada sob o Semantic Git, ela ocorre manualmente ou fora do protocolo; nessa modalidade não existe `CHANGE-INIT` nem CHANGE de inicialização, e o AS-IS resultante é reconhecido sem invalidação ou reconstrução retroativa.
 - **ADD** - Exigir que toda alteração semântica material posterior à criação inicial do namespace permaneça governada por CHANGE.
 - **ADD** - Tratar a ausência de AS-IS do namespace alvo como ausência de predecessor, sem criar ou atribuir um AS-IS vazio para a reconciliação de `CHANGE-INIT`.
 

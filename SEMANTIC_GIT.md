@@ -576,14 +576,15 @@ exemplo é `<namespace do documento>:CHANGE-014`; o campo curto não constitui
 uma chave global.
 
 `CHANGE-INIT` é o único valor permitido para o campo `change` de um CHANGE que
-governe a criação inicial de um namespace sob o Semantic Git. Criação manual ou
-externa ocorre fora do protocolo e não gera CHANGE de inicialização. Antes da
-aprovação, deve ser validado que o alvo não possui AS-IS no `base_commit` e que
-sua branch adiciona o primeiro AS-IS sem alterar Requirements, Decisions,
-Operations ou outro AS-IS ancestral. O alvo pode estar ausente do AS-IS do
-`base_commit`, sem exigir CHANGE no namespace pai. `CHANGE-INIT` segue o fluxo
-normal de branch, aprovação, implementação, RECONCILIATION, pre-merge recheck,
-merge e arquivamento.
+governe a criação inicial de um namespace sob o Semantic Git. Nesse caso, o
+namespace alvo pode estar ausente do AS-IS registrado no `base_commit`, pois o
+CHANGE cria seu primeiro AS-IS. Criação manual ou externa ocorre fora do
+protocolo e não gera CHANGE de inicialização. Antes da aprovação, deve ser
+validado que o alvo não possui AS-IS no `base_commit` e que sua branch adiciona
+o primeiro AS-IS sem alterar Requirements, Decisions, Operations ou outro AS-IS
+ancestral. A ausência do alvo não exige CHANGE no namespace pai. `CHANGE-INIT`
+segue o fluxo normal de branch, aprovação, implementação, RECONCILIATION,
+pre-merge recheck, merge e arquivamento.
 
 Dependências excepcionais podem ser declaradas:
 

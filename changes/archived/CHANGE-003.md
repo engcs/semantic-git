@@ -1,5 +1,5 @@
 change: CHANGE-003
-status: RECONCILED
+status: MERGED
 base_commit: f01605f607761f976dbe62aa1cc57fc97d4ef1d3
 approved_semantic_commit: 6ec278873e371633e38b4b3ebe1d999baa1b8046
 approval_scope:

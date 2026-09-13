@@ -1,7 +1,7 @@
 change: CHANGE-005
-status: DRAFT
+status: APPROVED
 base_commit: a1f3f96e8434c6d1bc43267382412d89c880e0cb
-approved_semantic_commit: 156fcabbbf58c2d3ab62919b2f34c1106c4b88f6
+approved_semantic_commit: 20ee802aec60cee1f512b82ce073417769d8068f
 approval_scope:
   - SEMANTIC_GIT.md
   - changes/CHANGE-005.md

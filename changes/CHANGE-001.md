@@ -1,5 +1,5 @@
 change: CHANGE-001
-status: RECONCILED
+status: MERGED
 base_commit: 7b6290a996937013a111ea9a0c969939de2516f8
 approved_semantic_commit: cdc1b0c4e971f9ffa070e317e76817902229d18b
 approval_scope:

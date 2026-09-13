@@ -1,6 +1,6 @@
 # Semantic Git — Modelo de Evolução do Conhecimento Semântico
 
-**Versão:** 1.1
+**Versão:** 1.2
 **Status:** especificação normativa standalone
 **Natureza:** modelo autocontido de gestão e evolução de conhecimento semântico
 **Compatibilidade conceitual:** modelo autocontido e independente de especificações externas
@@ -9,7 +9,7 @@
 
 ## 0. Regra de leitura e independência normativa
 
-O Semantic Git 1.1 é **autocontido**.
+O Semantic Git 1.2 é **autocontido**.
 
 Para compreender e operar corretamente um repositório governado por esta especificação, não é necessário consultar qualquer versão anterior do protocolo, uma skill, um prompt externo ou outra especificação normativa.
 
@@ -868,6 +868,10 @@ O TO-BE aprovado tornou-se parte do novo AS-IS.
 
 MERGED é terminal.
 
+Após a incorporação, a conclusão operacional do CHANGE exige seu arquivamento
+no caminho canônico definido na seção 21. O estado `MERGED` somente deve ser
+registrado depois que o movimento tiver sido concluído e validado.
+
 Uma mudança posterior que desfaça ou altere esse resultado exige novo CHANGE.
 
 ### 13.6. ABANDONED
@@ -1050,6 +1054,8 @@ snapshot final recuperável
   ↓
 merge
   ↓
+arquivamento pós-merge obrigatório
+  ↓
 MERGED
   ↓
 novo AS-IS
@@ -1082,6 +1088,10 @@ implementação definitiva
 RECONCILIATION
     ↓
 merge
+    ↓
+arquivamento pós-merge obrigatório
+    ↓
+MERGED
 ```
 
 A proposta e a análise de gaps podem ser ajustadas ou descartadas antes da
@@ -1452,7 +1462,33 @@ A IA interpreta contexto, impacto, coerência e conflito.
 
 CHANGEs concluídos não devem ser apagados definitivamente.
 
-Podem ser arquivados ou preservados por recurso que garanta recuperação histórica.
+Podem ser preservados por recurso que garanta recuperação histórica. Para
+CHANGEs com estado `MERGED`, este repositório adota adicionalmente o
+arquivamento físico obrigatório:
+
+```text
+changes/<CHANGE-ID>.md
+        ↓ merge confirmado
+changes/archived/<CHANGE-ID>.md
+```
+
+O movimento deve ser executado pela IA com `git mv`, nunca por cópia. O conteúdo
+semântico, a identidade, os IDs, as referências e o histórico devem ser
+preservados. A atualização do campo de estado para `MERGED` é metadado de
+ciclo e somente pode ocorrer depois que o destino existir, a origem não existir
+mais e a integridade do movimento tiver sido validada.
+
+`changes/` é reservado para CHANGEs não incorporados. Uma CHANGE `MERGED`
+encontrada nesse caminho produz `FAIL`. Não existe um novo estado `ARCHIVED`.
+
+Uma referência de `approval_scope` ao arquivo ativo de uma CHANGE continua
+resolvível após a relocação canônica para `changes/archived/` pela mesma
+identidade `CHANGE-ID`. A relocação histórica não constitui drift semântico e
+não exige nova aprovação.
+
+Se o arquivamento pós-merge falhar, a IA deve produzir `FAIL` e não declarar o
+fluxo concluído. O tratamento obrigatório de `ABANDONED` permanece limitado à
+preservação histórica geral desta seção.
 
 O AS-IS atual deve ser compreensível sem leitura obrigatória de CHANGEs históricos.
 
@@ -1901,7 +1937,10 @@ Exemplos:
 - estrutura exata de `REQUIREMENTS.md`, `DECISIONS.md` e `OPERATIONS.md`;
 - ausência de arquivos R/D/O vazios;
 - rejeição de seções, formatos de item e tipos documentais não previstos;
-- nome válido da branch exclusiva do CHANGE.
+- nome válido da branch exclusiva do CHANGE;
+- caminho canônico de arquivamento para CHANGEs `MERGED`;
+- ausência de CHANGE `MERGED` no diretório ativo `changes/`;
+- ausência de cópia simultânea da mesma CHANGE em local ativo e arquivado.
 
 #### Identity / Reference
 
@@ -1937,9 +1976,11 @@ Exemplos:
 - branch do CHANGE existe e parte do `base_commit`;
 - `base_commit` permanece estável em novo ciclo do mesmo CHANGE;
 - novo snapshot de aprovação está ancorado sem apagar aprovações anteriores;
+- `approval_scope` continua resolvível após relocação canônica da CHANGE;
 - implementação definitiva não foi incorporada antes da validação humana;
 - snapshots mínimos continuam recuperáveis;
-- pre-merge recheck observa a `main` atual.
+- pre-merge recheck observa a `main` atual;
+- movimento pós-merge preserva conteúdo semântico, identidade e histórico.
 
 #### Link / Integration
 
@@ -2135,6 +2176,10 @@ A IA deve:
 - preservar o `base_commit` e os snapshots anteriores durante novo ciclo;
 - atualizar o `approved_semantic_commit` somente após nova validação;
 - implementar somente o delta do novo ciclo e executar nova RECONCILIATION completa;
+- após merge confirmado, arquivar automaticamente toda CHANGE `MERGED` em `changes/archived/` usando `git mv`;
+- migrar CHANGEs `MERGED` existentes para o caminho canônico quando a regra de arquivamento entrar em vigor;
+- atualizar o estado para `MERGED` somente depois de validar o movimento pós-merge;
+- produzir `FAIL` quando o arquivamento obrigatório não puder ser concluído;
 - sinalizar contradições e conflitos;
 - executar pre-merge recheck;
 - manter o AS-IS limpo;
@@ -2159,6 +2204,10 @@ A IA não deve:
 - criar outra branch ou CHANGE para alteração do mesmo escopo antes de `MERGED`;
 - resetar o `base_commit` ou apagar âncora de aprovação anterior em novo ciclo;
 - implementar a alteração material antes da nova aprovação;
+- deixar CHANGE `MERGED` em `changes/` após o merge;
+- copiar uma CHANGE para o arquivo histórico em vez de usar `git mv`;
+- perguntar se deve executar arquivamento obrigatório já definido na especificação;
+- definir `ARCHIVED` como novo estado;
 - criar Operation sem conteúdo operacional duradouro;
 - tratar branch ou CHANGE em desenvolvimento como AS-IS;
 - resolver conflito material arbitrariamente;
@@ -2400,7 +2449,7 @@ Humano
 
 ## 30. Invariantes normativas
 
-1. O Semantic Git 1.1 é autocontido e não depende de uma especificação externa para interpretação normativa.
+1. O Semantic Git 1.2 é autocontido e não depende de uma especificação externa para interpretação normativa.
 2. `SEMANTIC_GIT.md` é a fonte normativa completa do protocolo.
 3. AS-IS e CHANGE são conceitos distintos.
 4. AS-IS contém somente conhecimento semântico vigente.
@@ -2462,12 +2511,18 @@ Humano
 60. Aprovação anterior permanece recuperável no histórico Git.
 61. Implementação de novo ciclo pré-merge limita-se ao delta aprovado, com RECONCILIATION completa.
 62. Escopo independente ou materialmente ampliado exige novo CHANGE.
+63. Toda CHANGE `MERGED` deve estar em `changes/archived/<CHANGE-ID>.md`.
+64. A IA deve executar o arquivamento pós-merge sem solicitar autorização adicional.
+65. O arquivamento obrigatório usa `git mv` e preserva conteúdo semântico, identidade e histórico.
+66. `MERGED` somente pode ser registrado após o arquivamento pós-merge ser validado.
+67. CHANGE `MERGED` em `changes/` ativo ou duplicada entre ativo e arquivado produz `FAIL`.
+68. A relocação canônica da CHANGE não exige nova aprovação quando não altera seu significado.
 
 ---
 
 ## 31. Requisitos de standalone
 
-Uma distribuição só pode declarar conformidade com **Semantic Git 1.1 Standalone** se:
+Uma distribuição só pode declarar conformidade com **Semantic Git 1.2 Standalone** se:
 
 1. possuir uma cópia íntegra desta especificação em `SEMANTIC_GIT.md` ou referência imutável equivalente acessível ao agente e às ferramentas;
 2. nenhuma regra necessária para interpretar R/D/O, CHANGE, Semantic Diff, estados, aprovação, reconciliação, IDs, vínculos ou testes depender exclusivamente de outra especificação;
@@ -2489,4 +2544,4 @@ sem cadeia obrigatória de herança documental em runtime.
 
 ---
 
-# Fim da especificação Semantic Git v1.1 Standalone
+# Fim da especificação Semantic Git v1.2 Standalone

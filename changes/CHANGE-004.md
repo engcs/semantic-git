@@ -1,5 +1,5 @@
 change: CHANGE-004
-status: APPROVED
+status: IN_PROGRESS
 base_commit: ff0433d98f4edd8813b81d1c68a6882a25302476
 approved_semantic_commit: c7a54dfdc6f32c0c5906c621887d55b7596ec966
 approval_scope:

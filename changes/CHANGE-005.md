@@ -1,7 +1,7 @@
 change: CHANGE-005
 status: RECONCILED
 base_commit: a1f3f96e8434c6d1bc43267382412d89c880e0cb
-approved_semantic_commit: 20ee802aec60cee1f512b82ce073417769d8068f
+approved_semantic_commit: c70dfeac90718a2f2e7def92a4276ee784977d59
 approval_scope:
   - SEMANTIC_GIT.md
   - changes/CHANGE-005.md

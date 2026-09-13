@@ -1,0 +1,2210 @@
+# Semantic Git — Modelo de Evolução do Conhecimento Semântico
+
+**Versão:** 1.0
+**Status:** especificação normativa standalone
+**Natureza:** modelo autocontido de gestão e evolução de conhecimento semântico
+**Compatibilidade conceitual:** modelo autocontido e independente de especificações externas
+
+---
+
+## 0. Regra de leitura e independência normativa
+
+O Semantic Git 1.0 é **autocontido**.
+
+Para compreender e operar corretamente um repositório governado por esta especificação, não é necessário consultar qualquer versão anterior do protocolo, uma skill, um prompt externo ou outra especificação normativa.
+
+```text
+SEMANTIC_GIT.md
+= fonte normativa completa do protocolo
+```
+
+`AGENTS.md`, skills, CLIs, validadores, manifestos, templates e automações podem orientar ou executar o protocolo, mas não substituem nem modificam esta especificação.
+
+Em caso de divergência:
+
+```text
+SEMANTIC_GIT.md
+> skill / AGENTS.md / automação / template / manifesto derivado
+```
+
+Uma skill pode resumir o procedimento operacional e consultar seções deste documento sob demanda, mas não deve criar uma segunda fonte de verdade.
+
+---
+
+## 1. Propósito
+
+O Semantic Git existe para preservar significado persistente sobre sistemas, negócio e operação por longos períodos sem transformar a documentação em uma estrutura complexa demais para humanos e IAs utilizarem com segurança.
+
+Sua prioridade é permitir responder rapidamente:
+
+- o que é considerado verdade hoje;
+- o que está sendo alterado;
+- qual transformação semântica foi aprovada;
+- o que deixou de valer e o que passou a valer;
+- como a transformação foi materializada fisicamente;
+- por que e como o estado atual evoluiu;
+- como reconstruir estados anteriores quando necessário.
+
+O Semantic Git favorece:
+
+- simplicidade;
+- previsibilidade;
+- rastreabilidade;
+- recuperação de contexto;
+- baixo custo cognitivo;
+- baixo volume documental;
+- uso intensivo do Git para fatos físicos e temporais;
+- documentação humana somente para significado relevante e difícil de reconstruir;
+- automação de regras determinísticas;
+- validação humana para decisões materiais de significado;
+- carregamento progressivo de contexto pela IA.
+
+A estrutura não deve armazenar tudo.
+
+Ela deve armazenar apenas conhecimento semântico relevante e difícil de reconstruir adequadamente a partir de artefatos ou histórico técnico.
+
+---
+
+## 2. Domínio governado
+
+O objeto governado pelo Semantic Git é **Semantic Knowledge**: significado persistente sobre o que um sistema, negócio ou operação deve ser, por que determinadas escolhas existem e como o estado vigente é operado.
+
+A materialização física desse significado pode existir em:
+
+- código;
+- configuração;
+- testes;
+- scripts;
+- modelos;
+- infraestrutura;
+- aplicações;
+- pipelines;
+- procedimentos executáveis;
+- outros artefatos técnicos.
+
+Essas materializações não constituem automaticamente novas dimensões semânticas.
+
+O Semantic Git distingue:
+
+```text
+significado persistente
+≠
+materialização física
+```
+
+O repositório que governa o significado é chamado **Semantic Repository**.
+
+Os escopos conceituais são chamados **Semantic Namespaces**.
+
+A transformação conceitual é representada por **Semantic Delta / Semantic Diff**.
+
+---
+
+## 3. Conceito central: AS-IS e CHANGE
+
+O Semantic Git separa de forma absoluta:
+
+```text
+PRESENTE
+≠
+TRANSFORMAÇÃO
+```
+
+### 3.1. AS-IS
+
+AS-IS representa o conhecimento semântico oficialmente aprovado e vigente em determinado escopo.
+
+Em fluxo Git, normalmente corresponde à branch principal:
+
+```text
+main
+```
+
+O AS-IS contém somente conhecimento que deve ser entendido como verdadeiro agora.
+
+No Semantic Git, o AS-IS permanente é expresso, conforme aplicável, por:
+
+```text
+REQUIREMENTS
+DECISIONS
+OPERATIONS
+```
+
+Artefatos físicos que materializam esse conhecimento não se tornam AS-IS semântico por existirem; eles devem permanecer coerentes com o AS-IS semântico governante.
+
+### 3.2. CHANGE
+
+CHANGE representa uma transformação proposta ou em desenvolvimento.
+
+Uma mudança ainda não é verdade.
+
+Ela é uma hipótese de futuro.
+
+Enquanto não for incorporada ao AS-IS:
+
+```text
+branch / CHANGE
+= TO-BE em desenvolvimento
+
+main
+= AS-IS vigente
+```
+
+Toda transformação semântica material deve ser governada por um CHANGE.
+
+Alterações puramente físicas, editoriais, de formatação ou refatorações que preservem integralmente o significado não exigem CHANGE semântico.
+
+Um CHANGE não deve ser tratado como verdade vigente antes do merge.
+
+---
+
+## 4. Ergonomia humano–IA
+
+O humano não deve ser obrigado a conhecer ou preencher corretamente toda a estrutura interna do protocolo.
+
+Ele deve poder começar com uma intenção simples.
+
+Cabe à IA e às automações, quando disponíveis:
+
+- localizar o Semantic Namespace aplicável;
+- consultar o AS-IS relevante;
+- recuperar Requirements ancestrais aplicáveis;
+- consultar Decisions relevantes;
+- consultar Operations quando houver impacto operacional;
+- pesquisar CHANGEs anteriores quando forem relevantes;
+- criar ou ajustar a estrutura do CHANGE;
+- preencher metadados determinísticos;
+- normalizar referências;
+- propor e manter o Semantic Diff;
+- executar testes de conformidade;
+- resolver vínculos semântico-físicos;
+- sinalizar ambiguidades materiais;
+- solicitar validação humana quando o significado depender de decisão humana.
+
+A complexidade do protocolo pertence principalmente à IA e às automações.
+
+O humano deve concentrar-se principalmente em:
+
+> expressar intenção e validar significado.
+
+A IA pode corrigir estrutura e inferir fatos determinísticos.
+
+A IA não pode inventar significado, motivo desconhecido, identidade humana ausente ou decisão material humana.
+
+---
+
+## 5. Semantic Namespaces
+
+O Semantic Git é recursivo.
+
+Um Semantic Repository pode possuir uma árvore de namespaces:
+
+```text
+root
+├── domain
+│   ├── operation
+│   └── cancelamento
+└── apuracao
+```
+
+Cada namespace pode conter AS-IS semântico e CHANGEs próprios.
+
+A raiz não possui autoridade especial apenas por ser raiz.
+
+Ela contém somente conhecimento cujo escopo seja realmente global.
+
+### 5.1. Menor escopo suficiente
+
+Um CHANGE deve viver no menor ancestral comum capaz de conter integralmente tudo o que a transformação pretende alterar.
+
+Exemplo:
+
+```text
+operation apenas
+→ domain/operation:CHANGE-002
+
+operation + cancelamento
+→ domain:CHANGE-002
+
+domain + apuracao
+→ root:CHANGE-002
+```
+
+Se durante a descoberta a mudança revelar alcance maior, o CHANGE deve subir para o menor namespace que passe a conter integralmente a transformação.
+
+Isso representa evolução da compreensão, não erro do processo.
+
+O escopo do CHANGE não obriga as entidades resultantes a permanecerem nesse mesmo nível.
+
+### 5.2. Herança de contexto
+
+Ao trabalhar em um namespace, a IA deve considerar:
+
+```text
+contexto local
++
+Requirements aplicáveis dos ancestrais
++
+Decisions relevantes
++
+Operations relevantes quando aplicável
++
+dependências laterais relevantes
+```
+
+Não deve carregar indiscriminadamente toda a árvore.
+
+A árvore existe para localização, herança e redução de contexto.
+
+### 5.3. Namespace não é filesystem
+
+O namespace responde:
+
+> onde este significado pertence conceitualmente?
+
+Ele não deve ser derivado automaticamente da estrutura física da implementação.
+
+```text
+identidade semântica
+≠
+caminho físico
+```
+
+A estrutura física pode espelhar a árvore semântica quando isso melhorar a navegação, mas reorganização puramente física não deve alterar identidade semântica quando significado e escopo conceitual forem preservados.
+
+---
+
+## 6. Dimensões permanentes do AS-IS
+
+O Semantic Git define três dimensões permanentes canônicas:
+
+```text
+REQUIREMENTS
+     ↓
+DECISIONS
+     ↓
+OPERATIONS
+```
+
+Elas representam sempre o estado semântico vigente do namespace em que vivem.
+
+Nem todo namespace precisa possuir todas as dimensões.
+
+Arquivos vazios não devem ser criados apenas para completar estrutura.
+
+Nenhuma dimensão deve existir apenas para preencher taxonomia.
+
+### 6.1. REQUIREMENTS
+
+REQUIREMENTS responde:
+
+> o que deve ser verdade?
+
+Pode conter:
+
+- objetivos;
+- requisitos funcionais;
+- requisitos não funcionais;
+- regras de negócio;
+- restrições;
+- contratos;
+- invariantes;
+- critérios de aceitação;
+- comportamentos esperados.
+
+É a dimensão de maior autoridade semântica permanente.
+
+REQUIREMENTS não deve funcionar como histórico, TODO, justificativa arquitetural ou descrição operacional.
+
+### 6.2. DECISIONS
+
+DECISIONS responde:
+
+> como e por que escolhemos satisfazer os Requirements?
+
+Pode registrar:
+
+- escolha arquitetural;
+- escolha de tecnologia;
+- escolha de fonte;
+- algoritmo;
+- estratégia de versionamento;
+- compatibilidade;
+- trade-offs;
+- alternativas relevantes descartadas;
+- consequências duradouras.
+
+Registrar somente decisões cuja ausência provavelmente faria alguém perguntar no futuro:
+
+> por que fizeram desta forma?
+
+### 6.3. OPERATIONS
+
+OPERATIONS responde:
+
+> como o estado vigente é utilizado, executado, mantido, validado ou recuperado?
+
+Pode conter:
+
+- execução;
+- publicação;
+- reprocessamento;
+- recuperação;
+- validação;
+- monitoramento;
+- dependências operacionais;
+- janelas;
+- rotinas;
+- procedimentos duradouros.
+
+OPERATIONS não é TODO.
+
+### 6.4. Hierarquia semântica
+
+É obrigatório:
+
+```text
+REQUIREMENTS
+     ↓
+DECISIONS
+     ↓
+OPERATIONS
+```
+
+Portanto:
+
+- Decisions não podem contradizer Requirements;
+- Operations não podem contradizer Requirements ou Decisions;
+- conhecimento local deve respeitar Requirements ancestrais aplicáveis;
+- materializações físicas devem permanecer coerentes com o conjunto vigente.
+
+Divergências materiais devem ser sinalizadas, não resolvidas arbitrariamente pela IA.
+
+---
+
+## 7. Identidade semântica, IDs e referências
+
+IDs identificam entidades semânticas.
+
+Eles não identificam versões de texto.
+
+Os prefixos oficiais são:
+
+```text
+R-
+D-
+O-
+CHANGE-
+```
+
+A identidade canônica é:
+
+```text
+<namespace>:<ID local>
+```
+
+Exemplos:
+
+```text
+root:R-001
+domain:R-017
+domain/operation:D-003
+domain/operation:O-005
+domain/operation:CHANGE-014
+```
+
+IDs curtos são locais ao namespace.
+
+Identidades canônicas são hierárquicas e inequívocas.
+
+### 7.1. Referências
+
+São permitidas:
+
+- referências absolutas;
+- referências relativas resolvíveis;
+- referências curtas quando o contexto for inequivocamente suficiente.
+
+Referências ambíguas não podem ser resolvidas por adivinhação.
+
+Toda referência deve ser normalizável para uma identidade canônica.
+
+Exemplo de referência absoluta:
+
+```text
+domain:D-004 → domain:R-017
+```
+
+### 7.2. IDs oficiais
+
+IDs oficiais:
+
+- são monotônicos por tipo dentro do namespace que os controla;
+- não precisam formar sequência contínua;
+- não devem ser renumerados por conveniência;
+- não devem ser reutilizados após remoção;
+- devem permanecer estáveis enquanto identidade e escopo conceitual forem preservados;
+- devem ser atribuídos de forma exclusiva e atômica.
+
+### 7.3. IDs locais de construção
+
+Novas entidades ainda em construção dentro de um CHANGE podem utilizar aliases locais:
+
+```text
+R-A
+D-A
+O-A
+```
+
+Aliases locais:
+
+- existem somente dentro do CHANGE;
+- evitam consumir IDs oficiais prematuramente;
+- não são identidades oficiais;
+- não devem permanecer no AS-IS;
+- devem ser promovidos antes da incorporação conforme a política de promoção.
+
+### 7.4. Preservação de identidade
+
+MODIFY exige preservação razoável da identidade semântica.
+
+Pergunta de controle:
+
+> depois da mudança, ainda estamos falando essencialmente da mesma entidade?
+
+Se a resposta for não, utilizar REMOVE + ADD.
+
+---
+
+## 8. CHANGE como unidade de evolução
+
+CHANGE é a unidade lógica de transformação semântica do Semantic Git.
+
+Um único CHANGE pode materializar-se em um ou vários repositórios físicos.
+
+Um Merge Request físico não é equivalente ao CHANGE.
+
+### 8.1. Contrato mínimo
+
+Em fluxo Git, todo CHANGE material deve possuir no mínimo:
+
+```yaml
+change: CHANGE-014
+status: DRAFT
+base_commit: 71ac982
+reason: null
+```
+
+O namespace é determinado pelo escopo em que o CHANGE vive.
+
+Dependências excepcionais podem ser declaradas:
+
+```yaml
+depends_on:
+  - domain:CHANGE-021
+```
+
+`depends_on` deve ser omitido quando não houver dependência real.
+
+`reason` é opcional.
+
+Se o motivo for desconhecido, a IA não deve inventá-lo.
+
+### 8.2. Coesão
+
+Um CHANGE deve conter, em geral, o conjunto coerente de alterações necessário para realizar uma transformação.
+
+Não fragmentar artificialmente uma única transformação apenas para criar dependências entre CHANGEs.
+
+### 8.3. CHANGE não é AS-IS
+
+Conteúdo de CHANGE representa TO-BE.
+
+Mesmo quando aprovado, um CHANGE ainda não é verdade vigente até sua incorporação ao AS-IS.
+
+---
+
+## 9. Semantic Delta e Semantic Diff
+
+Todo CHANGE semântico material deve possuir delta explícito.
+
+O **Semantic Delta** representa a transformação conceitual pretendida.
+
+Sua forma concreta preferencial é o **Semantic Diff**.
+
+O Semantic Diff deve separar, conforme aplicável:
+
+```text
+REQUIREMENTS
+DECISIONS
+OPERATIONS
+```
+
+Cada dimensão pode utilizar:
+
+```text
+ADD
+MODIFY
+REMOVE
+NONE
+```
+
+### 9.1. ADD
+
+```text
+ADD
+= nasce uma verdade ou identidade semântica nova
+```
+
+ADD contém somente conteúdo novo.
+
+### 9.2. REMOVE
+
+```text
+REMOVE
+= uma verdade ou identidade semântica vigente deixa de existir
+```
+
+O ID oficial removido não pode ser reutilizado.
+
+### 9.3. MODIFY
+
+```text
+MODIFY
+= a identidade permanece, mas parte de seu significado muda
+```
+
+MODIFY deve mostrar:
+
+1. contexto original suficiente;
+2. menor fragmento que deixa de valer;
+3. fragmento que passa a valer.
+
+Forma canônica:
+
+```text
+MODIFY R-021
+
+"A competência anterior deve ser congelada após o dia 10."
+
+- dia 10
++ dia 15
+```
+
+Não inventar campos intermediários que não existam no conhecimento original.
+
+### 9.4. REMOVE + ADD
+
+Quando a identidade anterior deixa conceitualmente de existir e outra nasce, utilizar:
+
+```text
+REMOVE + ADD
+```
+
+Não usar MODIFY apenas porque algum texto mudou.
+
+### 9.5. NONE
+
+NONE indica explicitamente que uma dimensão não sofre alteração semântica naquele CHANGE.
+
+NONE não é motivo para criar CHANGE vazio.
+
+### 9.6. Regra de representação
+
+> não explicar o delta quando é possível mostrar o próprio delta.
+
+Preferir texto original e `- / +` a paráfrases ou categorias inventadas.
+
+### 9.7. Evolução do Semantic Diff
+
+Enquanto o CHANGE estiver aberto, o Semantic Diff representa a melhor compreensão atual do futuro desejado.
+
+Se a compreensão mudar, o Semantic Diff deve ser atualizado.
+
+A aprovação humana não congela a capacidade de aprender; ela congela qual contrato semântico está aprovado naquele momento.
+
+Mudança material posterior exige nova aprovação.
+
+---
+
+## 10. Semantic Diff não é Git Diff
+
+```text
+Semantic Diff
+= o que mudou no significado
+
+Git Diff
+= o que mudou fisicamente
+```
+
+É permitido:
+
+```text
+Git Diff ≠ 0
+Semantic Diff = NONE
+```
+
+quando a diferença física preservar integralmente o significado.
+
+A correspondência não precisa ser linha a linha.
+
+Ela precisa ser semanticamente coerente.
+
+Git fornece fatos físicos.
+
+Semantic Diff explicita transformação de significado.
+
+---
+
+## 11. PRD, SPEC e TODO
+
+PRD, SPEC e TODO são instrumentos opcionais do CHANGE.
+
+Não são dimensões permanentes obrigatórias do AS-IS.
+
+Funcionam como andaimes temporários da transformação.
+
+### 11.1. PRD
+
+PRD pode ser utilizado para explorar:
+
+- problema;
+- objetivo;
+- contexto;
+- restrições;
+- resultado esperado.
+
+É particularmente útil para descobrir e formular mudança de Requirements.
+
+Conhecimento duradouro oriundo de PRD deve ser consolidado, quando aplicável, em:
+
+```text
+REQUIREMENTS
+```
+
+### 11.2. SPEC
+
+SPEC descreve como a transformação será realizada.
+
+Pode conter:
+
+- desenho técnico;
+- componentes afetados;
+- migração;
+- compatibilidade;
+- estratégia de testes;
+- detalhes relevantes de execução.
+
+Escolhas estruturais duradouras surgidas na SPEC devem ser consolidadas, quando aplicável, em:
+
+```text
+DECISIONS
+```
+
+### 11.3. TODO
+
+TODO representa trabalho pendente do CHANGE.
+
+Deve ser concreto, verificável e temporário.
+
+Procedimentos que continuarem válidos após a mudança devem ser consolidados, quando aplicável, em:
+
+```text
+OPERATIONS
+```
+
+TODO não deve virar documentação permanente apenas porque foi utilizado durante a execução.
+
+### 11.4. Regra de consolidação
+
+```text
+PRD                  ───→ REQUIREMENTS
+SPEC                 ───→ DECISIONS
+TODO / execução      ───→ OPERATIONS
+```
+
+A seta significa:
+
+> extrair e consolidar somente o conhecimento que continuará válido.
+
+Não significa copiar o documento temporário integralmente.
+
+---
+
+## 12. Evolução interna e snapshots
+
+Um CHANGE aberto pode evoluir.
+
+Hipóteses podem ser ampliadas, reduzidas, divididas, reformuladas ou descartadas antes da conclusão.
+
+Nada historicamente relevante pode tornar-se irrecuperável.
+
+No mínimo devem existir:
+
+```text
+snapshot inicial
++
+snapshot final
+```
+
+Snapshots intermediários devem ser preservados quando sua perda prejudicar a reconstrução futura, por exemplo:
+
+- mudança relevante de escopo;
+- reformulação material do Semantic Diff;
+- alteração substancial de PRD ou SPEC;
+- abandono de uma linha de solução relevante;
+- marco importante em mudança longa ou complexa.
+
+Rascunhos efêmeros não precisam ser preservados individualmente.
+
+A IA pode decidir os momentos apropriados para snapshots intermediários sem exigir aprovação humana para cada marco histórico.
+
+A estratégia Git não pode tornar os snapshots obrigatórios irrecuperáveis por squash, exclusão de branch ou limpeza de referências.
+
+Snapshots são garantia histórica do CHANGE, não uma dimensão permanente de conhecimento.
+
+---
+
+## 13. Máquina de estados
+
+Estados canônicos:
+
+```text
+DRAFT
+  ↓
+APPROVED
+  ↓
+IN_PROGRESS
+  ↓
+RECONCILED
+  ↓
+MERGED
+```
+
+Estado terminal alternativo:
+
+```text
+ABANDONED
+```
+
+### 13.1. DRAFT
+
+O CHANGE existe, mas seu contrato semântico ainda não está aprovado.
+
+Neste estado:
+
+- o Semantic Diff pode evoluir;
+- novas entidades podem nascer ou ser descartadas;
+- PRD pode ou não existir;
+- SPEC pode ou não existir;
+- TODO pode ou não existir;
+- nada deve ser tratado como semanticamente aprovado.
+
+### 13.2. APPROVED
+
+O humano aprovou o contrato semântico exato registrado pelas âncoras de aprovação.
+
+A aprovação responde:
+
+> é esta a transformação que queremos realizar?
+
+Ela é distinta da aprovação de MR e do ato de merge.
+
+### 13.3. IN_PROGRESS
+
+A transformação aprovada está sendo executada.
+
+Código, configuração, testes, documentação, PRD, SPEC e TODO podem evoluir desde que permaneçam coerentes com o contrato semântico aprovado.
+
+### 13.4. RECONCILED
+
+A execução foi confrontada com:
+
+- Semantic Diff aprovado;
+- estado final semântico;
+- Git Diff(s);
+- AS-IS aplicável;
+- referências;
+- hierarquia R/D/O;
+- demais invariantes obrigatórias.
+
+Não há pendências impeditivas observadas naquele estado.
+
+RECONCILED não congela `main`.
+
+### 13.5. MERGED
+
+O CHANGE foi incorporado à `main`.
+
+O TO-BE aprovado tornou-se parte do novo AS-IS.
+
+MERGED é terminal.
+
+Uma mudança posterior que desfaça ou altere esse resultado exige novo CHANGE.
+
+### 13.6. ABANDONED
+
+O CHANGE foi explicitamente encerrado sem incorporação ao AS-IS.
+
+Pode ocorrer a partir de qualquer estado anterior a MERGED.
+
+Não existe:
+
+```text
+MERGED → ABANDONED
+```
+
+### 13.7. Alteração material após aprovação
+
+Se o contrato semântico aprovado sofrer alteração material:
+
+```text
+APPROVED
+IN_PROGRESS
+RECONCILED
+    ↓
+DRAFT
+```
+
+Nova validação humana é obrigatória.
+
+Se o problema for somente de execução, sem alteração material do contrato:
+
+```text
+RECONCILED → IN_PROGRESS
+```
+
+O estado deve decorrer de condições objetivas, não de escolha arbitrária da IA.
+
+---
+
+## 14. Aprovação semântica e âncoras Git
+
+### 14.1. `base_commit`
+
+Todo CHANGE criado em fluxo Git deve registrar o commit imutável que representa o AS-IS físico de origem:
+
+```yaml
+base_commit: 71ac982
+```
+
+`base_commit` responde:
+
+> de qual estado físico esta transformação partiu?
+
+### 14.2. `approved_semantic_commit`
+
+Quando o humano aprovar o contrato semântico, deve ser registrado o commit que contém a versão exata aprovada:
+
+```yaml
+approved_semantic_commit: b18f3a1
+```
+
+### 14.3. `approval_scope`
+
+A aprovação deve registrar os documentos efetivamente aprovados:
+
+```yaml
+approval_scope:
+  - path/to/CHANGE-014.md
+```
+
+Assim:
+
+```text
+base_commit
+= de onde a transformação partiu
+
+approved_semantic_commit + approval_scope
+= exatamente qual transformação semântica foi aprovada
+```
+
+O metadado que registra o hash pode existir em commit posterior ao snapshot aprovado.
+
+Não criar hash autorreferente.
+
+Não é necessário criar hash semântico adicional quando commit + Git diff forem suficientes.
+
+### 14.4. Identidade do aprovador
+
+A identidade do aprovador não é obrigatória no núcleo do Semantic Git.
+
+Projetos podem ativar auditoria automática de identidade Git.
+
+A IA nunca deve inventar identidade ausente.
+
+### 14.5. Drift após aprovação
+
+Mudança material no conteúdo abrangido por:
+
+```text
+approved_semantic_commit + approval_scope
+```
+
+exige retorno a DRAFT e nova aprovação humana.
+
+Alterações exclusivamente técnicas, editoriais, de TODO, evidência, formatação ou metadados de aprovação não invalidam automaticamente a aprovação quando preservarem integralmente o significado aprovado.
+
+---
+
+## 15. Fluxo de uma mudança
+
+```text
+AS-IS do namespace relevante
+  ↓
+necessidade percebida
+  ↓
+menor escopo suficiente
+  ↓
+CHANGE / DRAFT
+  ↓
+base_commit
+  ↓
+PRD, se necessário
+  ↓
+primeira formulação coerente
+  ↓
+snapshot inicial
+  ↓
+Semantic Delta / Semantic Diff
+  ↓
+validação humana do significado
+  ↓
+approved_semantic_commit + approval_scope
+  ↓
+APPROVED
+  ↓
+SPEC, se necessária
+  ↓
+TODO, se necessário
+  ↓
+IN_PROGRESS
+  ↓
+execução
+  ↓
+snapshots intermediários, quando necessários
+  ↓
+validação
+  ↓
+RECONCILIATION
+  ↓
+RECONCILED
+  ↓
+promoção de IDs locais conforme política
+  ↓
+pre-merge recheck
+  ↓
+snapshot final recuperável
+  ↓
+merge
+  ↓
+MERGED
+  ↓
+novo AS-IS
+```
+
+A presença de PRD, SPEC ou TODO é opcional.
+
+As condições semânticas e de reconciliação não são opcionais quando aplicáveis.
+
+---
+
+## 16. RECONCILIATION semântica
+
+Antes de qualquer CHANGE ser incorporado ao AS-IS, RECONCILIATION é obrigatória.
+
+Confrontar explicitamente:
+
+```text
+Semantic Diff aprovado
+          ↕
+estado final semântico
+          ↕
+Git Diff(s) da implementação
+          ↕
+AS-IS semântico atual
+          ↕
+integridade entre R / D / O
+          ↕
+integridade referencial
+```
+
+Pergunta central:
+
+> tudo o que foi realmente alterado está corretamente representado pelo CHANGE e continua compatível com o AS-IS no qual será incorporado?
+
+A reconciliação deve detectar tanto:
+
+```text
+mudança declarada mas não materializada
+```
+
+quanto:
+
+```text
+mudança materializada mas não declarada
+```
+
+### 16.1. Integridade R / D / O
+
+Verificar, conforme aplicável:
+
+- Requirement removido ainda referenciado por Decision ou Operation;
+- Decision incompatível com Requirement vigente;
+- Operation incompatível com Requirement ou Decision;
+- Requirement ancestral aplicável violado;
+- conhecimento duradouro de PRD/SPEC/TODO não consolidado quando necessário;
+- implementação que materializa significado diferente do aprovado.
+
+### 16.2. Integridade referencial
+
+Verificar:
+
+- referências órfãs;
+- referências curtas ambíguas;
+- referências relativas irresolvíveis;
+- entidades removidas ainda referenciadas;
+- dependências semanticamente incompatíveis;
+- aliases locais ainda não resolvidos no momento em que deveriam estar promovidos;
+- referências cujo namespace semântico mudou sem reconciliação;
+- MODIFY utilizado sem preservação razoável de identidade.
+
+Exemplo:
+
+```text
+domain:D-004 → domain:R-017
+```
+
+Se o CHANGE fizer:
+
+```text
+  REMOVE domain:R-017
+```
+
+a reconciliação deve detectar que `domain:D-004` ficaria com referência inválida ou semanticamente inconsistente.
+
+Um MODIFY não obriga automaticamente a alteração de todos os dependentes.
+
+A IA deve verificar se eles continuam compatíveis.
+
+### 16.3. Verificação do contrato aprovado
+
+A reconciliação deve verificar se o conteúdo semântico executado continua correspondendo ao snapshot aprovado por:
+
+```text
+approved_semantic_commit
++
+approval_scope
+```
+
+O Git fornece a fotografia exata do conteúdo aprovado e das alterações posteriores.
+
+A IA deve interpretar o diff posterior e decidir se houve drift semântico material.
+
+Se houver, o CHANGE retorna a DRAFT.
+
+### 16.4. AS-IS de origem
+
+O Semantic Diff final deve corresponder à diferença entre:
+
+```text
+AS-IS semântico de origem
+↕
+novo AS-IS proposto
+```
+
+Não basta que o Semantic Diff descreva a intenção atual se ele já não representar corretamente a transformação desde a origem relevante.
+
+### 16.5. Concorrência entre CHANGEs
+
+Se `main` avançar após `base_commit`, o CHANGE não se torna automaticamente inválido.
+
+A IA deve avaliar se o avanço interfere no conhecimento relevante.
+
+A árvore de namespaces é indicador inicial de sobreposição, não prova suficiente.
+
+Conflito material com mais de uma interpretação válida exige decisão humana.
+
+### 16.6. Múltiplos CHANGEs candidatos
+
+Antes do primeiro merge de uma mesma janela, analisar conjuntamente os CHANGEs candidatos quando houver possibilidade de sobreposição.
+
+```text
+CHANGE-A ─┐
+CHANGE-B ─┼─→ análise de conflito semântico
+CHANGE-C ─┘
+```
+
+A ordem de merge deve ser considerada quando puder alterar o resultado.
+
+A IA deve informar ao humano quando a ordem de incorporação puder produzir resultados semanticamente diferentes.
+
+---
+
+## 17. Pre-merge recheck
+
+RECONCILED significa que a mudança estava coerente com o AS-IS observado durante a reconciliação.
+
+Isso não congela `main`.
+
+Imediatamente antes do merge:
+
+```text
+1. observar HEAD(main)
+2. verificar se corresponde ao AS-IS avaliado
+3. se mudou, reavaliar impacto
+4. repetir até que o merge ocorra contra o estado validado
+```
+
+Se o avanço da main for:
+
+```text
+irrelevante
+→ seguir
+
+relevante apenas à execução
+→ ajustar, retornar a IN_PROGRESS quando necessário e reconciliar
+
+material ao contrato semântico
+→ retornar a DRAFT e solicitar nova aprovação
+```
+
+Git fornece o fato de que o mundo mudou.
+
+A IA interpreta o impacto semântico dessa mudança.
+
+O pre-merge recheck é obrigatório.
+
+---
+
+## 18. Promoção de IDs locais
+
+Entidades locais que sobreviverão devem receber IDs oficiais antes de entrar no AS-IS.
+
+Modos suportados:
+
+```text
+pre_merge
+reconciliation
+```
+
+Apenas um modo pode estar ativo por projeto.
+
+Padrão:
+
+```text
+pre_merge
+```
+
+Configuração:
+
+```yaml
+id_promotion:
+  mode: pre_merge
+```
+
+### 18.1. Modo `pre_merge`
+
+A promoção ocorre depois de RECONCILED e antes do merge.
+
+Esse é o modo padrão porque evita consumir IDs oficiais antes de a identidade estar efetivamente prestes a entrar no AS-IS.
+
+### 18.2. Modo `reconciliation`
+
+A promoção ocorre dentro da própria RECONCILIATION.
+
+É apropriado quando validações finais, integrações ou regras de integridade precisam trabalhar com IDs oficiais antes de declarar RECONCILED.
+
+### 18.3. Regras comuns
+
+Independentemente do modo:
+
+1. identificar entidades locais que sobreviverão;
+2. determinar o namespace semântico de destino;
+3. determinar o tipo R, D ou O;
+4. atribuir o próximo ID oficial daquele tipo dentro do namespace de destino;
+5. alocar IDs de forma exclusiva e atômica;
+6. impedir colisões entre CHANGEs concorrentes;
+7. substituir aliases locais;
+8. atualizar dependências e referências;
+9. atualizar o Semantic Diff final;
+10. verificar novamente a integridade;
+11. garantir que o CHANGE arquivado utilize IDs oficiais resolvíveis.
+
+Exemplo:
+
+```text
+R-A → domain:R-028
+R-B → apuracao:R-011
+```
+
+O histórico oficial não deve depender do conhecimento de aliases locais.
+
+### 18.4. Exclusividade da política
+
+Não é permitido decidir o modo individualmente em cada CHANGE.
+
+O modo é política do projeto/repositório.
+
+Nunca usar os dois simultaneamente.
+
+---
+
+## 19. Fechamento de CHANGE
+
+Um CHANGE somente pode chegar a RECONCILED quando:
+
+- Semantic Diff está atualizado;
+- o contrato semântico atual corresponde ao snapshot aprovado;
+- o escopo do CHANGE contém integralmente a transformação;
+- Requirements afetados estão coerentes;
+- Requirements ancestrais aplicáveis foram respeitados;
+- Decisions necessárias foram persistidas;
+- Operations necessárias foram atualizadas;
+- conhecimento duradouro surgido em PRD, SPEC ou TODO foi consolidado quando aplicável;
+- materializações físicas estão coerentes com o estado proposto;
+- testes necessários foram concluídos;
+- documentação vigente representa o novo estado proposto;
+- IDs locais sobreviventes foram promovidos no momento definido pela política, quando aplicável;
+- referências foram reconciliadas;
+- não existem referências órfãs ou ambíguas;
+- Semantic Diff e Git Diff(s) são compatíveis;
+- conflitos concorrentes relevantes foram tratados;
+- dependências explícitas foram satisfeitas;
+- o Semantic Diff final representa a diferença entre o AS-IS de origem e o novo AS-IS proposto;
+- a suíte obrigatória não contém FAIL nem REVIEW impeditivo.
+
+O campo `reason` pode permanecer vazio.
+
+Sua ausência não bloqueia fechamento.
+
+Depois de RECONCILED, o pre-merge recheck continua obrigatório.
+
+Imediatamente antes da incorporação deve existir snapshot final recuperável representando o estado efetivamente levado ao merge.
+
+A estratégia Git deve preservar também o snapshot inicial e snapshots intermediários historicamente relevantes.
+
+Somente depois da incorporação à `main` o CHANGE passa a:
+
+```text
+MERGED
+```
+
+---
+
+## 20. Relação com Git
+
+Git deve ser utilizado intensivamente.
+
+```text
+main
+= AS-IS aprovado
+
+branch
+= TO-BE em desenvolvimento
+
+git diff
+= Git Diff / mudança física
+
+CHANGE
+= transformação semântica situada em namespace
+
+Semantic Diff
+= significado que nasceu, deixou de valer ou mudou
+
+Merge Request
+= processo de revisão e aprovação operacional da incorporação
+
+merge
+= transformação aprovada do TO-BE em novo AS-IS
+
+Git history
+= evolução física e temporal
+```
+
+Git fornece fatos físicos e temporais.
+
+Documentos explicitam significado.
+
+Semantic Namespace resolve identidade contextual.
+
+A IA interpreta contexto, impacto, coerência e conflito.
+
+---
+
+## 21. Histórico e reversão
+
+CHANGEs concluídos não devem ser apagados definitivamente.
+
+Podem ser arquivados ou preservados por recurso que garanta recuperação histórica.
+
+O AS-IS atual deve ser compreensível sem leitura obrigatória de CHANGEs históricos.
+
+Para entender o presente, deve bastar consultar:
+
+```text
+REQUIREMENTS
+DECISIONS
+OPERATIONS
+```
+
+mais as materializações vigentes quando necessário.
+
+Quando alguém perguntar como uma entidade evoluiu, CHANGEs são a primeira fonte da evolução semântica.
+
+Quando alguém perguntar qual era literalmente o conteúdo físico, Git é a fonte adequada.
+
+Um CHANGE MERGED não deve ser reescrito para fingir que nunca existiu.
+
+Reversão material deve ser representada por novo CHANGE.
+
+`git revert` não substitui CHANGE quando o significado for alterado.
+
+Mudança material ocorrida fora do fluxo normal deve ser regularizada por CHANGE de reconciliação quando o AS-IS documental deixar de representar a realidade oficial.
+
+---
+
+## 22. Semantic Repository e materializações externas
+
+O Semantic Repository representa a estrutura de conhecimento semântico governada pelo Semantic Git.
+
+As materializações podem estar:
+
+- no próprio repositório;
+- em outro repositório Git;
+- distribuídas entre vários repositórios independentes.
+
+A árvore semântica não deve ser redesenhada para reproduzir a topologia física da implementação.
+
+```text
+estrutura semântica
+≠
+estrutura física
+```
+
+A relação é associação, não composição física.
+
+Não exigir Git aninhado ou submodules apenas para reproduzir a árvore semântica.
+
+### 22.1. Configuração autoritativa
+
+O arquivo padrão é:
+
+```text
+.semantic-repo.yaml
+```
+
+Ele é versionado e representa a autoridade compartilhada para navegação:
+
+```text
+semântico → físico
+```
+
+Exemplo:
+
+```yaml
+sources:
+  domain/indicator:
+    repo: git@example.com:org/implementation.git
+    branch: main
+    path: models/indicadores/example_framework
+```
+
+Um namespace pode apontar para vários repositórios de implementação.
+
+Um repositório físico pode materializar vários namespaces.
+
+`branch` deve ser sempre informada e identifica a referência padrão compartilhada para investigação do vínculo. Ela não deve ser inferida a partir do clone local, da branch corrente ou da configuração padrão do repositório remoto.
+
+`path` é ponto recomendado de investigação, não fronteira rígida, salvo regra explícita do projeto.
+
+### 22.2. Configuração local opcional
+
+A localização dos clones na máquina não é conhecimento compartilhado.
+
+Quando necessária, usar:
+
+```text
+.semantic-repo.local.yaml
+```
+
+Ele pode mapear identidades remotas e branches para caminhos locais, inclusive quando o mesmo repositório possuir várias worktrees.
+
+A configuração local pode disponibilizar branches adicionais, mas não deve redefinir silenciosamente a `branch` padrão declarada em `.semantic-repo.yaml`.
+
+Não deve ser versionado.
+
+A ausência desse arquivo não impede compreensão dos vínculos remotos.
+
+### 22.3. Semantic Link
+
+Repositórios de implementação podem utilizar:
+
+```text
+semantic-link.yaml
+```
+
+para criar vínculo de retorno:
+
+```text
+implementação → semântica
+```
+
+Na raiz do repositório físico:
+
+```yaml
+semantic_repo: git@example.com:org/semantic.git
+```
+
+Em áreas físicas relevantes:
+
+```yaml
+    semantic_ref: domain/indicator
+```
+
+Quando ambos se aplicarem:
+
+```yaml
+semantic_repo: git@example.com:org/semantic.git
+    semantic_ref: domain/indicator
+```
+
+Marcadores internos:
+
+- são opcionais;
+- devem permanecer escassos;
+- aplicam-se aos descendentes até marcador mais específico;
+- utilizam o marcador aplicável mais próximo.
+
+### 22.4. Relação bidirecional e autoridade
+
+```text
+                 SEMANTIC REPOSITORY
+                        │
+                .semantic-repo.yaml
+                        │
+                        ├──────────────► IMPLEMENTATION REPO
+                        │                       │
+                        ◄──────────── semantic-link.yaml
+```
+
+O vínculo é bidirecional.
+
+A autoridade do mapeamento é assimétrica:
+
+```text
+.semantic-repo.yaml
+= autoridade semântico → físico
+
+semantic-link.yaml
+= vínculo/back-link físico → semântico
+```
+
+Divergências devem ser sinalizadas.
+
+O link físico não deve substituir silenciosamente a autoridade do Semantic Repository.
+
+### 22.5. Independência das identidades
+
+Preservar separadamente:
+
+```text
+identidade semântica
+identidade remota do repositório físico
+caminho local da máquina
+```
+
+Nenhuma deve ser inferida automaticamente a partir das outras sem regra explícita.
+
+---
+
+## 23. Estrutura física mínima standalone
+
+Um Semantic Repository governado pelo Semantic Git pode começar com:
+
+```text
+semantic-knowledge/
+├── .git/
+├── README.md
+├── AGENTS.md
+├── SEMANTIC_GIT.md
+├── .semantic-repo.yaml
+└── .gitignore
+```
+
+`SEMANTIC_GIT.md` é a única especificação normativa necessária.
+
+Nenhuma especificação externa é requerida.
+
+A árvore semântica surge sob demanda.
+
+Exemplo quando houver conhecimento real:
+
+```text
+semantic-knowledge/
+└── domain/
+    └── indicator/
+        ├── REQUIREMENTS.md
+        ├── DECISIONS.md
+        ├── OPERATIONS.md
+        └── changes/
+```
+
+Nenhum arquivo R/D/O precisa existir vazio.
+
+Quando usada, `.semantic-repo.local.yaml` deve constar no `.gitignore`.
+
+Artefatos derivados por ferramentas, como manifestos, caches e logs, não constituem conhecimento oficial e devem ser regeneráveis.
+
+### 23.1. Papel de `AGENTS.md`
+
+`AGENTS.md` é uma interface operacional para agentes.
+
+Ele pode instruir a IA a utilizar o Semantic Git e uma skill associada, mas não deve duplicar toda a especificação.
+
+Sua ausência não altera as regras normativas do Semantic Git, embora um projeto possa torná-lo obrigatório por convenção local.
+
+### 23.2. Papel de skills
+
+Uma skill do Semantic Git é opcional.
+
+Quando existir, deve:
+
+- resumir o procedimento operacional;
+- orientar progressive disclosure;
+- indicar quando consultar seções específicas de `SEMANTIC_GIT.md`;
+- nunca substituir a fonte normativa;
+- declarar compatibilidade com a versão do Semantic Git.
+
+O funcionamento semântico do padrão não pode depender de regras existentes somente na skill.
+
+---
+
+## 24. Bootstrap esperado da IA
+
+O bootstrap deve ser suficiente para operar sem uma especificação externa.
+
+### 24.1. Ao iniciar no Semantic Repository
+
+A IA deve:
+
+1. descobrir a raiz Git;
+2. ler `SEMANTIC_GIT.md` ou, quando uma skill compatível já fornecer o procedimento operacional, carregar deste documento somente as seções normativas necessárias sob demanda;
+3. ler `.semantic-repo.yaml`;
+4. determinar o Semantic Namespace atual;
+5. carregar REQUIREMENTS locais;
+6. subir pelos ancestrais para recuperar Requirements aplicáveis;
+7. consultar DECISIONS relevantes;
+8. consultar OPERATIONS quando houver impacto operacional;
+9. identificar CHANGE ativo aplicável quando existir;
+10. expandir lateralmente somente quando dependências ou conflitos exigirem;
+11. pesquisar CHANGEs históricos somente quando forem relevantes à pergunta ou transformação.
+
+Não carregar indiscriminadamente toda a árvore nem toda a especificação quando o ambiente oferecer acesso seletivo confiável às regras necessárias.
+
+### 24.2. Ao iniciar em implementação governada
+
+A IA deve:
+
+1. descobrir a raiz Git física;
+2. procurar `semantic-link.yaml` na raiz e, quando necessário, nos ancestrais físicos relevantes;
+3. resolver `semantic_repo` e `semantic_ref`;
+4. consultar o Semantic Repository antes de realizar escrita governada;
+5. carregar o AS-IS semântico aplicável;
+6. vincular alterações semânticas materiais a um CHANGE;
+7. reconciliar a implementação com o contrato semântico antes de concluir.
+
+### 24.3. Progressive disclosure
+
+O contexto operacional preferencial é:
+
+```text
+namespace local
++
+Requirements ancestrais aplicáveis
++
+Decisions relevantes
++
+Operations relevantes
++
+CHANGE ativo
++
+dependências laterais somente quando necessárias
+```
+
+A IA deve buscar mais contexto quando necessário, não antecipadamente por padrão.
+
+---
+
+## 25. Testes de conformidade
+
+O Semantic Git adota o princípio:
+
+> toda regra determinística do padrão deve, sempre que possível, existir como teste executável e não apenas como instrução para humanos ou IAs.
+
+Estados importantes devem decorrer de condições verificáveis, e não apenas de campos declarados.
+
+### 25.1. Classes de teste
+
+Uma implementação de testes Semantic Git deve suportar, conceitualmente:
+
+```text
+STRUCTURAL
+IDENTITY / REFERENCE
+LIFECYCLE
+GIT / HISTORY
+LINK / INTEGRATION
+RECONCILIATION
+SEMANTIC
+```
+
+#### Structural
+
+Exemplos:
+
+- formato válido de CHANGE;
+- status canônico;
+- política de promoção válida;
+- configurações obrigatórias quando aplicáveis;
+- estrutura de arquivos válida quando presente.
+
+#### Identity / Reference
+
+Exemplos:
+
+- identidade canônica única;
+- ID oficial não reutilizado;
+- referências absolutas válidas;
+- referências relativas resolvíveis;
+- ausência de referências órfãs;
+- aliases locais resolvidos antes da incorporação;
+- alocação atômica sem colisão.
+
+#### Lifecycle
+
+Exemplos:
+
+- campos exigidos pelo estado presentes;
+- CHANGE MERGED não tratado como ativo;
+- APPROVED possui âncora de aprovação;
+- alteração material após aprovação retorna a DRAFT;
+- ABANDONED não tratado como candidato a merge.
+
+#### Git / History
+
+Exemplos:
+
+- `base_commit` existe;
+- `approved_semantic_commit` existe;
+- `approval_scope` existe no commit indicado;
+- snapshots mínimos continuam recuperáveis;
+- pre-merge recheck observa a `main` atual.
+
+#### Link / Integration
+
+Exemplos:
+
+- `.semantic-repo.yaml` bem formado;
+- `semantic-link.yaml` resolvível;
+- divergência entre autoridade e back-link detectada;
+- configuração local não versionada;
+- nenhum Git aninhado criado apenas para reproduzir a árvore semântica.
+
+#### Reconciliation
+
+Exemplos:
+
+- Semantic Diff compatível com Git Diff(s);
+- transformação declarada foi materializada;
+- transformação material não declarada foi classificada;
+- conflitos concorrentes tratados;
+- dependências satisfeitas;
+- integridade referencial final válida;
+- contrato atual corresponde ao aprovado.
+
+#### Semantic
+
+Exemplos canônicos:
+
+```text
+decision_respects_requirements
+operation_respects_requirements
+operation_respects_decisions
+child_respects_ancestor_requirements
+semantic_diff_source_matches_asis
+semantic_diff_matches_approved_contract
+modify_preserves_semantic_identity
+removed_entity_has_no_live_semantic_dependents
+semantic_namespace_resolves
+semantic_reference_unambiguous
+implementation_matches_semantic_contract
+```
+
+### 25.2. Determinístico antes de interpretativo
+
+Quando uma regra puder ser decidida por estrutura, identidade, Git ou referência, o teste deve ser determinístico.
+
+A IA deve ser utilizada somente onde a pergunta depender de significado.
+
+Exemplo:
+
+```text
+D-004 referencia R-017 removido
+→ FAIL determinístico
+```
+
+Já:
+
+```text
+D-004 ainda respeita o significado de R-017 após MODIFY?
+→ teste semântico por IA
+```
+
+### 25.3. Resultados canônicos
+
+```text
+PASS
+WARN
+REVIEW
+FAIL
+```
+
+- `PASS`: conformidade confirmada;
+- `WARN`: condição não impeditiva que merece atenção;
+- `REVIEW`: julgamento humano ou semântico é necessário antes de avançar;
+- `FAIL`: invariante violada.
+
+`FAIL` bloqueia avanço.
+
+`REVIEW` bloqueia transições que dependam daquela decisão até resolução.
+
+`WARN` não bloqueia por padrão.
+
+Quando houver mais de uma interpretação material plausível:
+
+```text
+REVIEW
+```
+
+A IA não deve decidir arbitrariamente.
+
+### 25.4. RECONCILED como consequência
+
+RECONCILED não deve ser apenas um status escrito manualmente.
+
+Ele deve corresponder à aprovação da suíte obrigatória de reconciliação do projeto, sem FAIL e sem REVIEW impeditivo.
+
+### 25.5. Gate de pre-merge
+
+Antes do merge deve existir um gate que confirme:
+
+- CHANGE continua reconciliado;
+- `main` observada continua válida;
+- promoção de IDs foi concluída conforme a política;
+- referências permanecem íntegras;
+- nenhuma nova incompatibilidade foi introduzida.
+
+O resultado operacional pode ser:
+
+```text
+READY
+```
+
+ou:
+
+```text
+BLOCKED
+```
+
+READY não é novo estado do CHANGE.
+
+É apenas resultado do gate imediatamente anterior ao merge.
+
+### 25.6. Manifesto derivado
+
+Ferramentas podem compilar o Semantic Repository para um manifesto derivado contendo:
+
+- identidades;
+- namespaces;
+- relações;
+- CHANGEs;
+- vínculos;
+- materializações.
+
+Esse manifesto:
+
+- não é fonte de verdade;
+- não deve ser editado manualmente;
+- deve ser regenerável;
+- pode acelerar testes e navegação.
+
+---
+
+## 26. Comportamento esperado da IA
+
+A IA deve:
+
+- permitir que o humano expresse intenção sem conhecer o contrato interno do CHANGE;
+- distinguir presente de transformação;
+- localizar o menor Semantic Namespace suficiente;
+- elevar o escopo do CHANGE quando a compreensão revelar impacto maior;
+- respeitar Requirements ancestrais aplicáveis;
+- consultar REQUIREMENTS antes de propor mudança;
+- consultar DECISIONS antes de reinventar soluções;
+- consultar OPERATIONS quando houver impacto operacional;
+- expandir para namespaces irmãos apenas quando dependências ou conflitos tornarem isso relevante;
+- pesquisar CHANGEs anteriores quando forem relevantes;
+- preservar identidade canônica;
+- resolver identidade como `namespace:ID`;
+- aceitar referências relativas quando úteis, mas normalizá-las para identidade absoluta durante validação;
+- não adivinhar referências ambíguas;
+- utilizar CHANGE para transformações semânticas materiais;
+- capturar `base_commit` ao criar CHANGE em fluxo Git;
+- manter status coerente com a máquina de estados;
+- produzir Semantic Diff explícito;
+- separar ADD, MODIFY, REMOVE e NONE;
+- verificar preservação de identidade antes de MODIFY;
+- preferir REMOVE + ADD quando uma identidade for substituída;
+- utilizar texto original sempre que possível;
+- mostrar o menor fragmento necessário em `- / +`;
+- atualizar o Semantic Diff quando a compreensão evoluir;
+- utilizar aliases locais para novas entidades quando apropriado;
+- obedecer à política de promoção de IDs;
+- preservar snapshots históricos relevantes;
+- registrar `approved_semantic_commit` e `approval_scope` após aprovação;
+- nunca inventar `reason` nem identidade de aprovador;
+- consolidar conhecimento duradouro de PRD/SPEC/TODO em R/D/O quando aplicável;
+- reconciliar Semantic Diff, Git Diff(s), AS-IS e snapshot aprovado;
+- verificar integridade referencial mesmo quando não houver promoção de IDs;
+- detectar referências órfãs, ambíguas, relativas irresolvíveis e dependências semanticamente incompatíveis;
+- analisar concorrência semântica entre CHANGEs;
+- considerar a ordem de merge quando puder alterar resultado;
+- executar testes determinísticos antes de julgamento semântico por IA;
+- sinalizar contradições e conflitos;
+- executar pre-merge recheck;
+- manter o AS-IS limpo;
+- usar Git para fatos físicos e temporais;
+- usar documentos para significado persistente;
+- carregar contexto progressivamente, evitando leitura indiscriminada.
+
+---
+
+## 27. O que a IA não deve fazer
+
+A IA não deve:
+
+- exigir do humano metadados determinísticos que possa derivar;
+- inventar motivo ou identidade humana;
+- inventar decisão semântica apenas para completar estrutura;
+- criar Operation sem conteúdo operacional duradouro;
+- tratar branch ou CHANGE em desenvolvimento como AS-IS;
+- resolver conflito material arbitrariamente;
+- assumir que toda mudança pertence à raiz;
+- manter CHANGE em escopo estreito quando o impacto se ampliou;
+- confundir caminho físico com Semantic Namespace;
+- derivar namespace automaticamente da topologia de implementação;
+- reutilizar ou renumerar IDs oficiais por conveniência;
+- promover entidade no namespace errado;
+- usar MODIFY quando uma identidade foi substituída;
+- transformar todo Git Diff em Semantic Diff;
+- criar CHANGE para mudança sem impacto semântico;
+- criar arquivos R/D/O vazios apenas para preencher estrutura;
+- transformar PRD, SPEC ou TODO em documentação permanente por inércia;
+- perder snapshots obrigatórios por estratégia Git;
+- duplicar o mesmo significado em múltiplos lugares sem necessidade;
+- criar árvores profundas sem necessidade;
+- criar links físicos indiscriminadamente;
+- tratar `semantic-link.yaml` como fonte concorrente de verdade;
+- considerar testes físicos suficientes para declarar RECONCILED;
+- definir RECONCILED manualmente quando a suíte obrigatória não estiver satisfeita;
+- declarar MERGED antes da incorporação real ao AS-IS;
+- tratar uma skill, manifesto ou AGENTS como autoridade superior ao Semantic Git;
+- carregar indiscriminadamente toda a árvore ou todo o histórico quando não forem necessários.
+
+---
+
+## 28. Regra de ouro
+
+A pergunta permanente é:
+
+> esta informação descreve o que é verdade agora ou descreve uma transformação em andamento?
+
+Se descreve o presente:
+
+```text
+AS-IS
+→ REQUIREMENTS / DECISIONS / OPERATIONS
+```
+
+Se descreve transformação:
+
+```text
+CHANGE
+```
+
+Se descreve alteração física:
+
+```text
+Git Diff
+```
+
+Se descreve trabalho futuro:
+
+```text
+TODO
+```
+
+Se descreve problema, intenção e resultado esperado temporariamente:
+
+```text
+PRD
+```
+
+Se descreve plano técnico temporário da transformação:
+
+```text
+SPEC
+```
+
+Se algo descoberto nesses artefatos continuar verdadeiro após a mudança, consolidá-lo no AS-IS permanente apropriado.
+
+---
+
+## 29. Modelo mental final
+
+```text
+                         MAIN
+                          │
+                     AS-IS vigente
+                          │
+        ┌─────────────────┼─────────────────┐
+        │                 │                 │
+  REQUIREMENTS        DECISIONS        OPERATIONS
+        │                 │                 │
+        └─────────────────┼─────────────────┘
+                          │
+                  materializações
+                          │
+                     necessidade
+                          ↓
+                       CHANGE
+                        DRAFT
+                          │
+                     base_commit
+                          │
+                   PRD opcional
+                          │
+                  snapshot inicial
+                          │
+                   Semantic Diff
+                          │
+               ADD / MODIFY /
+               REMOVE / NONE
+                          │
+                          ↓
+                  validação humana
+                          ↓
+             approved_semantic_commit
+                  + approval_scope
+                          ↓
+                      APPROVED
+                          ↓
+                    SPEC opcional
+                          ↓
+                    TODO opcional
+                          ↓
+                    IN_PROGRESS
+                          ↓
+                      execução
+                          ↓
+                snapshots intermediários
+                  quando necessários
+                          ↓
+                   RECONCILIATION
+                          │
+               Semantic Diff aprovado
+                          ↕
+                    Git Diff(s)
+                          ↕
+                     AS-IS atual
+                          ↕
+                integridade R / D / O
+                          ↕
+                integridade referencial
+                          ↓
+                     RECONCILED
+                          ↓
+                  promoção de IDs
+                 conforme a política
+                          ↓
+                 PRE-MERGE RECHECK
+                          ↓
+                    snapshot final
+                          ↓
+                        merge
+                          ↓
+                       MERGED
+                          ↓
+                     novo AS-IS
+```
+
+No vínculo com implementação externa:
+
+```text
+                 SEMANTIC REPOSITORY
+                        │
+                .semantic-repo.yaml
+                        │
+                        ├──────────────► IMPLEMENTATION REPO
+                        │                       │
+                        ◄──────────── semantic-link.yaml
+```
+
+A relação é bidirecional.
+
+A autoridade do mapeamento é assimétrica e permanece no Semantic Repository.
+
+Em termos simples:
+
+```text
+AS-IS
+= verdade vigente
+
+Semantic Namespace
+= contexto conceitual onde conhecimento e mudanças pertencem
+
+namespace:ID
+= identidade canônica e inequívoca
+
+REQUIREMENTS
+= o que deve ser verdade
+
+DECISIONS
+= como e por que escolhemos satisfazer os Requirements
+
+OPERATIONS
+= como o estado vigente é operado e mantido
+
+CHANGE
+= hipótese de nova verdade no menor escopo suficiente
+
+base_commit
+= estado físico de origem da transformação
+
+Semantic Diff
+= exatamente o que deixa de ser verdade e o que passa a ser verdade
+
+approved_semantic_commit + approval_scope
+= snapshot exato do significado aprovado
+
+Git Diff
+= exatamente o que mudou fisicamente
+
+RECONCILIATION
+= prova de coerência entre intenção aprovada, execução física,
+  referências, R/D/O e AS-IS observado
+
+PRE-MERGE RECHECK
+= verificação de que a reconciliação continua válida diante da main atual
+
+Merge
+= transformação do TO-BE aprovado em novo AS-IS
+```
+
+A divisão de responsabilidades é:
+
+```text
+Git
+→ garante fatos físicos e temporais
+
+Documentos R/D/O + CHANGE
+→ explicitam significado
+
+Semantic Namespace
+→ resolve contexto e identidade
+
+IA
+→ interpreta intenção, impacto, coerência e conflito
+
+Testes determinísticos
+→ garantem fatos e invariantes verificáveis por testes determinísticos
+
+Humano
+→ valida decisões materiais de significado
+```
+
+---
+
+## 30. Invariantes normativas
+
+1. O Semantic Git 1.0 é autocontido e não depende de uma especificação externa para interpretação normativa.
+2. `SEMANTIC_GIT.md` é a fonte normativa completa do protocolo.
+3. AS-IS e CHANGE são conceitos distintos.
+4. AS-IS contém somente conhecimento semântico vigente.
+5. REQUIREMENTS, DECISIONS e OPERATIONS são as dimensões permanentes canônicas do AS-IS.
+6. REQUIREMENTS é a maior autoridade semântica permanente.
+7. DECISIONS não podem contradizer REQUIREMENTS.
+8. OPERATIONS não podem contradizer REQUIREMENTS ou DECISIONS.
+9. Toda transformação semântica material é governada por CHANGE.
+10. CHANGE vive no menor Semantic Namespace suficiente.
+11. Identidade canônica é namespace + ID local.
+12. R-, D- e O- são prefixos oficiais das entidades permanentes.
+13. IDs oficiais não são reutilizados nem renumerados por conveniência.
+14. IDs oficiais devem ser alocados de forma exclusiva e atômica.
+15. MODIFY exige preservação razoável de identidade.
+16. Quando a identidade muda materialmente, usar REMOVE + ADD.
+17. Semantic Diff deve separar R/D/O conforme aplicável.
+18. Semantic Diff representa mudança de significado, não mudança física.
+19. Semantic Diff e Git Diff são conceitos diferentes.
+20. Git Diff pode existir com Semantic Diff = NONE.
+21. Aprovação humana referencia conteúdo semântico exato e recuperável por `approved_semantic_commit + approval_scope`.
+22. Drift material do contrato aprovado exige nova aprovação.
+23. PRD duradouro consolida-se em REQUIREMENTS quando aplicável.
+24. SPEC duradoura consolida-se em DECISIONS quando aplicável.
+25. Procedimento duradouro surgido em TODO/execução consolida-se em OPERATIONS quando aplicável.
+26. Snapshots historicamente relevantes não podem se tornar irrecuperáveis.
+27. RECONCILIATION é obrigatória antes da incorporação.
+28. RECONCILIATION deve provar coerência entre Semantic Diff aprovado, AS-IS semântico, R/D/O e todas as materializações físicas relevantes.
+29. RECONCILED deve ser consequência de conformidade, não simples declaração.
+30. RECONCILED não congela `main`.
+31. Pre-merge recheck é obrigatório.
+32. MERGED somente existe após incorporação efetiva ao AS-IS.
+33. Reversão material de CHANGE MERGED exige novo CHANGE.
+34. Estrutura semântica não deve ser moldada para reproduzir estrutura física.
+35. `.semantic-repo.yaml` é a autoridade compartilhada do vínculo semântico → físico.
+36. `semantic-link.yaml` cria o vínculo físico → semântico sem se tornar fonte concorrente de verdade.
+37. Configuração local de clones não deve ser versionada.
+38. Regras determinísticas devem, sempre que possível, ser testadas automaticamente.
+39. Testes semânticos por IA só devem ser usados quando regras determinísticas não forem suficientes.
+40. Ambiguidade material com múltiplas interpretações plausíveis deve produzir REVIEW, não decisão arbitrária da IA.
+41. A IA deve carregar somente contexto suficiente e expandi-lo progressivamente quando necessário.
+42. O AS-IS atual deve permanecer compreensível sem leitura obrigatória do histórico de CHANGEs.
+43. Skill, AGENTS, validator, template e manifesto derivado não podem conter regras normativas indispensáveis ausentes de `SEMANTIC_GIT.md`.
+
+---
+
+## 31. Requisitos de standalone
+
+Uma distribuição só pode declarar conformidade com **Semantic Git 1.0 Standalone** se:
+
+1. possuir uma cópia íntegra desta especificação em `SEMANTIC_GIT.md` ou referência imutável equivalente acessível ao agente e às ferramentas;
+2. nenhuma regra necessária para interpretar R/D/O, CHANGE, Semantic Diff, estados, aprovação, reconciliação, IDs, vínculos ou testes depender exclusivamente de outra especificação;
+3. qualquer skill ou `AGENTS.md` puder ser removido sem alterar o significado normativo do protocolo;
+4. qualquer manifesto ou cache puder ser regenerado a partir das fontes oficiais;
+5. a operação semântica puder ser reconstruída a partir de `SEMANTIC_GIT.md`, do Semantic Repository, do Git e das materializações vinculadas.
+
+O objetivo do modo standalone é:
+
+```text
+uma especificação normativa
++
+contexto carregado sob demanda
++
+automações verificáveis
+```
+
+sem cadeia obrigatória de herança documental em runtime.
+
+---
+
+# Fim da especificação Semantic Git v1.0 Standalone

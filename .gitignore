@@ -1,0 +1,9 @@
+# Configuração local, específica da máquina.
+.semantic-repo.local.yaml
+
+# Artefatos e fontes compactadas não oficiais.
+*.zip
+target/
+dbt_packages/
+logs/
+graphify-out/

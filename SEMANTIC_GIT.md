@@ -1,6 +1,6 @@
 # Semantic Git — Modelo de Evolução do Conhecimento Semântico
 
-**Versão:** 1.2
+**Versão:** 1.3
 **Status:** especificação normativa standalone
 **Natureza:** modelo autocontido de gestão e evolução de conhecimento semântico
 **Compatibilidade conceitual:** modelo autocontido e independente de especificações externas
@@ -9,7 +9,7 @@
 
 ## 0. Regra de leitura e independência normativa
 
-O Semantic Git 1.2 é **autocontido**.
+O Semantic Git 1.3 é **autocontido**.
 
 Para compreender e operar corretamente um repositório governado por esta especificação, não é necessário consultar qualquer versão anterior do protocolo, uma skill, um prompt externo ou outra especificação normativa.
 
@@ -114,11 +114,13 @@ TRANSFORMAÇÃO
 
 AS-IS representa o conhecimento semântico oficialmente aprovado e vigente em determinado escopo.
 
-Em fluxo Git, normalmente corresponde à branch principal:
+No Semantic Repository governante, em fluxo Git corresponde à `main` local:
 
 ```text
 main
 ```
+
+Uma `main` remota ou de outro clone não substitui a `main` local governante.
 
 O AS-IS contém somente conhecimento que deve ser entendido como verdadeiro agora.
 
@@ -923,6 +925,62 @@ RECONCILED → IN_PROGRESS
 
 O estado deve decorrer de condições objetivas, não de escolha arbitrária da IA.
 
+### 13.8. Gates de capacidade e autorização
+
+Estado de CHANGE e autorização operacional são conceitos distintos. Nenhum
+estado, por si só, autoriza merge, criação de tag ou push.
+
+Enquanto o CHANGE estiver em `DRAFT`, a IA pode somente:
+
+- ler contexto e materializações;
+- sintetizar intenção e Semantic Diff;
+- analisar gaps, conflitos e impactos;
+- escrever ou atualizar a própria CHANGE em elaboração.
+
+Em `DRAFT`, a IA não pode alocar agentes de implementação nem editar
+`SEMANTIC_GIT.md`, R/D/O, materializações físicas ou arquivos fora da CHANGE.
+
+`APPROVED` confirma somente o contrato semântico exato. A execução exige:
+
+1. `approved_semantic_commit` existente;
+2. `approval_scope` resolvido;
+3. preflight de recursos, branch, escopo e drift aprovado;
+4. autorização explícita de implementação, identificando a CHANGE;
+5. transição explícita para `IN_PROGRESS`.
+
+"Aprovo a CHANGE-ID" autoriza somente o significado. Para autorizar também a
+execução, o humano deve dizer, por exemplo:
+
+```text
+Aprovo e autorizo a implementação da CHANGE-ID.
+```
+
+Somente `IN_PROGRESS` permite implementação, limitada ao escopo aprovado.
+`RECONCILED` permite validação e correções de execução autorizadas, mas não
+autoriza merge.
+
+As autorizações abaixo são independentes:
+
+```text
+semantic approval
+    ≠ implementation authorization
+    ≠ merge authorization
+    ≠ tag/release authorization
+    ≠ push/publication authorization
+```
+
+Uma autorização de merge somente existe quando o humano identificar a CHANGE,
+a branch de origem e `main` de destino em uma instrução explícita, por exemplo:
+
+```text
+Faça o merge da CHANGE-ID da branch `change/CHANGE-ID-slug` na `main`.
+```
+
+"Aprovado", "faça", "pode seguir" ou equivalentes não autorizam merge, tag,
+release ou push quando não identificarem explicitamente a operação. Na dúvida,
+a IA deve produzir `MERGE_BLOCKED`, `RELEASE_BLOCKED` ou
+`PUBLICATION_BLOCKED`, conforme o caso.
+
 ---
 
 ## 14. Aprovação semântica e âncoras Git
@@ -1133,6 +1191,24 @@ A presença de PRD, SPEC ou TODO é opcional.
 
 As condições semânticas e de reconciliação não são opcionais quando aplicáveis.
 
+### 15.2. Transação de incorporação local
+
+A incorporação autorizada deve ser tratada como uma transação única. A IA deve:
+
+1. capturar o `HEAD` exato da branch candidata e o `HEAD` exato da `main`;
+2. confirmar a autorização explícita de merge para esses alvos;
+3. iniciar a integração sem finalizar o commit de merge;
+4. mover a CHANGE para `changes/archived/` com `git mv`;
+5. atualizar o estado para `MERGED` somente no resultado integrado;
+6. validar o AS-IS final, a ausência da origem e a integridade do histórico;
+7. criar um único merge commit que contenha toda a transação.
+
+Qualquer falha antes do merge commit final deve abortar a integração e produzir
+`MERGE_BLOCKED`. Não é permitido deixar uma integração parcialmente finalizada,
+uma CHANGE `MERGED` ativa ou um arquivo arquivado sem o merge correspondente.
+
+Push, tag e release são posteriores e independentes dessa transação.
+
 ---
 
 ## 16. RECONCILIATION semântica
@@ -1301,6 +1377,22 @@ A IA interpreta o impacto semântico dessa mudança.
 
 O pre-merge recheck é obrigatório.
 
+Quando o recheck for aprovado, registrar o conjunto de entrada do gate:
+
+```text
+main_head
+candidate_head
+base_commit
+approved_semantic_commit
+approval_scope
+final_snapshot
+```
+
+Esse conjunto é imutável para a tentativa de incorporação. Qualquer mudança
+em uma dessas entradas, na branch candidata ou na `main`, invalida o resultado
+e exige novo recheck. `READY` confirma somente o conjunto capturado; não
+autoriza merge.
+
 ---
 
 ## 18. Promoção de IDs locais
@@ -1447,6 +1539,21 @@ merge
 Git history
 = evolução física e temporal
 ```
+
+No Semantic Repository governante, a `main` local é a referência oficial do
+AS-IS. Um merge concluído nessa `main` incorpora semanticamente a transformação
+e não depende de push para ser vigente.
+
+`origin/main` e outras referências remotas são réplicas ou destinos de
+publicação. `git push` transmite commits e referências já existentes, mas não
+aprova, não reconcilia, não incorpora e não altera o AS-IS local.
+
+Tags são marcadores de versão. Criar tag exige autorização explícita separada
+e não é consequência automática de aprovação, reconciliação ou merge.
+
+Push e criação de tag não podem ser executados pela IA sem autorização textual
+explícita que identifique a operação, a referência e o destino. Falha de push
+não desfaz nem invalida o AS-IS local já incorporado.
 
 Git fornece fatos físicos e temporais.
 
@@ -1964,6 +2071,8 @@ Exemplos:
 - APPROVED possui âncora de aprovação;
 - alteração material após aprovação retorna a DRAFT;
 - alteração material pré-merge permanece na mesma CHANGE e branch quando o escopo não muda;
+- DRAFT não aloca recursos de implementação;
+- aprovação semântica não autoriza merge, tag ou push;
 - ABANDONED não tratado como candidato a merge.
 
 #### Git / History
@@ -1977,6 +2086,8 @@ Exemplos:
 - `base_commit` permanece estável em novo ciclo do mesmo CHANGE;
 - novo snapshot de aprovação está ancorado sem apagar aprovações anteriores;
 - `approval_scope` continua resolvível após relocação canônica da CHANGE;
+- conjunto de entrada do pre-merge permanece imutável durante a transação;
+- merge usa a branch e a `main` capturadas pelo gate;
 - implementação definitiva não foi incorporada antes da validação humana;
 - snapshots mínimos continuam recuperáveis;
 - pre-merge recheck observa a `main` atual;
@@ -2022,6 +2133,11 @@ removed_entity_has_no_live_semantic_dependents
 semantic_namespace_resolves
 semantic_reference_unambiguous
 implementation_matches_semantic_contract
+implementation_gate_blocks_unapproved
+merge_authorization_is_explicit
+merge_transaction_is_atomic
+local_main_is_authoritative
+publication_is_not_incorporation
 ```
 
 ### 25.2. Determinístico antes de interpretativo
@@ -2051,12 +2167,20 @@ PASS
 WARN
 REVIEW
 FAIL
+IMPLEMENTATION_BLOCKED
+MERGE_BLOCKED
+RELEASE_BLOCKED
+PUBLICATION_BLOCKED
 ```
 
 - `PASS`: conformidade confirmada;
 - `WARN`: condição não impeditiva que merece atenção;
 - `REVIEW`: julgamento humano ou semântico é necessário antes de avançar;
 - `FAIL`: invariante violada.
+- `IMPLEMENTATION_BLOCKED`: recursos de implementação não podem ser alocados;
+- `MERGE_BLOCKED`: incorporação local não está autorizada ou não é segura;
+- `RELEASE_BLOCKED`: tag ou release não está autorizado;
+- `PUBLICATION_BLOCKED`: push ou publicação não está autorizado.
 
 `FAIL` bloqueia avanço.
 
@@ -2078,7 +2202,21 @@ RECONCILED não deve ser apenas um status escrito manualmente.
 
 Ele deve corresponder à aprovação da suíte obrigatória de reconciliação do projeto, sem FAIL e sem REVIEW impeditivo.
 
-### 25.5. Gate de pre-merge
+### 25.5. Gate de implementação
+
+Antes de transicionar para `IN_PROGRESS`, a IA deve confirmar:
+
+- CHANGE em `APPROVED`;
+- `approved_semantic_commit` e `approval_scope` válidos;
+- branch correta e `base_commit` preservado;
+- recursos de implementação disponíveis;
+- ausência de drift material;
+- escopo de escrita limitado ao contrato aprovado.
+
+Se uma condição falhar, produzir `IMPLEMENTATION_BLOCKED` e não alocar agente
+de implementação nem editar arquivos fora da CHANGE permitida em `DRAFT`.
+
+### 25.6. Gate de pre-merge
 
 Antes do merge deve existir um gate que confirme:
 
@@ -2086,7 +2224,12 @@ Antes do merge deve existir um gate que confirme:
 - `main` observada continua válida;
 - promoção de IDs foi concluída conforme a política;
 - referências permanecem íntegras;
-- nenhuma nova incompatibilidade foi introduzida.
+- nenhuma nova incompatibilidade foi introduzida;
+- autorização textual explícita identifica CHANGE, branch de origem e `main`;
+- `main_head`, `candidate_head`, `base_commit`, `approved_semantic_commit`,
+  `approval_scope` e snapshot final correspondem ao conjunto capturado;
+- a transação de merge pode conter arquivamento, estado `MERGED` e resultado
+  final sem duplicidade.
 
 O resultado operacional pode ser:
 
@@ -2104,7 +2247,10 @@ READY não é novo estado do CHANGE.
 
 É apenas resultado do gate imediatamente anterior ao merge.
 
-### 25.6. Manifesto derivado
+`READY` não autoriza merge. Sem autorização textual explícita, produzir
+`MERGE_BLOCKED`.
+
+### 25.7. Manifesto derivado
 
 Ferramentas podem compilar o Semantic Repository para um manifesto derivado contendo:
 
@@ -2144,6 +2290,8 @@ A IA deve:
 - não adivinhar referências ambíguas;
 - utilizar CHANGE para transformações semânticas materiais;
 - capturar `base_commit` ao criar CHANGE em fluxo Git;
+- limitar em `DRAFT` os recursos a leitura, síntese, análise de gaps e escrita na própria CHANGE;
+- executar o preflight de implementação antes de alocar qualquer agente de escrita;
 - manter status coerente com a máquina de estados;
 - produzir Semantic Diff explícito;
 - separar ADD, MODIFY, REMOVE e NONE;
@@ -2172,6 +2320,11 @@ A IA deve:
 - criar branch exclusiva antes de criar ou evoluir CHANGE semântico material;
 - manter proposta e análise de gaps como TO-BE até a validação humana;
 - iniciar implementação definitiva somente após a validação humana;
+- separar aprovação semântica de autorização de implementação, merge, tag e push;
+- exigir autorização textual explícita para merge, tag e push;
+- tratar a `main` local governante como AS-IS oficial e push como publicação;
+- capturar e preservar o conjunto imutável de entradas do pre-merge;
+- executar a incorporação em transação única com arquivamento e `MERGED`;
 - reabrir o mesmo CHANGE e manter a mesma branch quando houver alteração material antes de `MERGED` dentro do mesmo escopo;
 - preservar o `base_commit` e os snapshots anteriores durante novo ciclo;
 - atualizar o `approved_semantic_commit` somente após nova validação;
@@ -2180,6 +2333,7 @@ A IA deve:
 - migrar CHANGEs `MERGED` existentes para o caminho canônico quando a regra de arquivamento entrar em vigor;
 - atualizar o estado para `MERGED` somente depois de validar o movimento pós-merge;
 - produzir `FAIL` quando o arquivamento obrigatório não puder ser concluído;
+- produzir `IMPLEMENTATION_BLOCKED`, `MERGE_BLOCKED`, `RELEASE_BLOCKED` ou `PUBLICATION_BLOCKED` quando o gate correspondente falhar;
 - sinalizar contradições e conflitos;
 - executar pre-merge recheck;
 - manter o AS-IS limpo;
@@ -2200,6 +2354,12 @@ A IA não deve:
 - criar `README.md` apenas para completar a estrutura;
 - copiar para um filho o texto ou o ID de uma entidade ancestral;
 - executar implementação definitiva antes da validação humana do CHANGE;
+- alocar agente de implementação em `DRAFT`;
+- editar arquivos fora da CHANGE em `DRAFT`;
+- interpretar aprovação semântica como autorização de merge, tag ou push;
+- executar merge sem identificar explicitamente CHANGE, origem e destino;
+- criar tag ou executar push automaticamente após merge;
+- continuar uma transação de merge após mudança no conjunto de entradas capturado;
 - usar o nome da branch para inferir namespace ou escopo semântico;
 - criar outra branch ou CHANGE para alteração do mesmo escopo antes de `MERGED`;
 - resetar o `base_commit` ou apagar âncora de aprovação anterior em novo ciclo;
@@ -2299,10 +2459,12 @@ Se algo descoberto nesses artefatos continuar verdadeiro após a mudança, conso
                           │
                      necessidade
                           ↓
-                       CHANGE
-                        DRAFT
-                          │
-                     base_commit
+                        CHANGE
+                         DRAFT
+                           │
+                   somente análise e gaps
+                           │
+                      base_commit
                           │
                    PRD opcional
                           │
@@ -2319,9 +2481,11 @@ Se algo descoberto nesses artefatos continuar verdadeiro após a mudança, conso
              approved_semantic_commit
                   + approval_scope
                           ↓
-                      APPROVED
-                          ↓
-                    SPEC opcional
+                        APPROVED
+                           ↓
+                  gate de implementação
+                           ↓
+                     SPEC opcional
                           ↓
                     TODO opcional
                           ↓
@@ -2349,15 +2513,18 @@ Se algo descoberto nesses artefatos continuar verdadeiro após a mudança, conso
                   promoção de IDs
                  conforme a política
                           ↓
-                 PRE-MERGE RECHECK
-                          ↓
-                    snapshot final
-                          ↓
-                        merge
-                          ↓
-                       MERGED
-                          ↓
-                     novo AS-IS
+                  PRE-MERGE RECHECK
+                           ↓
+                autorização explícita de merge
+                           ↓
+                     snapshot final
+                           ↓
+                 transação de incorporação
+               + arquivamento + MERGED
+                           ↓
+                   merge commit local
+                           ↓
+                      novo AS-IS
 ```
 
 No vínculo com implementação externa:
@@ -2449,7 +2616,7 @@ Humano
 
 ## 30. Invariantes normativas
 
-1. O Semantic Git 1.2 é autocontido e não depende de uma especificação externa para interpretação normativa.
+1. O Semantic Git 1.3 é autocontido e não depende de uma especificação externa para interpretação normativa.
 2. `SEMANTIC_GIT.md` é a fonte normativa completa do protocolo.
 3. AS-IS e CHANGE são conceitos distintos.
 4. AS-IS contém somente conhecimento semântico vigente.
@@ -2517,12 +2684,21 @@ Humano
 66. `MERGED` somente pode ser registrado após o arquivamento pós-merge ser validado.
 67. CHANGE `MERGED` em `changes/` ativo ou duplicada entre ativo e arquivado produz `FAIL`.
 68. A relocação canônica da CHANGE não exige nova aprovação quando não altera seu significado.
+69. `DRAFT` não pode alocar recursos de implementação nem editar arquivos fora da própria CHANGE.
+70. Aprovação semântica não autoriza implementação, merge, tag, release ou push por inferência.
+71. A `main` local do Semantic Repository governante é o AS-IS oficial.
+72. Push é publicação ou replicação e não altera o AS-IS local.
+73. Merge exige autorização textual explícita que identifique CHANGE, origem e destino.
+74. O gate de merge deve capturar entradas imutáveis e invalidar-se quando qualquer uma mudar.
+75. Incorporação, arquivamento e estado `MERGED` devem compor uma única transação local final.
+76. Tag, release e push exigem autorizações textuais independentes.
+77. Implementação definitiva somente pode ocorrer após aprovação semântica registrada e preflight de implementação.
 
 ---
 
 ## 31. Requisitos de standalone
 
-Uma distribuição só pode declarar conformidade com **Semantic Git 1.2 Standalone** se:
+Uma distribuição só pode declarar conformidade com **Semantic Git 1.3 Standalone** se:
 
 1. possuir uma cópia íntegra desta especificação em `SEMANTIC_GIT.md` ou referência imutável equivalente acessível ao agente e às ferramentas;
 2. nenhuma regra necessária para interpretar R/D/O, CHANGE, Semantic Diff, estados, aprovação, reconciliação, IDs, vínculos ou testes depender exclusivamente de outra especificação;
@@ -2544,4 +2720,4 @@ sem cadeia obrigatória de herança documental em runtime.
 
 ---
 
-# Fim da especificação Semantic Git v1.2 Standalone
+# Fim da especificação Semantic Git v1.3 Standalone

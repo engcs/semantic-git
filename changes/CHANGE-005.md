@@ -1,5 +1,5 @@
 change: CHANGE-005
-status: IN_PROGRESS
+status: DRAFT
 base_commit: a1f3f96e8434c6d1bc43267382412d89c880e0cb
 approved_semantic_commit: 12a43809e9a5e4d122c855a0542e11a4703431d4
 approval_scope:
@@ -16,6 +16,7 @@ reason: null
 - **ADD** - Permitir que a criação inicial governada de um Semantic Namespace inexistente seja representada por um CHANGE localizado no namespace que será criado, ainda que esse namespace não exista no AS-IS do `base_commit`.
 - **ADD** - Reconhecer que a criação inicial de um Semantic Namespace também pode ocorrer manualmente ou fora do Semantic Git, sem CHANGE-INIT, sem invalidar o AS-IS resultante.
 - **ADD** - Exigir que toda alteração semântica material posterior à criação inicial do namespace permaneça governada por CHANGE.
+- **ADD** - Tratar a ausência de AS-IS do namespace alvo como ausência de predecessor, sem criar ou atribuir um AS-IS vazio para a reconciliação de `CHANGE-INIT`.
 
 ### DECISIONS
 
@@ -25,6 +26,7 @@ reason: null
 - **ADD** - Definir que `CHANGE-INIT` não consome o primeiro identificador numérico; a primeira evolução normal do namespace utilizará `CHANGE-001`.
 - **ADD** - Permitir que o CHANGE de inicialização esteja no caminho do namespace alvo na branch, mesmo quando o namespace estiver ausente do AS-IS de origem, sem exigir CHANGE ou alteração no namespace pai.
 - **ADD** - Submeter `CHANGE-INIT` ao fluxo normal de branch, aprovação, implementação, RECONCILIATION, pre-merge recheck, merge e arquivamento.
+- **ADD** - Identificar a especificação resultante como Semantic Git v1.5.
 
 ### OPERATIONS
 

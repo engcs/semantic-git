@@ -1,6 +1,6 @@
 # Semantic Git — Modelo de Evolução do Conhecimento Semântico
 
-**Versão:** 1.3
+**Versão:** 1.4
 **Status:** especificação normativa standalone
 **Natureza:** modelo autocontido de gestão e evolução de conhecimento semântico
 **Compatibilidade conceitual:** modelo autocontido e independente de especificações externas
@@ -9,7 +9,7 @@
 
 ## 0. Regra de leitura e independência normativa
 
-O Semantic Git 1.3 é **autocontido**.
+O Semantic Git 1.4 é **autocontido**.
 
 Para compreender e operar corretamente um repositório governado por esta especificação, não é necessário consultar qualquer versão anterior do protocolo, uma skill, um prompt externo ou outra especificação normativa.
 
@@ -174,6 +174,9 @@ Cabe à IA e às automações, quando disponíveis:
 - consultar Decisions relevantes;
 - consultar Operations quando houver impacto operacional;
 - pesquisar CHANGEs anteriores quando forem relevantes;
+- alocar CHANGE-IDs pela sequência local do namespace controlador;
+- resolver CHANGEs por identidade canônica em referências, autorizações e gates;
+- validar identidade, caminho e branch antes de criar um CHANGE;
 - criar ou ajustar a estrutura do CHANGE;
 - preencher metadados determinísticos;
 - normalizar referências;
@@ -427,7 +430,14 @@ domain/operation:O-005
 domain/operation:CHANGE-014
 ```
 
-IDs curtos são locais ao namespace.
+IDs curtos são locais ao namespace. O mesmo `CHANGE-ID` curto pode existir em
+namespaces distintos sem representar a mesma transformação:
+
+```text
+root:CHANGE-004
+≠
+applications/mop/programacao:CHANGE-004
+```
 
 Identidades canônicas são hierárquicas e inequívocas.
 
@@ -446,7 +456,10 @@ Toda referência deve ser normalizável para uma identidade canônica.
 Quando a referência atravessar a fronteira de um namespace, a forma persistida
 deve ser a identidade canônica completa (`namespace:ID`). Referências curtas
 podem ser usadas somente dentro do contexto local quando forem inequivocamente
-resolvíveis.
+resolvíveis. Referências persistidas que identifiquem CHANGE devem usar a
+identidade canônica quando a forma curta puder designar mais de um CHANGE.
+Dependências e entradas de gates devem sempre usar a identidade canônica.
+Autorizações seguem as regras mais estritas da seção 13.8.
 
 Exemplo de referência absoluta:
 
@@ -459,18 +472,25 @@ domain:D-004 → domain:R-017
 IDs oficiais:
 
 - são monotônicos por tipo dentro do namespace que os controla;
-- não podem reutilizar, em namespace descendente, ID oficial do mesmo tipo já
-  utilizado por qualquer namespace ancestral;
 - não precisam formar sequência contínua;
 - não devem ser renumerados por conveniência;
-- não devem ser reutilizados após remoção;
+- não devem ser reutilizados dentro do namespace após remoção;
 - devem permanecer estáveis enquanto identidade e escopo conceitual forem preservados;
 - devem ser atribuídos de forma exclusiva e atômica.
 
-A verificação de alocação deve consultar todos os namespaces ancestrais antes
-de atribuir um novo ID. A identidade canônica continua sendo
-`namespace:ID`; a restrição adicional impede que um descendente oculte ou
-reapresente um ID ancestral.
+Para entidades semânticas permanentes `R-`, `D-` e `O-`, um namespace
+descendente não pode reutilizar ID oficial do mesmo tipo já utilizado por
+qualquer namespace ancestral. A verificação de alocação deve consultar o
+namespace controlador e seus ancestrais antes de atribuir um novo ID. Essa
+proteção impede que o descendente oculte ou reapresente uma entidade ancestral.
+
+Para `CHANGE-`, a sequência é local e independente em cada Semantic Namespace.
+A alocação consulta os CHANGEs ativos, arquivados e históricos do próprio
+namespace, sem reservar ou consumir números em ancestrais, descendentes ou
+irmãos. CHANGE-IDs curtos iguais em namespaces distintos são válidos; sua
+unicidade é determinada pela identidade canônica `<namespace>:<CHANGE-ID>`.
+Reutilizar um CHANGE-ID ativo, arquivado ou histórico no mesmo namespace produz
+`FAIL`.
 
 ### 7.3. IDs locais de construção
 
@@ -490,9 +510,9 @@ Aliases locais:
 - não devem permanecer no AS-IS;
 - devem ser promovidos antes da incorporação conforme a política de promoção.
 
-A promoção deve aplicar a mesma verificação de colisão com IDs ancestrais. Um
-alias local não pode ser promovido para um ID oficial já utilizado por um
-ancestral.
+A promoção de entidades R/D/O deve aplicar a mesma verificação de colisão com
+IDs ancestrais. Um alias local não pode ser promovido para um ID oficial R/D/O
+já utilizado por um ancestral.
 
 ### 7.4. Preservação de identidade
 
@@ -525,7 +545,9 @@ base_commit: 71ac982
 reason: null
 ```
 
-O namespace é determinado pelo escopo em que o CHANGE vive.
+O namespace é determinado pelo escopo em que o CHANGE vive. A identidade do
+exemplo é `<namespace do documento>:CHANGE-014`; o campo curto não constitui
+uma chave global.
 
 Dependências excepcionais podem ser declaradas:
 
@@ -534,7 +556,10 @@ depends_on:
   - domain:CHANGE-021
 ```
 
-`depends_on` deve ser omitido quando não houver dependência real.
+`depends_on` deve ser omitido quando não houver dependência real. Cada item deve
+usar a identidade canônica completa, inclusive para dependência no mesmo
+namespace. Autodependências e ciclos são comparados por identidade canônica,
+nunca apenas pelo CHANGE-ID curto.
 
 `reason` é opcional.
 
@@ -945,15 +970,19 @@ Em `DRAFT`, a IA não pode alocar agentes de implementação nem editar
 1. `approved_semantic_commit` existente;
 2. `approval_scope` resolvido;
 3. preflight de recursos, branch, escopo e drift aprovado;
-4. autorização explícita de implementação, identificando a CHANGE;
+4. autorização explícita de implementação, identificando a CHANGE por sua
+   identidade canônica;
 5. transição explícita para `IN_PROGRESS`.
 
-"Aprovo a CHANGE-ID" autoriza somente o significado. Para autorizar também a
-execução, o humano deve dizer, por exemplo:
+Uma aprovação semântica deve identificar a CHANGE por sua identidade canônica.
+Para autorizar também a execução, o humano deve dizer, por exemplo:
 
 ```text
-Aprovo e autorizo a implementação da CHANGE-ID.
+Aprovo e autorizo a implementação de domain:CHANGE-014.
 ```
+
+Uma autorização que use apenas CHANGE-ID curto ou que não possa ser vinculada
+inequivocamente à identidade canônica produz `IMPLEMENTATION_BLOCKED`.
 
 Somente `IN_PROGRESS` permite implementação, limitada ao escopo aprovado.
 `RECONCILED` permite validação e correções de execução autorizadas, mas não
@@ -969,11 +998,13 @@ semantic approval
     ≠ push/publication authorization
 ```
 
-Uma autorização de merge somente existe quando o humano identificar a CHANGE,
-a branch de origem e `main` de destino em uma instrução explícita, por exemplo:
+Uma autorização de merge somente existe quando o humano identificar a identidade
+canônica da CHANGE, a branch globalmente única de origem e a `main` de destino
+em uma instrução explícita, por exemplo:
 
 ```text
-Faça o merge da CHANGE-ID da branch `change/CHANGE-ID-slug` na `main`.
+Faça o merge de domain:CHANGE-014 da branch
+`change/domain/CHANGE-014-slug` na `main`.
 ```
 
 "Aprovado", "faça", "pode seguir" ou equivalentes não autorizam merge, tag,
@@ -1119,16 +1150,38 @@ MERGED
 novo AS-IS
 ```
 
-Para toda transformação semântica material, a branch exclusiva deve existir
-antes da criação ou evolução do CHANGE. A convenção operacional é:
+Para toda transformação semântica material, a branch exclusiva e globalmente
+única no repositório deve existir antes da criação ou evolução do CHANGE. Para
+novos CHANGEs, a convenção operacional é:
 
 ```text
-change/<CHANGE-ID>-<slug-curto>
+change/<namespace-key>/<CHANGE-ID>-<slug-curto>
 ```
 
+`root` é o `namespace-key` reservado ao namespace raiz. Para os demais
+namespaces, `namespace-key` é a representação reversível do namespace canônico
+em um único componente de ref Git: bytes UTF-8 que não sejam letras ASCII
+minúsculas, algarismos ou hífen são codificados como `%HH`, com hexadecimal
+maiúsculo. Assim, `applications/mop/programacao` torna-se
+`applications%2Fmop%2Fprogramacao`. O namespace decodificado da branch deve
+corresponder ao namespace controlador da identidade canônica do CHANGE.
+
 O `slug-curto` deve usar somente caracteres ASCII minúsculos, algarismos e
-hífens. O nome da branch é um identificador operacional e não define
-namespace, escopo ou identidade semântica.
+hífens. O namespace representado na branch é redundância operacional
+verificável: não define nem substitui o namespace documental, o escopo ou a
+identidade semântica.
+
+Antes de criar um CHANGE, devem ser validados atomicamente: a inexistência da
+identidade canônica no namespace controlador, a disponibilidade do caminho
+ativo local e a unicidade global da branch Git. A alocação do próximo CHANGE-ID
+consulta somente CHANGEs ativos, arquivados e recuperáveis no histórico desse
+namespace; números de outros namespaces não participam da alocação.
+
+CHANGE-IDs e nomes de branches estabelecidos antes do Semantic Git 1.4 são
+preservados sem renumeração ou migração retroativa obrigatória. A branch
+`change/CHANGE-004-change-ids-locais`, usada para introduzir esta regra, também
+é preservada. A nova convenção aplica-se apenas a CHANGEs criados depois desta
+mudança.
 
 O fluxo resumido obrigatório é:
 
@@ -1198,7 +1251,8 @@ A incorporação autorizada deve ser tratada como uma transação única. A IA d
 1. capturar o `HEAD` exato da branch candidata e o `HEAD` exato da `main`;
 2. confirmar a autorização explícita de merge para esses alvos;
 3. iniciar a integração sem finalizar o commit de merge;
-4. mover a CHANGE para `changes/archived/` com `git mv`;
+4. mover a CHANGE com `git mv` para o diretório `changes/archived/` do
+   namespace controlador;
 5. atualizar o estado para `MERGED` somente no resultado integrado;
 6. validar o AS-IS final, a ausência da origem e a integridade do histórico;
 7. criar um único merge commit que contenha toda a transação.
@@ -1442,7 +1496,8 @@ Independentemente do modo:
 3. determinar o tipo R, D ou O;
 4. atribuir o próximo ID oficial daquele tipo dentro do namespace de destino;
 5. alocar IDs de forma exclusiva e atômica;
-6. impedir colisões entre CHANGEs concorrentes;
+6. impedir colisões de IDs R/D/O entre CHANGEs concorrentes e na cadeia
+   ancestral aplicável;
 7. substituir aliases locais;
 8. atualizar dependências e referências;
 9. atualizar o Semantic Diff final;
@@ -1574,10 +1629,14 @@ CHANGEs com estado `MERGED`, este repositório adota adicionalmente o
 arquivamento físico obrigatório:
 
 ```text
-changes/<CHANGE-ID>.md
-        ↓ merge confirmado
-changes/archived/<CHANGE-ID>.md
+<namespace-dir>/changes/<CHANGE-ID>.md
+                   ↓ merge confirmado
+<namespace-dir>/changes/archived/<CHANGE-ID>.md
 ```
+
+Os caminhos são relativos ao diretório documental do Semantic Namespace que
+controla a identidade. Para `root`, `<namespace-dir>` é a raiz do Semantic
+Repository; para `domain/operation`, por exemplo, é `domain/operation/`.
 
 O movimento deve ser executado pela IA com `git mv`, nunca por cópia. O conteúdo
 semântico, a identidade, os IDs, as referências e o histórico devem ser
@@ -1585,13 +1644,15 @@ preservados. A atualização do campo de estado para `MERGED` é metadado de
 ciclo e somente pode ocorrer depois que o destino existir, a origem não existir
 mais e a integridade do movimento tiver sido validada.
 
-`changes/` é reservado para CHANGEs não incorporados. Uma CHANGE `MERGED`
-encontrada nesse caminho produz `FAIL`. Não existe um novo estado `ARCHIVED`.
+O diretório `changes/` de cada namespace é reservado para seus CHANGEs não
+incorporados. Uma CHANGE `MERGED` encontrada no caminho ativo de seu namespace
+produz `FAIL`. Não existe um novo estado `ARCHIVED`.
 
 Uma referência de `approval_scope` ao arquivo ativo de uma CHANGE continua
-resolvível após a relocação canônica para `changes/archived/` pela mesma
-identidade `CHANGE-ID`. A relocação histórica não constitui drift semântico e
-não exige nova aprovação.
+resolvível após a relocação canônica para o `changes/archived/` do mesmo
+namespace. A resolução usa a identidade canônica e o namespace de origem do
+caminho aprovado; nunca busca globalmente por basename ou CHANGE-ID curto. A
+relocação histórica não constitui drift semântico e não exige nova aprovação.
 
 Se o arquivamento pós-merge falhar, a IA deve produzir `FAIL` e não declarar o
 fluxo concluído. O tratamento obrigatório de `ABANDONED` permanece limitado à
@@ -1940,7 +2001,7 @@ pode converter `FAIL` estrutural em resultado válido.
 #### Regra de bloqueio
 
 Nome de arquivo não canônico, arquivo R/D/O com estrutura diferente, seção
-adicional, item fora do formato, ID duplicado, colisão com ID ancestral,
+adicional, item fora do formato, ID duplicado, colisão de ID R/D/O com ancestral,
 referência não resolvível ou novo tipo de documento permanente deve produzir
 `FAIL`. A IA não deve corrigir esse caso inventando uma convenção; deve
 interromper a operação e informar a violação.
@@ -2044,8 +2105,11 @@ Exemplos:
 - estrutura exata de `REQUIREMENTS.md`, `DECISIONS.md` e `OPERATIONS.md`;
 - ausência de arquivos R/D/O vazios;
 - rejeição de seções, formatos de item e tipos documentais não previstos;
-- nome válido da branch exclusiva do CHANGE;
-- caminho canônico de arquivamento para CHANGEs `MERGED`;
+- nome válido e globalmente único da branch exclusiva do CHANGE;
+- correspondência entre o `namespace-key` reversível da branch e o namespace
+  controlador, sem usá-lo como fonte de autoridade;
+- caminho ativo e caminho canônico de arquivamento relativos ao namespace
+  controlador para CHANGEs `MERGED`;
 - ausência de CHANGE `MERGED` no diretório ativo `changes/`;
 - ausência de cópia simultânea da mesma CHANGE em local ativo e arquivado.
 
@@ -2055,10 +2119,15 @@ Exemplos:
 
 - identidade canônica única;
 - ID oficial não reutilizado;
+- CHANGE-ID não reutilizado no mesmo namespace;
+- CHANGE-IDs curtos iguais aceitos em namespaces distintos;
+- próximo CHANGE-ID calculado somente sobre o histórico local do namespace;
 - referências absolutas válidas;
 - referências relativas resolvíveis;
 - ausência de referências órfãs;
-- ausência de colisão de ID entre namespace descendente e ancestral;
+- ausência de colisão de ID R/D/O entre namespace descendente e ancestral;
+- dependências entre CHANGEs e detecção de ciclos resolvidas por identidade
+  canônica completa;
 - aliases locais resolvidos antes da incorporação;
 - alocação atômica sem colisão.
 
@@ -2073,6 +2142,9 @@ Exemplos:
 - alteração material pré-merge permanece na mesma CHANGE e branch quando o escopo não muda;
 - DRAFT não aloca recursos de implementação;
 - aprovação semântica não autoriza merge, tag ou push;
+- aprovação e autorização de implementação identificam a CHANGE por identidade
+  canônica;
+- autorização ambígua de implementação produz `IMPLEMENTATION_BLOCKED`;
 - ABANDONED não tratado como candidato a merge.
 
 #### Git / History
@@ -2086,12 +2158,16 @@ Exemplos:
 - `base_commit` permanece estável em novo ciclo do mesmo CHANGE;
 - novo snapshot de aprovação está ancorado sem apagar aprovações anteriores;
 - `approval_scope` continua resolvível após relocação canônica da CHANGE;
+- relocação de `approval_scope` é resolvida pela identidade canônica e pelo
+  namespace de origem, sem busca global por basename ou ID curto;
 - conjunto de entrada do pre-merge permanece imutável durante a transação;
 - merge usa a branch e a `main` capturadas pelo gate;
 - implementação definitiva não foi incorporada antes da validação humana;
 - snapshots mínimos continuam recuperáveis;
 - pre-merge recheck observa a `main` atual;
-- movimento pós-merge preserva conteúdo semântico, identidade e histórico.
+- movimento pós-merge preserva conteúdo semântico, identidade e histórico;
+- branches anteriores ao Semantic Git 1.4 e a branch desta transformação são
+  aceitas sem migração retroativa.
 
 #### Link / Integration
 
@@ -2125,16 +2201,26 @@ operation_respects_requirements
 operation_respects_decisions
 child_respects_ancestor_requirements
 child_does_not_duplicate_ancestor_text
-child_id_does_not_collide_with_ancestor
+child_rdo_id_does_not_collide_with_ancestor
 semantic_diff_source_matches_asis
 semantic_diff_matches_approved_contract
 modify_preserves_semantic_identity
 removed_entity_has_no_live_semantic_dependents
 semantic_namespace_resolves
 semantic_reference_unambiguous
+change_identity_is_namespace_qualified
+change_id_sequence_is_namespace_local
+change_id_may_repeat_across_namespaces
+change_dependency_cycle_uses_canonical_identity
+change_branch_is_globally_unique
+change_branch_namespace_key_matches_controller
+change_paths_are_relative_to_controller_namespace
+change_approval_scope_relocation_uses_origin_namespace
 implementation_matches_semantic_contract
 implementation_gate_blocks_unapproved
+implementation_gate_blocks_ambiguous_change_identity
 merge_authorization_is_explicit
+merge_gate_identifies_canonical_change_branch_and_destination
 merge_transaction_is_atomic
 local_main_is_authoritative
 publication_is_not_incorporation
@@ -2206,7 +2292,7 @@ Ele deve corresponder à aprovação da suíte obrigatória de reconciliação d
 
 Antes de transicionar para `IN_PROGRESS`, a IA deve confirmar:
 
-- CHANGE em `APPROVED`;
+- identidade canônica da CHANGE em `APPROVED`;
 - `approved_semantic_commit` e `approval_scope` válidos;
 - branch correta e `base_commit` preservado;
 - recursos de implementação disponíveis;
@@ -2215,6 +2301,8 @@ Antes de transicionar para `IN_PROGRESS`, a IA deve confirmar:
 
 Se uma condição falhar, produzir `IMPLEMENTATION_BLOCKED` e não alocar agente
 de implementação nem editar arquivos fora da CHANGE permitida em `DRAFT`.
+Identidade curta ou ambígua na autorização também produz
+`IMPLEMENTATION_BLOCKED`.
 
 ### 25.6. Gate de pre-merge
 
@@ -2225,7 +2313,8 @@ Antes do merge deve existir um gate que confirme:
 - promoção de IDs foi concluída conforme a política;
 - referências permanecem íntegras;
 - nenhuma nova incompatibilidade foi introduzida;
-- autorização textual explícita identifica CHANGE, branch de origem e `main`;
+- autorização textual explícita identifica a identidade canônica da CHANGE, a
+  branch globalmente única de origem e a `main` de destino;
 - `main_head`, `candidate_head`, `base_commit`, `approved_semantic_commit`,
   `approval_scope` e snapshot final correspondem ao conjunto capturado;
 - a transação de merge pode conter arquivamento, estado `MERGED` e resultado
@@ -2248,7 +2337,8 @@ READY não é novo estado do CHANGE.
 É apenas resultado do gate imediatamente anterior ao merge.
 
 `READY` não autoriza merge. Sem autorização textual explícita, produzir
-`MERGE_BLOCKED`.
+`MERGE_BLOCKED`. Identidade, branch ou destino ausente, ambíguo ou inconsistente
+também produz `MERGE_BLOCKED`.
 
 ### 25.7. Manifesto derivado
 
@@ -2286,6 +2376,12 @@ A IA deve:
 - pesquisar CHANGEs anteriores quando forem relevantes;
 - preservar identidade canônica;
 - resolver identidade como `namespace:ID`;
+- alocar CHANGE-ID por sequência estritamente local, consultando CHANGEs ativos,
+  arquivados e históricos somente no namespace controlador;
+- aceitar CHANGE-ID curto repetido em namespaces distintos e rejeitar sua
+  reutilização dentro do mesmo namespace;
+- resolver índices, referências persistidas ambíguas, dependências, aprovações,
+  autorizações e gates de CHANGE por identidade canônica;
 - aceitar referências relativas quando úteis, mas normalizá-las para identidade absoluta durante validação;
 - não adivinhar referências ambíguas;
 - utilizar CHANGE para transformações semânticas materiais;
@@ -2315,9 +2411,14 @@ A IA deve:
 - aplicar exclusivamente o padrão documental canônico da seção 23.3;
 - tratar `README.md` como opcional e mínimo;
 - herdar Requirements ancestrais sem copiar texto ou identidade;
-- verificar colisões com IDs ancestrais antes de criar ou promover IDs;
+- verificar colisões com IDs ancestrais somente para R/D/O, durante criação ou
+  promoção;
 - bloquear padrões documentais não previstos antes de sintetizar conteúdo;
 - criar branch exclusiva antes de criar ou evoluir CHANGE semântico material;
+- validar atomicamente identidade canônica, caminho local e unicidade global da
+  branch antes de criar um CHANGE;
+- aplicar `change/<namespace-key>/<CHANGE-ID>-<slug-curto>` apenas a novos
+  CHANGEs e preservar CHANGE-IDs e branches historicamente estabelecidos;
 - manter proposta e análise de gaps como TO-BE até a validação humana;
 - iniciar implementação definitiva somente após a validação humana;
 - separar aprovação semântica de autorização de implementação, merge, tag e push;
@@ -2329,7 +2430,8 @@ A IA deve:
 - preservar o `base_commit` e os snapshots anteriores durante novo ciclo;
 - atualizar o `approved_semantic_commit` somente após nova validação;
 - implementar somente o delta do novo ciclo e executar nova RECONCILIATION completa;
-- após merge confirmado, arquivar automaticamente toda CHANGE `MERGED` em `changes/archived/` usando `git mv`;
+- após merge confirmado, arquivar automaticamente toda CHANGE `MERGED` no
+  `changes/archived/` de seu namespace controlador usando `git mv`;
 - migrar CHANGEs `MERGED` existentes para o caminho canônico quando a regra de arquivamento entrar em vigor;
 - atualizar o estado para `MERGED` somente depois de validar o movimento pós-merge;
 - produzir `FAIL` quando o arquivamento obrigatório não puder ser concluído;
@@ -2350,6 +2452,9 @@ A IA não deve:
 - exigir do humano metadados determinísticos que possa derivar;
 - inventar motivo ou identidade humana;
 - inventar decisão semântica apenas para completar estrutura;
+- tratar CHANGE-ID curto como identidade global;
+- consultar números de CHANGE de namespaces ancestrais, descendentes ou irmãos
+  para alocar a sequência local;
 - criar ou aceitar nomes, seções, formatos ou tipos documentais alternativos;
 - criar `README.md` apenas para completar a estrutura;
 - copiar para um filho o texto ou o ID de uma entidade ancestral;
@@ -2357,14 +2462,17 @@ A IA não deve:
 - alocar agente de implementação em `DRAFT`;
 - editar arquivos fora da CHANGE em `DRAFT`;
 - interpretar aprovação semântica como autorização de merge, tag ou push;
-- executar merge sem identificar explicitamente CHANGE, origem e destino;
+- executar merge sem identificar explicitamente a identidade canônica da
+  CHANGE, a branch globalmente única de origem e o destino;
 - criar tag ou executar push automaticamente após merge;
 - continuar uma transação de merge após mudança no conjunto de entradas capturado;
 - usar o nome da branch para inferir namespace ou escopo semântico;
+- resolver dependência, aprovação, autorização, gate ou relocação de
+  `approval_scope` por busca global de CHANGE-ID curto ou basename;
 - criar outra branch ou CHANGE para alteração do mesmo escopo antes de `MERGED`;
 - resetar o `base_commit` ou apagar âncora de aprovação anterior em novo ciclo;
 - implementar a alteração material antes da nova aprovação;
-- deixar CHANGE `MERGED` em `changes/` após o merge;
+- deixar CHANGE `MERGED` no `changes/` ativo de seu namespace após o merge;
 - copiar uma CHANGE para o arquivo histórico em vez de usar `git mv`;
 - perguntar se deve executar arquivamento obrigatório já definido na especificação;
 - definir `ARCHIVED` como novo estado;
@@ -2616,7 +2724,7 @@ Humano
 
 ## 30. Invariantes normativas
 
-1. O Semantic Git 1.3 é autocontido e não depende de uma especificação externa para interpretação normativa.
+1. O Semantic Git 1.4 é autocontido e não depende de uma especificação externa para interpretação normativa.
 2. `SEMANTIC_GIT.md` é a fonte normativa completa do protocolo.
 3. AS-IS e CHANGE são conceitos distintos.
 4. AS-IS contém somente conhecimento semântico vigente.
@@ -2664,11 +2772,11 @@ Humano
 46. Cada arquivo R/D/O deve seguir exatamente a estrutura documental canônica do Semantic Git.
 47. Nenhum novo tipo de documento permanente é válido dentro de um Semantic Namespace sem alteração normativa desta especificação.
 48. Requirements ancestrais aplicáveis são herdados sem cópia textual para o namespace descendente.
-49. Namespace descendente não pode reutilizar ID oficial do mesmo tipo usado por namespace ancestral.
+49. Namespace descendente não pode reutilizar ID oficial R/D/O do mesmo tipo usado por namespace ancestral; essa proteção não se aplica a CHANGE-ID.
 50. Nome, estrutura, tipo documental, item, ID ou referência inválidos produzem `FAIL` estrutural ou referencial.
 51. A IA não pode criar convenção alternativa para contornar uma violação do padrão canônico.
 52. Todo CHANGE semântico material deve possuir branch exclusiva antes de sua criação ou evolução.
-53. A branch de CHANGE deve seguir a convenção `change/<CHANGE-ID>-<slug-curto>`.
+53. Novas branches de CHANGE devem seguir `change/<namespace-key>/<CHANGE-ID>-<slug-curto>` e ser globalmente únicas no repositório.
 54. Proposta e análise de gaps permanecem TO-BE até a validação humana.
 55. Implementação definitiva somente pode começar após a validação humana do contrato semântico exato.
 56. `main` permanece AS-IS até a incorporação do CHANGE.
@@ -2678,7 +2786,7 @@ Humano
 60. Aprovação anterior permanece recuperável no histórico Git.
 61. Implementação de novo ciclo pré-merge limita-se ao delta aprovado, com RECONCILIATION completa.
 62. Escopo independente ou materialmente ampliado exige novo CHANGE.
-63. Toda CHANGE `MERGED` deve estar em `changes/archived/<CHANGE-ID>.md`.
+63. Toda CHANGE `MERGED` deve estar em `<namespace-dir>/changes/archived/<CHANGE-ID>.md` no namespace controlador.
 64. A IA deve executar o arquivamento pós-merge sem solicitar autorização adicional.
 65. O arquivamento obrigatório usa `git mv` e preserva conteúdo semântico, identidade e histórico.
 66. `MERGED` somente pode ser registrado após o arquivamento pós-merge ser validado.
@@ -2688,17 +2796,26 @@ Humano
 70. Aprovação semântica não autoriza implementação, merge, tag, release ou push por inferência.
 71. A `main` local do Semantic Repository governante é o AS-IS oficial.
 72. Push é publicação ou replicação e não altera o AS-IS local.
-73. Merge exige autorização textual explícita que identifique CHANGE, origem e destino.
+73. Merge exige autorização textual explícita que identifique a identidade canônica da CHANGE, a branch globalmente única de origem e o destino.
 74. O gate de merge deve capturar entradas imutáveis e invalidar-se quando qualquer uma mudar.
 75. Incorporação, arquivamento e estado `MERGED` devem compor uma única transação local final.
 76. Tag, release e push exigem autorizações textuais independentes.
 77. Implementação definitiva somente pode ocorrer após aprovação semântica registrada e preflight de implementação.
+78. Cada Semantic Namespace controla uma sequência local independente de CHANGE-IDs.
+79. CHANGE-ID não pode ser reutilizado no mesmo namespace, mas pode repetir-se em namespaces distintos.
+80. A identidade inequívoca de uma CHANGE é `<namespace>:<CHANGE-ID>`.
+81. Dependências, aprovações, autorizações e gates de CHANGE usam identidade canônica; ambiguidade bloqueia a operação aplicável.
+82. Dependências e ciclos entre CHANGEs são resolvidos por identidade canônica completa, nunca apenas por CHANGE-ID curto.
+83. Caminhos ativo e arquivado de CHANGE são relativos ao diretório documental do namespace controlador.
+84. A relocação de `approval_scope` é resolvida pela identidade canônica e pelo namespace de origem, nunca por busca global de basename ou ID curto.
+85. O namespace codificado na branch é redundância verificável e não fonte de autoridade semântica.
+86. CHANGE-IDs e branches anteriores ao Semantic Git 1.4, inclusive a branch desta transformação, permanecem válidos sem migração retroativa obrigatória.
 
 ---
 
 ## 31. Requisitos de standalone
 
-Uma distribuição só pode declarar conformidade com **Semantic Git 1.3 Standalone** se:
+Uma distribuição só pode declarar conformidade com **Semantic Git 1.4 Standalone** se:
 
 1. possuir uma cópia íntegra desta especificação em `SEMANTIC_GIT.md` ou referência imutável equivalente acessível ao agente e às ferramentas;
 2. nenhuma regra necessária para interpretar R/D/O, CHANGE, Semantic Diff, estados, aprovação, reconciliação, IDs, vínculos ou testes depender exclusivamente de outra especificação;
@@ -2720,4 +2837,4 @@ sem cadeia obrigatória de herança documental em runtime.
 
 ---
 
-# Fim da especificação Semantic Git v1.3 Standalone
+# Fim da especificação Semantic Git v1.4 Standalone

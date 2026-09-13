@@ -1,6 +1,6 @@
 # Semantic Git — Modelo de Evolução do Conhecimento Semântico
 
-**Versão:** 1.4
+**Versão:** 1.5
 **Status:** especificação normativa standalone
 **Natureza:** modelo autocontido de gestão e evolução de conhecimento semântico
 **Compatibilidade conceitual:** modelo autocontido e independente de especificações externas
@@ -9,7 +9,7 @@
 
 ## 0. Regra de leitura e independência normativa
 
-O Semantic Git 1.4 é **autocontido**.
+O Semantic Git 1.5 é **autocontido**.
 
 Para compreender e operar corretamente um repositório governado por esta especificação, não é necessário consultar qualquer versão anterior do protocolo, uma skill, um prompt externo ou outra especificação normativa.
 
@@ -152,7 +152,14 @@ main
 = AS-IS vigente
 ```
 
-Toda transformação semântica material deve ser governada por um CHANGE.
+Quando a criação inicial de um namespace for governada pelo Semantic Git, o
+caminho padrão é `CHANGE-INIT`. Ela também pode ocorrer manualmente ou fora do
+Semantic Git, sem `CHANGE-INIT`; isso não invalida o AS-IS resultante, não prova
+ferramenta ou autoria e não exige reconstrução.
+
+A partir da existência do namespace, toda alteração semântica material,
+inclusive em `REQUIREMENTS`, `DECISIONS` ou `OPERATIONS`, deve ser governada por
+um CHANGE.
 
 Alterações puramente físicas, editoriais, de formatação ou refatorações que preservem integralmente o significado não exigem CHANGE semântico.
 
@@ -213,6 +220,11 @@ root
 ```
 
 Cada namespace pode conter AS-IS semântico e CHANGEs próprios.
+
+Um namespace novo pode surgir manualmente ou fora do Semantic Git, sem
+`CHANGE-INIT`, sem invalidar o AS-IS resultante. Quando sua criação inicial for
+governada pelo Semantic Git, o `CHANGE-INIT` fica no namespace alvo, mesmo que
+ele não possua AS-IS no `base_commit`; o namespace pai não precisa de CHANGE.
 
 A raiz não possui autoridade especial apenas por ser raiz.
 
@@ -492,6 +504,15 @@ unicidade é determinada pela identidade canônica `<namespace>:<CHANGE-ID>`.
 Reutilizar um CHANGE-ID ativo, arquivado ou histórico no mesmo namespace produz
 `FAIL`.
 
+Para a criação inicial governada de um namespace, `CHANGE-INIT` é identificador
+especial, único por identidade canônica do namespace e não reutilizável. Ele não
+consome a sequência numérica de CHANGE-IDs; portanto, a primeira evolução normal
+do namespace usa `CHANGE-001`.
+
+Se o namespace já possuir AS-IS sem `CHANGE-INIT`, ele é origem estabelecida: a
+primeira evolução governada usa `CHANGE-001`, sem inferir ou registrar a autoria
+de sua criação.
+
 ### 7.3. IDs locais de construção
 
 Novas entidades ainda em construção dentro de um CHANGE podem utilizar aliases locais:
@@ -548,6 +569,14 @@ reason: null
 O namespace é determinado pelo escopo em que o CHANGE vive. A identidade do
 exemplo é `<namespace do documento>:CHANGE-014`; o campo curto não constitui
 uma chave global.
+
+`CHANGE-INIT` pode ocupar o campo `change` deste contrato somente para a primeira
+criação governada do namespace alvo. Antes da aprovação, deve ser validado que o
+alvo não possui AS-IS no `base_commit` e que sua branch adiciona o primeiro AS-IS
+sem alterar Requirements, Decisions, Operations ou outro AS-IS ancestral. O alvo
+pode estar ausente do AS-IS do `base_commit`, sem exigir CHANGE no namespace pai.
+`CHANGE-INIT` segue o fluxo normal de branch, aprovação, implementação,
+RECONCILIATION, pre-merge recheck, merge e arquivamento.
 
 Dependências excepcionais podem ser declaradas:
 
@@ -1091,7 +1120,8 @@ Alterações exclusivamente técnicas, editoriais, de TODO, evidência, formata�
 ## 15. Fluxo de uma mudança
 
 ```text
-AS-IS do namespace relevante
+AS-IS do namespace relevante, quando existente
+ou ausência do AS-IS do namespace-alvo em `CHANGE-INIT`
   ↓
 necessidade percebida
   ↓
@@ -1284,6 +1314,11 @@ integridade entre R / D / O
           ↕
 integridade referencial
 ```
+
+Em `CHANGE-INIT`, a ausência de AS-IS no namespace alvo é ausência de
+predecessor e não deve ser materializada como arquivo, entidade ou baseline
+vazio. A reconciliação confronta o Semantic Diff aprovado com o primeiro AS-IS
+adicionado e valida que não há alterações nos AS-IS ancestrais.
 
 Pergunta central:
 
@@ -2096,6 +2131,7 @@ SEMANTIC
 Exemplos:
 
 - formato válido de CHANGE;
+- forma especial `CHANGE-INIT` válida no contrato de CHANGE;
 - status canônico;
 - política de promoção válida;
 - configurações obrigatórias quando aplicáveis;
@@ -2122,6 +2158,11 @@ Exemplos:
 - CHANGE-ID não reutilizado no mesmo namespace;
 - CHANGE-IDs curtos iguais aceitos em namespaces distintos;
 - próximo CHANGE-ID calculado somente sobre o histórico local do namespace;
+- `CHANGE-INIT` único por namespace e não reutilizado;
+- `CHANGE-INIT` não consome a sequência numérica e a primeira evolução normal
+  usa `CHANGE-001`;
+- namespace já estabelecido sem `CHANGE-INIT` usa `CHANGE-001` na primeira
+  evolução governada;
 - referências absolutas válidas;
 - referências relativas resolvíveis;
 - ausência de referências órfãs;
@@ -2140,6 +2181,7 @@ Exemplos:
 - APPROVED possui âncora de aprovação;
 - alteração material após aprovação retorna a DRAFT;
 - alteração material pré-merge permanece na mesma CHANGE e branch quando o escopo não muda;
+- `CHANGE-INIT` percorre o fluxo normal de CHANGE;
 - DRAFT não aloca recursos de implementação;
 - aprovação semântica não autoriza merge, tag ou push;
 - aprovação e autorização de implementação identificam a CHANGE por identidade
@@ -2155,6 +2197,8 @@ Exemplos:
 - `approved_semantic_commit` existe;
 - `approval_scope` existe no commit indicado;
 - branch do CHANGE existe e parte do `base_commit`;
+- `CHANGE-INIT` pode iniciar namespace ausente do AS-IS em `base_commit` sem
+  CHANGE no namespace pai;
 - `base_commit` permanece estável em novo ciclo do mesmo CHANGE;
 - novo snapshot de aprovação está ancorado sem apagar aprovações anteriores;
 - `approval_scope` continua resolvível após relocação canônica da CHANGE;
@@ -2189,6 +2233,8 @@ Exemplos:
 - conflitos concorrentes tratados;
 - dependências satisfeitas;
 - integridade referencial final válida;
+- `CHANGE-INIT` adiciona somente o primeiro AS-IS do alvo e não altera AS-IS
+  ancestral;
 - contrato atual corresponde ao aprovado.
 
 #### Semantic
@@ -2207,6 +2253,16 @@ semantic_diff_matches_approved_contract
 modify_preserves_semantic_identity
 removed_entity_has_no_live_semantic_dependents
 semantic_namespace_resolves
+governed_namespace_initialization_uses_change_init
+external_namespace_initialization_without_change_init_preserves_asis
+absence_of_change_init_does_not_infer_provenance
+post_initial_namespace_material_change_requires_change
+change_init_is_unique_per_namespace
+change_init_does_not_consume_numeric_sequence
+established_namespace_without_change_init_starts_at_change_001
+change_init_target_may_be_absent_from_base_commit
+change_init_does_not_require_parent_change
+change_init_does_not_modify_ancestor_asis
 semantic_reference_unambiguous
 change_identity_is_namespace_qualified
 change_id_sequence_is_namespace_local
@@ -2367,6 +2423,15 @@ A IA deve:
 - permitir que o humano expresse intenção sem conhecer o contrato interno do CHANGE;
 - distinguir presente de transformação;
 - localizar o menor Semantic Namespace suficiente;
+- distinguir a criação inicial manual ou externa, que pode ocorrer sem `CHANGE-INIT`
+  sem invalidar o AS-IS, da criação inicial governada, cujo caminho padrão é
+  `CHANGE-INIT`;
+- não inferir ferramenta, autoria ou necessidade de reconstrução pela ausência de
+  `CHANGE-INIT`;
+- tratar namespace já estabelecido sem `CHANGE-INIT` como origem estabelecida e
+  alocar `CHANGE-001` para sua primeira evolução governada;
+- exigir CHANGE para toda alteração semântica material posterior à existência do
+  namespace, inclusive em REQUIREMENTS, DECISIONS e OPERATIONS;
 - elevar o escopo do CHANGE quando a compreensão revelar impacto maior;
 - respeitar Requirements ancestrais aplicáveis;
 - consultar REQUIREMENTS antes de propor mudança;
@@ -2378,6 +2443,8 @@ A IA deve:
 - resolver identidade como `namespace:ID`;
 - alocar CHANGE-ID por sequência estritamente local, consultando CHANGEs ativos,
   arquivados e históricos somente no namespace controlador;
+- manter `CHANGE-INIT` único por namespace, sem consumir `CHANGE-001`, permitir o
+  alvo ausente do `base_commit` sem CHANGE no pai e aplicar o fluxo normal;
 - aceitar CHANGE-ID curto repetido em namespaces distintos e rejeitar sua
   reutilização dentro do mesmo namespace;
 - resolver índices, referências persistidas ambíguas, dependências, aprovações,
@@ -2724,7 +2791,7 @@ Humano
 
 ## 30. Invariantes normativas
 
-1. O Semantic Git 1.4 é autocontido e não depende de uma especificação externa para interpretação normativa.
+1. O Semantic Git 1.5 é autocontido e não depende de uma especificação externa para interpretação normativa.
 2. `SEMANTIC_GIT.md` é a fonte normativa completa do protocolo.
 3. AS-IS e CHANGE são conceitos distintos.
 4. AS-IS contém somente conhecimento semântico vigente.
@@ -2732,7 +2799,9 @@ Humano
 6. REQUIREMENTS é a maior autoridade semântica permanente.
 7. DECISIONS não podem contradizer REQUIREMENTS.
 8. OPERATIONS não podem contradizer REQUIREMENTS ou DECISIONS.
-9. Toda transformação semântica material é governada por CHANGE.
+9. Toda alteração semântica material posterior à existência de um namespace,
+   inclusive em REQUIREMENTS, DECISIONS ou OPERATIONS, deve ser governada por
+   CHANGE.
 10. CHANGE vive no menor Semantic Namespace suficiente.
 11. Identidade canônica é namespace + ID local.
 12. R-, D- e O- são prefixos oficiais das entidades permanentes.
@@ -2810,12 +2879,17 @@ Humano
 84. A relocação de `approval_scope` é resolvida pela identidade canônica e pelo namespace de origem, nunca por busca global de basename ou ID curto.
 85. O namespace codificado na branch é redundância verificável e não fonte de autoridade semântica.
 86. CHANGE-IDs e branches anteriores ao Semantic Git 1.4, inclusive a branch desta transformação, permanecem válidos sem migração retroativa obrigatória.
+87. A criação inicial de um Semantic Namespace pode ocorrer manualmente ou fora do Semantic Git sem `CHANGE-INIT`, sem invalidar o AS-IS resultante.
+88. Quando a criação inicial for governada pelo Semantic Git, o caminho padrão é `CHANGE-INIT`.
+89. A ausência de `CHANGE-INIT` não prova ferramenta ou autoria e não exige reconstrução.
+90. `CHANGE-INIT` é único por namespace, não consome `CHANGE-001` e segue o fluxo normal de CHANGE.
+91. `CHANGE-INIT` pode estar no caminho do namespace alvo mesmo quando ele estiver ausente do AS-IS do `base_commit`; o namespace pai não precisa de CHANGE.
 
 ---
 
 ## 31. Requisitos de standalone
 
-Uma distribuição só pode declarar conformidade com **Semantic Git 1.4 Standalone** se:
+Uma distribuição só pode declarar conformidade com **Semantic Git 1.5 Standalone** se:
 
 1. possuir uma cópia íntegra desta especificação em `SEMANTIC_GIT.md` ou referência imutável equivalente acessível ao agente e às ferramentas;
 2. nenhuma regra necessária para interpretar R/D/O, CHANGE, Semantic Diff, estados, aprovação, reconciliação, IDs, vínculos ou testes depender exclusivamente de outra especificação;
@@ -2837,4 +2911,4 @@ sem cadeia obrigatória de herança documental em runtime.
 
 ---
 
-# Fim da especificação Semantic Git v1.4 Standalone
+# Fim da especificação Semantic Git v1.5 Standalone

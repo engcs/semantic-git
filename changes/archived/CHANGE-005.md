@@ -1,0 +1,37 @@
+change: CHANGE-005
+status: MERGED
+base_commit: a1f3f96e8434c6d1bc43267382412d89c880e0cb
+approved_semantic_commit: c70dfeac90718a2f2e7def92a4276ee784977d59
+approval_scope:
+  - SEMANTIC_GIT.md
+  - changes/CHANGE-005.md
+reason: null
+
+# CHANGE-005
+
+## Semantic Diff
+
+### REQUIREMENTS
+
+- **ADD** - Exigir que a criação inicial, quando realizada sob o Semantic Git, seja governada por um único `CHANGE-INIT`. Nesse caso, o namespace alvo pode estar ausente do AS-IS registrado no `base_commit`, pois o CHANGE cria seu primeiro AS-IS.
+- **ADD** - Reconhecer a modalidade alternativa: quando a criação inicial não for realizada sob o Semantic Git, ela ocorre manualmente ou fora do protocolo; nessa modalidade não existe `CHANGE-INIT` nem CHANGE de inicialização, e o AS-IS resultante é reconhecido sem invalidação ou reconstrução retroativa.
+- **ADD** - Exigir que toda alteração semântica material posterior à criação inicial do namespace permaneça governada por CHANGE.
+- **ADD** - Tratar a ausência de AS-IS do namespace alvo como ausência de predecessor, sem criar ou atribuir um AS-IS vazio para a reconciliação de `CHANGE-INIT`.
+
+### DECISIONS
+
+- **ADD** - Reservar `CHANGE-INIT` como identificador especial, único por namespace, para a primeira criação governada de seu AS-IS.
+- **ADD** - Exigir `CHANGE-INIT` como o único caminho de criação inicial quando o namespace for criado sob o Semantic Git.
+- **ADD** - Definir `CHANGE-INIT` como marcador do papel de inicialização semântica, e não como registro da ferramenta ou do agente que produziu a alteração.
+- **ADD** - Definir que `CHANGE-INIT` não consome o primeiro identificador numérico; a primeira evolução normal do namespace utilizará `CHANGE-001`.
+- **ADD** - Permitir que o CHANGE de inicialização esteja no caminho do namespace alvo na branch, mesmo quando o namespace estiver ausente do AS-IS de origem, sem exigir CHANGE ou alteração no namespace pai.
+- **ADD** - Submeter `CHANGE-INIT` ao fluxo normal de branch, aprovação, implementação, RECONCILIATION, pre-merge recheck, merge e arquivamento.
+- **ADD** - Identificar a especificação resultante como Semantic Git v1.5.
+
+### OPERATIONS
+
+- **ADD** - Validar, antes da aprovação de `CHANGE-INIT`, que o namespace alvo não possui AS-IS no `base_commit` e que a branch adiciona seu primeiro AS-IS.
+- **ADD** - Validar que `CHANGE-INIT` não altera Requirements, Decisions, Operations ou qualquer outro AS-IS de namespace ancestral.
+- **ADD** - Validar que existe no máximo um `CHANGE-INIT` por identidade canônica de namespace e que ele não pode ser reutilizado.
+- **ADD** - Arquivar `CHANGE-INIT` no diretório `changes/archived/` do namespace inicializado após o merge confirmado.
+- **ADD** - Quando o namespace já existir no AS-IS de origem sem registro de `CHANGE-INIT`, tratar esse estado como criação externa ao protocolo e alocar `CHANGE-001` para a primeira evolução governada, sem inferir ou registrar a autoria de sua criação.

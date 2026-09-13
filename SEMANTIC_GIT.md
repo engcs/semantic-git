@@ -896,6 +896,21 @@ DRAFT
 
 Nova validação humana é obrigatória.
 
+Quando a alteração material ocorrer antes de `MERGED` e permanecer dentro do
+mesmo escopo semântico:
+
+- o mesmo `CHANGE-ID` deve ser mantido;
+- a mesma branch exclusiva deve ser mantida;
+- o estado deve retornar a `DRAFT`;
+- o `base_commit` original deve ser preservado;
+- o Semantic Diff deve ser atualizado com o novo delta;
+- a aprovação anterior continua recuperável no histórico Git;
+- a nova aprovação deve registrar um novo `approved_semantic_commit`.
+
+Esse ciclo não cria outra branch nem outro CHANGE. Um novo CHANGE somente é
+necessário quando a transformação for independente ou quando o escopo tiver
+ultrapassado materialmente o contrato original.
+
 Se o problema for somente de execução, sem alteração material do contrato:
 
 ```text
@@ -927,6 +942,11 @@ Quando o humano aprovar o contrato semântico, deve ser registrado o commit que 
 ```yaml
 approved_semantic_commit: b18f3a1
 ```
+
+Em uma nova aprovação do mesmo CHANGE antes de `MERGED`, o novo snapshot
+aprovado substitui o `approved_semantic_commit` vigente como referência atual.
+O valor anterior não deve ser apagado do histórico Git. O `base_commit` não
+muda enquanto a transformação continuar no mesmo escopo semântico.
 
 ### 14.3. `approval_scope`
 
@@ -1069,6 +1089,35 @@ validação. Elas não são implementação definitiva e não podem ser tratadas
 AS-IS. A implementação definitiva somente começa depois da validação humana do
 contrato semântico exato. A branch mantém `main` como AS-IS durante todo o
 período anterior ao merge.
+
+### 15.1. Novo ciclo antes do merge
+
+Se uma alteração material for identificada em `APPROVED`, `IN_PROGRESS` ou
+`RECONCILED`, e o CHANGE ainda não tiver sido incorporado à `main`, o fluxo é:
+
+```text
+CHANGE RECONCILED
+    ↓ alteração material identificada
+mesma branch + mesmo CHANGE / DRAFT
+    ↓
+Semantic Diff atualizado
+    ↓
+proposta e análise de gaps
+    ↓
+nova validação humana
+    ↓
+novo approved_semantic_commit
+    ↓
+implementar somente o novo delta
+    ↓
+RECONCILIATION completa
+    ↓
+RECONCILED
+```
+
+O ciclo anterior não deve ser apagado nem reescrito. A nova reconciliação deve
+verificar o contrato completo, embora a implementação física se limite ao
+delta aprovado no novo ciclo.
 
 A presença de PRD, SPEC ou TODO é opcional.
 
@@ -1875,6 +1924,7 @@ Exemplos:
 - CHANGE MERGED não tratado como ativo;
 - APPROVED possui âncora de aprovação;
 - alteração material após aprovação retorna a DRAFT;
+- alteração material pré-merge permanece na mesma CHANGE e branch quando o escopo não muda;
 - ABANDONED não tratado como candidato a merge.
 
 #### Git / History
@@ -1885,6 +1935,8 @@ Exemplos:
 - `approved_semantic_commit` existe;
 - `approval_scope` existe no commit indicado;
 - branch do CHANGE existe e parte do `base_commit`;
+- `base_commit` permanece estável em novo ciclo do mesmo CHANGE;
+- novo snapshot de aprovação está ancorado sem apagar aprovações anteriores;
 - implementação definitiva não foi incorporada antes da validação humana;
 - snapshots mínimos continuam recuperáveis;
 - pre-merge recheck observa a `main` atual.
@@ -2079,6 +2131,10 @@ A IA deve:
 - criar branch exclusiva antes de criar ou evoluir CHANGE semântico material;
 - manter proposta e análise de gaps como TO-BE até a validação humana;
 - iniciar implementação definitiva somente após a validação humana;
+- reabrir o mesmo CHANGE e manter a mesma branch quando houver alteração material antes de `MERGED` dentro do mesmo escopo;
+- preservar o `base_commit` e os snapshots anteriores durante novo ciclo;
+- atualizar o `approved_semantic_commit` somente após nova validação;
+- implementar somente o delta do novo ciclo e executar nova RECONCILIATION completa;
 - sinalizar contradições e conflitos;
 - executar pre-merge recheck;
 - manter o AS-IS limpo;
@@ -2100,6 +2156,9 @@ A IA não deve:
 - copiar para um filho o texto ou o ID de uma entidade ancestral;
 - executar implementação definitiva antes da validação humana do CHANGE;
 - usar o nome da branch para inferir namespace ou escopo semântico;
+- criar outra branch ou CHANGE para alteração do mesmo escopo antes de `MERGED`;
+- resetar o `base_commit` ou apagar âncora de aprovação anterior em novo ciclo;
+- implementar a alteração material antes da nova aprovação;
 - criar Operation sem conteúdo operacional duradouro;
 - tratar branch ou CHANGE em desenvolvimento como AS-IS;
 - resolver conflito material arbitrariamente;
@@ -2397,6 +2456,12 @@ Humano
 54. Proposta e análise de gaps permanecem TO-BE até a validação humana.
 55. Implementação definitiva somente pode começar após a validação humana do contrato semântico exato.
 56. `main` permanece AS-IS até a incorporação do CHANGE.
+57. Alteração material antes de `MERGED`, dentro do mesmo escopo, retorna o mesmo CHANGE à `DRAFT`.
+58. Novo ciclo pré-merge mantém o mesmo CHANGE-ID, a mesma branch e o mesmo `base_commit`.
+59. Novo ciclo pré-merge exige novo snapshot e nova validação humana.
+60. Aprovação anterior permanece recuperável no histórico Git.
+61. Implementação de novo ciclo pré-merge limita-se ao delta aprovado, com RECONCILIATION completa.
+62. Escopo independente ou materialmente ampliado exige novo CHANGE.
 
 ---
 

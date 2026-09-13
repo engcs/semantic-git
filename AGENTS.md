@@ -14,7 +14,8 @@ Ao iniciar uma tarefa:
 3. consulte `transformations/IES_RDO_Transform.md` quando a tarefa envolver IES e RDO;
 4. consulte `applications/mop/foundations/` quando a tarefa envolver as premissas semânticas dos indicadores MOP;
 5. consulte `applications/mop/` quando a tarefa envolver a aplicação MOP;
-6. expanda o contexto apenas quando dependências ou conflitos exigirem.
+6. siga exclusivamente o padrão documental canônico da seção 23.3 de `SEMANTIC_GIT.md`;
+7. expanda o contexto apenas quando dependências ou conflitos exigirem.
 
 ## Semantic Work
 
@@ -29,7 +30,7 @@ Ao iniciar uma tarefa:
 
 ## Repository Scope
 
-O `README.md` apresenta a estrutura e o propósito do projeto. A aplicação MOP
+Quando existir, `README.md` contém somente orientação essencial. A aplicação MOP
 é um contexto de uso do Semantic Git, não uma substituição da especificação.
 Conhecimento específico de outras aplicações deve permanecer em seus namespaces
 ou repositórios próprios.

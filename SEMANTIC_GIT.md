@@ -1,6 +1,6 @@
 # Semantic Git — Modelo de Evolução do Conhecimento Semântico
 
-**Versão:** 1.0
+**Versão:** 1.1
 **Status:** especificação normativa standalone
 **Natureza:** modelo autocontido de gestão e evolução de conhecimento semântico
 **Compatibilidade conceitual:** modelo autocontido e independente de especificações externas
@@ -9,7 +9,7 @@
 
 ## 0. Regra de leitura e independência normativa
 
-O Semantic Git 1.0 é **autocontido**.
+O Semantic Git 1.1 é **autocontido**.
 
 Para compreender e operar corretamente um repositório governado por esta especificação, não é necessário consultar qualquer versão anterior do protocolo, uma skill, um prompt externo ou outra especificação normativa.
 
@@ -256,6 +256,18 @@ Não deve carregar indiscriminadamente toda a árvore.
 
 A árvore existe para localização, herança e redução de contexto.
 
+Requirements ancestrais aplicáveis são herdados conceitualmente pelo namespace
+descendente. Essa herança:
+
+- não copia o texto do ancestral para o descendente;
+- não cria uma segunda entidade semântica por si só;
+- mantém o texto e a identidade no namespace de origem;
+- exige referência canônica quando uma entidade local depender, especializar ou
+  restringir o conceito ancestral.
+
+Uma especialização ou complemento local é uma entidade própria e deve receber
+um novo ID. A herança, sozinha, não exige repetição no arquivo filho.
+
 ### 5.3. Namespace não é filesystem
 
 O namespace responde:
@@ -429,6 +441,11 @@ Referências ambíguas não podem ser resolvidas por adivinhação.
 
 Toda referência deve ser normalizável para uma identidade canônica.
 
+Quando a referência atravessar a fronteira de um namespace, a forma persistida
+deve ser a identidade canônica completa (`namespace:ID`). Referências curtas
+podem ser usadas somente dentro do contexto local quando forem inequivocamente
+resolvíveis.
+
 Exemplo de referência absoluta:
 
 ```text
@@ -440,11 +457,18 @@ domain:D-004 → domain:R-017
 IDs oficiais:
 
 - são monotônicos por tipo dentro do namespace que os controla;
+- não podem reutilizar, em namespace descendente, ID oficial do mesmo tipo já
+  utilizado por qualquer namespace ancestral;
 - não precisam formar sequência contínua;
 - não devem ser renumerados por conveniência;
 - não devem ser reutilizados após remoção;
 - devem permanecer estáveis enquanto identidade e escopo conceitual forem preservados;
 - devem ser atribuídos de forma exclusiva e atômica.
+
+A verificação de alocação deve consultar todos os namespaces ancestrais antes
+de atribuir um novo ID. A identidade canônica continua sendo
+`namespace:ID`; a restrição adicional impede que um descendente oculte ou
+reapresente um ID ancestral.
 
 ### 7.3. IDs locais de construção
 
@@ -463,6 +487,10 @@ Aliases locais:
 - não são identidades oficiais;
 - não devem permanecer no AS-IS;
 - devem ser promovidos antes da incorporação conforme a política de promoção.
+
+A promoção deve aplicar a mesma verificação de colisão com IDs ancestrais. Um
+alias local não pode ser promovido para um ID oficial já utilizado por um
+ancestral.
 
 ### 7.4. Preservação de identidade
 
@@ -868,6 +896,21 @@ DRAFT
 
 Nova validação humana é obrigatória.
 
+Quando a alteração material ocorrer antes de `MERGED` e permanecer dentro do
+mesmo escopo semântico:
+
+- o mesmo `CHANGE-ID` deve ser mantido;
+- a mesma branch exclusiva deve ser mantida;
+- o estado deve retornar a `DRAFT`;
+- o `base_commit` original deve ser preservado;
+- o Semantic Diff deve ser atualizado com o novo delta;
+- a aprovação anterior continua recuperável no histórico Git;
+- a nova aprovação deve registrar um novo `approved_semantic_commit`.
+
+Esse ciclo não cria outra branch nem outro CHANGE. Um novo CHANGE somente é
+necessário quando a transformação for independente ou quando o escopo tiver
+ultrapassado materialmente o contrato original.
+
 Se o problema for somente de execução, sem alteração material do contrato:
 
 ```text
@@ -899,6 +942,11 @@ Quando o humano aprovar o contrato semântico, deve ser registrado o commit que 
 ```yaml
 approved_semantic_commit: b18f3a1
 ```
+
+Em uma nova aprovação do mesmo CHANGE antes de `MERGED`, o novo snapshot
+aprovado substitui o `approved_semantic_commit` vigente como referência atual.
+O valor anterior não deve ser apagado do histórico Git. O `base_commit` não
+muda enquanto a transformação continuar no mesmo escopo semântico.
 
 ### 14.3. `approval_scope`
 
@@ -956,9 +1004,13 @@ necessidade percebida
   ↓
 menor escopo suficiente
   ↓
+branch exclusiva do CHANGE
+  ↓
 CHANGE / DRAFT
   ↓
 base_commit
+  ↓
+proposta e análise de gaps
   ↓
 PRD, se necessário
   ↓
@@ -1002,6 +1054,70 @@ MERGED
   ↓
 novo AS-IS
 ```
+
+Para toda transformação semântica material, a branch exclusiva deve existir
+antes da criação ou evolução do CHANGE. A convenção operacional é:
+
+```text
+change/<CHANGE-ID>-<slug-curto>
+```
+
+O `slug-curto` deve usar somente caracteres ASCII minúsculos, algarismos e
+hífens. O nome da branch é um identificador operacional e não define
+namespace, escopo ou identidade semântica.
+
+O fluxo resumido obrigatório é:
+
+```text
+branch exclusiva
+    ↓
+CHANGE / DRAFT
+    ↓
+proposta e análise de gaps
+    ↓
+validação humana
+    ↓
+implementação definitiva
+    ↓
+RECONCILIATION
+    ↓
+merge
+```
+
+A proposta e a análise de gaps podem ser ajustadas ou descartadas antes da
+validação. Elas não são implementação definitiva e não podem ser tratadas como
+AS-IS. A implementação definitiva somente começa depois da validação humana do
+contrato semântico exato. A branch mantém `main` como AS-IS durante todo o
+período anterior ao merge.
+
+### 15.1. Novo ciclo antes do merge
+
+Se uma alteração material for identificada em `APPROVED`, `IN_PROGRESS` ou
+`RECONCILED`, e o CHANGE ainda não tiver sido incorporado à `main`, o fluxo é:
+
+```text
+CHANGE RECONCILED
+    ↓ alteração material identificada
+mesma branch + mesmo CHANGE / DRAFT
+    ↓
+Semantic Diff atualizado
+    ↓
+proposta e análise de gaps
+    ↓
+nova validação humana
+    ↓
+novo approved_semantic_commit
+    ↓
+implementar somente o novo delta
+    ↓
+RECONCILIATION completa
+    ↓
+RECONCILED
+```
+
+O ciclo anterior não deve ser apagado nem reescrito. A nova reconciliação deve
+verificar o contrato completo, embora a implementação física se limite ao
+delta aprovado no novo ciclo.
 
 A presença de PRD, SPEC ou TODO é opcional.
 
@@ -1525,7 +1641,7 @@ Um Semantic Repository governado pelo Semantic Git pode começar com:
 ```text
 semantic-knowledge/
 ├── .git/
-├── README.md
+├── README.md                 # opcional
 ├── AGENTS.md
 ├── SEMANTIC_GIT.md
 ├── .semantic-repo.yaml
@@ -1578,6 +1694,114 @@ Quando existir, deve:
 
 O funcionamento semântico do padrão não pode depender de regras existentes somente na skill.
 
+### 23.3. Padrão documental canônico
+
+O padrão documental usado pela aplicação MOP é o padrão global do Semantic Git
+para documentos permanentes de Semantic Namespaces. Nenhum padrão alternativo
+é válido.
+
+#### Nomes canônicos
+
+Os nomes físicos são sensíveis a maiúsculas e minúsculas e são exatamente:
+
+```text
+README.md          opcional
+REQUIREMENTS.md    quando houver Requirements no namespace
+DECISIONS.md       quando houver Decisions no namespace
+OPERATIONS.md      quando houver Operations no namespace
+```
+
+Não são válidos nomes singulares, nomes em minúsculas, variações de grafia,
+arquivos duplicados ou novos arquivos permanentes para representar uma dessas
+dimensões. Não são válidos novos tipos de documento permanente dentro de um
+Semantic Namespace. Um novo tipo só pode existir após alteração normativa
+explícita desta especificação.
+
+A ausência de `README.md` é válida e não deve provocar sua criação. A ausência
+de um arquivo R/D/O também é válida quando a dimensão não se aplica. Arquivos
+R/D/O vazios não são válidos.
+
+Documentos de infraestrutura desta especificação, instruções operacionais de
+agentes e artefatos de CHANGE autorizados possuem regras próprias e não criam
+um padrão alternativo para o AS-IS de um namespace. Documentos auxiliares de
+uma aplicação somente podem existir fora desse AS-IS canônico e não autorizam
+a criação de novos tipos permanentes.
+
+#### `README.md`
+
+Quando existir, `README.md` deve conter somente o essencial para identificar o
+namespace e compreender seu propósito ou escopo. Pode conter links diretos de
+orientação quando forem indispensáveis.
+
+`README.md` não é dimensão semântica e não pode conter Requirements, Decisions,
+Operations, IDs, histórico, procedimentos operacionais ou regras concorrentes.
+Não deve receber seções, tabelas, metadados ou conteúdo explicativo que não
+seja necessário para essa orientação mínima.
+
+#### Arquivos R/D/O
+
+Cada arquivo R/D/O deve possuir exatamente esta estrutura, nesta ordem:
+
+```markdown
+# Requirements - <nome do namespace>
+
+## Cabeçalho
+
+<resumo curto do escopo>
+
+## Corpo
+
+- **R-001** - <texto do Requirement>
+```
+
+Para `DECISIONS.md`, usar `Decisions` e o prefixo `D-`. Para `OPERATIONS.md`,
+usar `Operations` e o prefixo `O-`.
+
+O arquivo deve conter um único título de nível 1, um único `## Cabeçalho` e um
+único `## Corpo`, nessa ordem. O `Cabeçalho` é um resumo do conteúdo do
+namespace e não cria entidade ou ID. O `Corpo` contém somente uma lista direta
+de itens, com um item por entidade:
+
+```text
+- **R-001** - texto
+- **R-002** - texto
+```
+
+O ID deve usar o prefixo correspondente e pelo menos três algarismos decimais.
+IDs oficiais permanecem estáveis e não podem ser alterados apenas para adequar
+formatação. Não são válidos frontmatter, tabelas, listas aninhadas, seções
+adicionais ou outro formato de item dentro desses arquivos.
+
+O conteúdo de cada item deve respeitar sua dimensão: Requirement expressa o
+que deve ser verdade; Decision expressa uma escolha duradoura; Operation
+expressa comportamento ou procedimento operacional duradouro. Relações com
+outras entidades devem permanecer no próprio item, por referências resolvíveis,
+sem criar seções ou arquivos auxiliares.
+
+Ao reorganizar um documento, a IA pode ordenar itens ou sintetizar o
+`Cabeçalho` somente quando isso preservar integralmente significado, identidade,
+referências e histórico. Não pode criar conteúdo para completar o formato.
+
+A IA também pode sintetizar a redação de um item quando a formulação resultante
+for semanticamente equivalente ao conhecimento sustentado por fontes canônicas,
+intenção humana explícita ou CHANGE em análise. Sintetizar significa condensar
+ou relacionar significado existente; não significa inventar requisito, escolha,
+operação, justificativa, identidade ou decisão humana. Uma síntese materialmente
+ambígua deve produzir `REVIEW`.
+
+A validação estrutural dos nomes, seções, itens, IDs e referências é
+determinística. A IA é usada somente para classificação, equivalência,
+relação e síntese semântica quando a estrutura não for suficiente. A IA não
+pode converter `FAIL` estrutural em resultado válido.
+
+#### Regra de bloqueio
+
+Nome de arquivo não canônico, arquivo R/D/O com estrutura diferente, seção
+adicional, item fora do formato, ID duplicado, colisão com ID ancestral,
+referência não resolvível ou novo tipo de documento permanente deve produzir
+`FAIL`. A IA não deve corrigir esse caso inventando uma convenção; deve
+interromper a operação e informar a violação.
+
 ---
 
 ## 24. Bootstrap esperado da IA
@@ -1601,6 +1825,11 @@ A IA deve:
 11. pesquisar CHANGEs históricos somente quando forem relevantes à pergunta ou transformação.
 
 Não carregar indiscriminadamente toda a árvore nem toda a especificação quando o ambiente oferecer acesso seletivo confiável às regras necessárias.
+
+Ao entrar em um namespace, a IA deve aplicar o padrão documental da seção
+23.3 antes de interpretar ou reorganizar seu conteúdo. `README.md` é opcional.
+Arquivos permanentes desconhecidos ou estruturas alternativas são violações
+estruturais e não devem ser convertidos automaticamente para um novo padrão.
 
 ### 24.2. Ao iniciar em implementação governada
 
@@ -1666,7 +1895,13 @@ Exemplos:
 - status canônico;
 - política de promoção válida;
 - configurações obrigatórias quando aplicáveis;
-- estrutura de arquivos válida quando presente.
+- estrutura de arquivos válida quando presente;
+- nomes canônicos de documentos;
+- `README.md` ausente ou mínimo quando presente;
+- estrutura exata de `REQUIREMENTS.md`, `DECISIONS.md` e `OPERATIONS.md`;
+- ausência de arquivos R/D/O vazios;
+- rejeição de seções, formatos de item e tipos documentais não previstos;
+- nome válido da branch exclusiva do CHANGE.
 
 #### Identity / Reference
 
@@ -1677,6 +1912,7 @@ Exemplos:
 - referências absolutas válidas;
 - referências relativas resolvíveis;
 - ausência de referências órfãs;
+- ausência de colisão de ID entre namespace descendente e ancestral;
 - aliases locais resolvidos antes da incorporação;
 - alocação atômica sem colisão.
 
@@ -1688,6 +1924,7 @@ Exemplos:
 - CHANGE MERGED não tratado como ativo;
 - APPROVED possui âncora de aprovação;
 - alteração material após aprovação retorna a DRAFT;
+- alteração material pré-merge permanece na mesma CHANGE e branch quando o escopo não muda;
 - ABANDONED não tratado como candidato a merge.
 
 #### Git / History
@@ -1697,6 +1934,10 @@ Exemplos:
 - `base_commit` existe;
 - `approved_semantic_commit` existe;
 - `approval_scope` existe no commit indicado;
+- branch do CHANGE existe e parte do `base_commit`;
+- `base_commit` permanece estável em novo ciclo do mesmo CHANGE;
+- novo snapshot de aprovação está ancorado sem apagar aprovações anteriores;
+- implementação definitiva não foi incorporada antes da validação humana;
 - snapshots mínimos continuam recuperáveis;
 - pre-merge recheck observa a `main` atual.
 
@@ -1731,6 +1972,8 @@ decision_respects_requirements
 operation_respects_requirements
 operation_respects_decisions
 child_respects_ancestor_requirements
+child_does_not_duplicate_ancestor_text
+child_id_does_not_collide_with_ancestor
 semantic_diff_source_matches_asis
 semantic_diff_matches_approved_contract
 modify_preserves_semantic_identity
@@ -1880,6 +2123,18 @@ A IA deve:
 - analisar concorrência semântica entre CHANGEs;
 - considerar a ordem de merge quando puder alterar resultado;
 - executar testes determinísticos antes de julgamento semântico por IA;
+- aplicar exclusivamente o padrão documental canônico da seção 23.3;
+- tratar `README.md` como opcional e mínimo;
+- herdar Requirements ancestrais sem copiar texto ou identidade;
+- verificar colisões com IDs ancestrais antes de criar ou promover IDs;
+- bloquear padrões documentais não previstos antes de sintetizar conteúdo;
+- criar branch exclusiva antes de criar ou evoluir CHANGE semântico material;
+- manter proposta e análise de gaps como TO-BE até a validação humana;
+- iniciar implementação definitiva somente após a validação humana;
+- reabrir o mesmo CHANGE e manter a mesma branch quando houver alteração material antes de `MERGED` dentro do mesmo escopo;
+- preservar o `base_commit` e os snapshots anteriores durante novo ciclo;
+- atualizar o `approved_semantic_commit` somente após nova validação;
+- implementar somente o delta do novo ciclo e executar nova RECONCILIATION completa;
 - sinalizar contradições e conflitos;
 - executar pre-merge recheck;
 - manter o AS-IS limpo;
@@ -1896,6 +2151,14 @@ A IA não deve:
 - exigir do humano metadados determinísticos que possa derivar;
 - inventar motivo ou identidade humana;
 - inventar decisão semântica apenas para completar estrutura;
+- criar ou aceitar nomes, seções, formatos ou tipos documentais alternativos;
+- criar `README.md` apenas para completar a estrutura;
+- copiar para um filho o texto ou o ID de uma entidade ancestral;
+- executar implementação definitiva antes da validação humana do CHANGE;
+- usar o nome da branch para inferir namespace ou escopo semântico;
+- criar outra branch ou CHANGE para alteração do mesmo escopo antes de `MERGED`;
+- resetar o `base_commit` ou apagar âncora de aprovação anterior em novo ciclo;
+- implementar a alteração material antes da nova aprovação;
 - criar Operation sem conteúdo operacional duradouro;
 - tratar branch ou CHANGE em desenvolvimento como AS-IS;
 - resolver conflito material arbitrariamente;
@@ -2137,7 +2400,7 @@ Humano
 
 ## 30. Invariantes normativas
 
-1. O Semantic Git 1.0 é autocontido e não depende de uma especificação externa para interpretação normativa.
+1. O Semantic Git 1.1 é autocontido e não depende de uma especificação externa para interpretação normativa.
 2. `SEMANTIC_GIT.md` é a fonte normativa completa do protocolo.
 3. AS-IS e CHANGE são conceitos distintos.
 4. AS-IS contém somente conhecimento semântico vigente.
@@ -2180,12 +2443,31 @@ Humano
 41. A IA deve carregar somente contexto suficiente e expandi-lo progressivamente quando necessário.
 42. O AS-IS atual deve permanecer compreensível sem leitura obrigatória do histórico de CHANGEs.
 43. Skill, AGENTS, validator, template e manifesto derivado não podem conter regras normativas indispensáveis ausentes de `SEMANTIC_GIT.md`.
+44. Os nomes canônicos dos documentos permanentes são `README.md`, `REQUIREMENTS.md`, `DECISIONS.md` e `OPERATIONS.md`.
+45. `README.md` é opcional e deve conter somente orientação essencial.
+46. Cada arquivo R/D/O deve seguir exatamente a estrutura documental canônica do Semantic Git.
+47. Nenhum novo tipo de documento permanente é válido dentro de um Semantic Namespace sem alteração normativa desta especificação.
+48. Requirements ancestrais aplicáveis são herdados sem cópia textual para o namespace descendente.
+49. Namespace descendente não pode reutilizar ID oficial do mesmo tipo usado por namespace ancestral.
+50. Nome, estrutura, tipo documental, item, ID ou referência inválidos produzem `FAIL` estrutural ou referencial.
+51. A IA não pode criar convenção alternativa para contornar uma violação do padrão canônico.
+52. Todo CHANGE semântico material deve possuir branch exclusiva antes de sua criação ou evolução.
+53. A branch de CHANGE deve seguir a convenção `change/<CHANGE-ID>-<slug-curto>`.
+54. Proposta e análise de gaps permanecem TO-BE até a validação humana.
+55. Implementação definitiva somente pode começar após a validação humana do contrato semântico exato.
+56. `main` permanece AS-IS até a incorporação do CHANGE.
+57. Alteração material antes de `MERGED`, dentro do mesmo escopo, retorna o mesmo CHANGE à `DRAFT`.
+58. Novo ciclo pré-merge mantém o mesmo CHANGE-ID, a mesma branch e o mesmo `base_commit`.
+59. Novo ciclo pré-merge exige novo snapshot e nova validação humana.
+60. Aprovação anterior permanece recuperável no histórico Git.
+61. Implementação de novo ciclo pré-merge limita-se ao delta aprovado, com RECONCILIATION completa.
+62. Escopo independente ou materialmente ampliado exige novo CHANGE.
 
 ---
 
 ## 31. Requisitos de standalone
 
-Uma distribuição só pode declarar conformidade com **Semantic Git 1.0 Standalone** se:
+Uma distribuição só pode declarar conformidade com **Semantic Git 1.1 Standalone** se:
 
 1. possuir uma cópia íntegra desta especificação em `SEMANTIC_GIT.md` ou referência imutável equivalente acessível ao agente e às ferramentas;
 2. nenhuma regra necessária para interpretar R/D/O, CHANGE, Semantic Diff, estados, aprovação, reconciliação, IDs, vínculos ou testes depender exclusivamente de outra especificação;
@@ -2207,4 +2489,4 @@ sem cadeia obrigatória de herança documental em runtime.
 
 ---
 
-# Fim da especificação Semantic Git v1.0 Standalone
+# Fim da especificação Semantic Git v1.1 Standalone

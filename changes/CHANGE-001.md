@@ -1,6 +1,13 @@
 change: CHANGE-001
-status: DRAFT
+status: APPROVED
 base_commit: 7b6290a996937013a111ea9a0c969939de2516f8
+approved_semantic_commit: 2608851f47873e8e61d270a4e922495d4dc3310d
+approval_scope:
+  - SEMANTIC_GIT.md
+  - AGENTS.md
+  - README.md
+  - applications/mop/README.md
+  - changes/CHANGE-001.md
 reason: null
 
 # CHANGE-001

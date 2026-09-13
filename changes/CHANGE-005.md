@@ -1,5 +1,5 @@
 change: CHANGE-005
-status: APPROVED
+status: IN_PROGRESS
 base_commit: a1f3f96e8434c6d1bc43267382412d89c880e0cb
 approved_semantic_commit: 20ee802aec60cee1f512b82ce073417769d8068f
 approval_scope:

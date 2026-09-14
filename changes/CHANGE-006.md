@@ -1,5 +1,5 @@
 change: CHANGE-006
-status: IN_PROGRESS
+status: RECONCILED
 base_commit: 871dbab5edf3674ab76b734c0ef28a6edcea303c
 approved_semantic_commit: 11dbd56345aedc3ef3bb6a96e07f055ebd4482c7
 approval_scope:

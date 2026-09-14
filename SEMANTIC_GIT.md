@@ -286,8 +286,11 @@ descendente. Essa herança:
 - exige referência canônica quando uma entidade local depender, especializar ou
   restringir o conceito ancestral.
 
-Uma especialização ou complemento local é uma entidade própria e deve receber
-um novo ID. A herança, sozinha, não exige repetição no arquivo filho.
+Uma especialização ou complemento local é uma entidade própria e deve possuir
+identidade canônica própria no namespace local. O mesmo ID curto do mesmo tipo
+pode existir no ancestral e no descendente, pois as identidades canônicas são
+distintas. A herança, sozinha, não exige repetição no arquivo filho nem cria
+uma entidade local.
 
 ### 5.3. Namespace não é filesystem
 
@@ -446,13 +449,18 @@ domain/operation:O-005
 domain/operation:CHANGE-014
 ```
 
-IDs curtos são locais ao namespace. O mesmo `CHANGE-ID` curto pode existir em
-namespaces distintos sem representar a mesma transformação:
+IDs curtos são locais ao namespace. A identidade de qualquer entidade é a
+combinação do namespace canônico com o ID local. O mesmo ID curto pode existir
+em namespaces distintos sem representar a mesma entidade:
 
 ```text
+domain:R-001
+≠
+domain/child:R-001
+
 root:CHANGE-004
 ≠
-applications/mop/programacao:CHANGE-004
+domain:CHANGE-004
 ```
 
 Identidades canônicas são hierárquicas e inequívocas.
@@ -471,9 +479,11 @@ Toda referência deve ser normalizável para uma identidade canônica.
 
 Quando a referência atravessar a fronteira de um namespace, a forma persistida
 deve ser a identidade canônica completa (`namespace:ID`). Referências curtas
-podem ser usadas somente dentro do contexto local quando forem inequivocamente
-resolvíveis. Referências persistidas que identifiquem CHANGE devem usar a
-identidade canônica quando a forma curta puder designar mais de um CHANGE.
+podem ser usadas somente para entidades do namespace local quando forem
+inequivocamente resolvíveis. Uma referência curta não deve procurar entidade em
+namespace ancestral, descendente ou irmão. Referências persistidas que
+identifiquem CHANGE devem usar a identidade canônica quando a forma curta puder
+designar mais de um CHANGE.
 Dependências e entradas de gates devem sempre usar a identidade canônica.
 Autorizações seguem as regras mais estritas da seção 13.8.
 
@@ -481,6 +491,7 @@ Exemplo de referência absoluta:
 
 ```text
 domain:D-004 → domain:R-017
+domain/child:D-001 → domain:R-001
 ```
 
 ### 7.2. IDs oficiais
@@ -494,11 +505,16 @@ IDs oficiais:
 - devem permanecer estáveis enquanto identidade e escopo conceitual forem preservados;
 - devem ser atribuídos de forma exclusiva e atômica.
 
-Para entidades semânticas permanentes `R-`, `D-` e `O-`, um namespace
-descendente não pode reutilizar ID oficial do mesmo tipo já utilizado por
-qualquer namespace ancestral. A verificação de alocação deve consultar o
-namespace controlador e seus ancestrais antes de atribuir um novo ID. Essa
-proteção impede que o descendente oculte ou reapresente uma entidade ancestral.
+Para entidades semânticas permanentes `R-`, `D-` e `O-`, a unicidade é
+verificada por tipo dentro do namespace controlador. Um ID curto do mesmo tipo
+não pode ser duplicado nem reutilizado, inclusive após remoção, dentro desse
+mesmo namespace.
+
+O mesmo ID curto do mesmo tipo pode existir em namespaces distintos, inclusive
+entre ancestral e descendente ou entre namespaces irmãos, porque suas
+identidades canônicas são distintas. A alocação R/D/O consulta o AS-IS, o
+histórico e alocações concorrentes do próprio namespace controlador; não reserva
+nem consome números em ancestrais, descendentes ou irmãos.
 
 Para `CHANGE-`, a sequência é local e independente em cada Semantic Namespace.
 A alocação consulta os CHANGEs ativos, arquivados e históricos do próprio
@@ -536,9 +552,10 @@ Aliases locais:
 - não devem permanecer no AS-IS;
 - devem ser promovidos antes da incorporação conforme a política de promoção.
 
-A promoção de entidades R/D/O deve aplicar a mesma verificação de colisão com
-IDs ancestrais. Um alias local não pode ser promovido para um ID oficial R/D/O
-já utilizado por um ancestral.
+A promoção de entidades R/D/O deve verificar duplicidade, reutilização e
+alocações concorrentes somente no namespace semântico de destino e no
+respectivo tipo. A existência do mesmo ID curto em namespace ancestral,
+descendente ou irmão não bloqueia a promoção.
 
 ### 7.4. Preservação de identidade
 
@@ -657,7 +674,7 @@ REMOVE
 = uma verdade ou identidade semântica vigente deixa de existir
 ```
 
-O ID oficial removido não pode ser reutilizado.
+O ID oficial removido não pode ser reutilizado no mesmo namespace controlador e no mesmo tipo.
 
 ### 9.3. MODIFY
 
@@ -1200,8 +1217,8 @@ change/<namespace-key>/<CHANGE-ID>-<slug-curto>
 namespaces, `namespace-key` é a representação reversível do namespace canônico
 em um único componente de ref Git: bytes UTF-8 que não sejam letras ASCII
 minúsculas, algarismos ou hífen são codificados como `%HH`, com hexadecimal
-maiúsculo. Assim, `applications/mop/programacao` torna-se
-`applications%2Fmop%2Fprogramacao`. O namespace decodificado da branch deve
+maiúsculo. Assim, `domain/operation` torna-se
+`domain%2Foperation`. O namespace decodificado da branch deve
 corresponder ao namespace controlador da identidade canônica do CHANGE.
 
 O `slug-curto` deve usar somente caracteres ASCII minúsculos, algarismos e
@@ -1539,8 +1556,8 @@ Independentemente do modo:
 3. determinar o tipo R, D ou O;
 4. atribuir o próximo ID oficial daquele tipo dentro do namespace de destino;
 5. alocar IDs de forma exclusiva e atômica;
-6. impedir colisões de IDs R/D/O entre CHANGEs concorrentes e na cadeia
-   ancestral aplicável;
+6. impedir duplicidade ou reutilização de IDs R/D/O no mesmo namespace de
+   destino e tipo, inclusive entre CHANGEs concorrentes;
 7. substituir aliases locais;
 8. atualizar dependências e referências;
 9. atualizar o Semantic Diff final;
@@ -2044,9 +2061,11 @@ pode converter `FAIL` estrutural em resultado válido.
 #### Regra de bloqueio
 
 Nome de arquivo não canônico, arquivo R/D/O com estrutura diferente, seção
-adicional, item fora do formato, ID duplicado, colisão de ID R/D/O com ancestral,
-referência não resolvível ou novo tipo de documento permanente deve produzir
-`FAIL`. A IA não deve corrigir esse caso inventando uma convenção; deve
+adicional, item fora do formato, ID R/D/O duplicado ou reutilizado no mesmo
+namespace e tipo, referência persistida entre namespaces sem identidade canônica
+completa, referência não resolvível ou novo tipo de documento permanente deve
+produzir `FAIL`. A existência do mesmo ID curto R/D/O em namespace distinto não
+é colisão. A IA não deve corrigir esse caso inventando uma convenção; deve
 interromper a operação e informar a violação.
 
 ---
@@ -2162,7 +2181,9 @@ Exemplos:
 Exemplos:
 
 - identidade canônica única;
-- ID oficial não reutilizado;
+- ID R/D/O não duplicado nem reutilizado no mesmo namespace e tipo;
+- mesmo ID curto R/D/O aceito entre ancestral e descendente;
+- mesmo ID curto R/D/O aceito entre namespaces irmãos;
 - CHANGE-ID não reutilizado no mesmo namespace;
 - CHANGE-IDs curtos iguais aceitos em namespaces distintos;
 - próximo CHANGE-ID calculado somente sobre o histórico local do namespace;
@@ -2173,8 +2194,9 @@ Exemplos:
   evolução governada, sem inferir sua proveniência;
 - referências absolutas válidas;
 - referências relativas resolvíveis;
+- referência curta local válida quando inequivocamente resolvível;
+- referência persistida entre namespaces exige identidade canônica completa;
 - ausência de referências órfãs;
-- ausência de colisão de ID R/D/O entre namespace descendente e ancestral;
 - dependências entre CHANGEs e detecção de ciclos resolvidas por identidade
   canônica completa;
 - aliases locais resolvidos antes da incorporação;
@@ -2257,7 +2279,12 @@ operation_respects_requirements
 operation_respects_decisions
 child_respects_ancestor_requirements
 child_does_not_duplicate_ancestor_text
-child_rdo_id_does_not_collide_with_ancestor
+rdo_id_is_unique_within_namespace_and_type
+rdo_id_is_not_reused_within_namespace
+rdo_id_may_repeat_between_ancestor_and_descendant
+rdo_id_may_repeat_between_siblings
+cross_namespace_reference_requires_canonical_identity
+local_short_reference_resolves_within_namespace
 semantic_diff_source_matches_asis
 semantic_diff_matches_approved_contract
 modify_preserves_semantic_identity
@@ -2491,8 +2518,8 @@ A IA deve:
 - aplicar exclusivamente o padrão documental canônico da seção 23.3;
 - tratar `README.md` como opcional e mínimo;
 - herdar Requirements ancestrais sem copiar texto ou identidade;
-- verificar colisões com IDs ancestrais somente para R/D/O, durante criação ou
-  promoção;
+- verificar duplicidade, reutilização e alocação concorrente de IDs R/D/O
+  somente no namespace controlador e no respectivo tipo;
 - bloquear padrões documentais não previstos antes de sintetizar conteúdo;
 - criar branch exclusiva antes de criar ou evoluir CHANGE semântico material;
 - validar atomicamente identidade canônica, caminho local e unicidade global da
@@ -2537,7 +2564,7 @@ A IA não deve:
   para alocar a sequência local;
 - criar ou aceitar nomes, seções, formatos ou tipos documentais alternativos;
 - criar `README.md` apenas para completar a estrutura;
-- copiar para um filho o texto ou o ID de uma entidade ancestral;
+- copiar para um filho o texto ou a identidade canônica de uma entidade ancestral;
 - executar implementação definitiva antes da validação humana do CHANGE;
 - alocar agente de implementação em `DRAFT`;
 - editar arquivos fora da CHANGE em `DRAFT`;
@@ -2563,7 +2590,7 @@ A IA não deve:
 - manter CHANGE em escopo estreito quando o impacto se ampliou;
 - confundir caminho físico com Semantic Namespace;
 - derivar namespace automaticamente da topologia de implementação;
-- reutilizar ou renumerar IDs oficiais por conveniência;
+- reutilizar IDs oficiais no mesmo namespace e tipo ou renumerá-los por conveniência;
 - promover entidade no namespace errado;
 - usar MODIFY quando uma identidade foi substituída;
 - transformar todo Git Diff em Semantic Diff;
@@ -2825,8 +2852,8 @@ Humano
 10. CHANGE vive no menor Semantic Namespace suficiente.
 11. Identidade canônica é namespace + ID local.
 12. R-, D- e O- são prefixos oficiais das entidades permanentes.
-13. IDs oficiais não são reutilizados nem renumerados por conveniência.
-14. IDs oficiais devem ser alocados de forma exclusiva e atômica.
+13. IDs oficiais R/D/O não são duplicados nem reutilizados dentro do mesmo namespace e tipo, nem renumerados por conveniência.
+14. IDs oficiais devem ser alocados de forma exclusiva e atômica dentro do namespace controlador.
 15. MODIFY exige preservação razoável de identidade.
 16. Quando a identidade muda materialmente, usar REMOVE + ADD.
 17. Semantic Diff deve separar R/D/O conforme aplicável.
@@ -2861,7 +2888,7 @@ Humano
 46. Cada arquivo R/D/O deve seguir exatamente a estrutura documental canônica do Semantic Git.
 47. Nenhum novo tipo de documento permanente é válido dentro de um Semantic Namespace sem alteração normativa desta especificação.
 48. Requirements ancestrais aplicáveis são herdados sem cópia textual para o namespace descendente.
-49. Namespace descendente não pode reutilizar ID oficial R/D/O do mesmo tipo usado por namespace ancestral; essa proteção não se aplica a CHANGE-ID.
+49. Para R/D/O, a unicidade e a não reutilização são determinadas por namespace canônico e por tipo; o mesmo ID curto pode existir em namespaces distintos, inclusive entre ancestral e descendente ou entre irmãos. As regras locais de CHANGE-ID permanecem independentes e inalteradas.
 50. Nome, estrutura, tipo documental, item, ID ou referência inválidos produzem `FAIL` estrutural ou referencial.
 51. A IA não pode criar convenção alternativa para contornar uma violação do padrão canônico.
 52. Todo CHANGE semântico material deve possuir branch exclusiva antes de sua criação ou evolução.

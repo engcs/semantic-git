@@ -1,6 +1,10 @@
 change: CHANGE-008
-status: DRAFT
+status: APPROVED
 base_commit: 345b4615b94dc0699b7965c55af3f13c6da82b2e
+approved_semantic_commit: 31997d29462aa0eea404bbbc930ae4cf58f8837c
+approval_scope:
+  - SEMANTIC_GIT.md
+  - changes/CHANGE-008.md
 reason: null
 
 # CHANGE-008

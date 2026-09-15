@@ -2058,6 +2058,74 @@ determinística. A IA é usada somente para classificação, equivalência,
 relação e síntese semântica quando a estrutura não for suficiente. A IA não
 pode converter `FAIL` estrutural em resultado válido.
 
+#### Separação obrigatória entre R/D/O
+
+Antes de escrever ou concluir R/D/O, a IA deve determinar:
+
+1. o Semantic Namespace e seu nível de abstração;
+2. o que é comum ao domínio;
+3. o que pertence aos consumidores, usos especializados ou subdomínios;
+4. o que é conceito semântico e o que é apenas materialização física.
+
+##### REQUIREMENTS
+
+`REQUIREMENTS` deve registrar somente verdades, necessidades e invariantes
+estáveis do domínio. Não deve incluir nomes de tabelas, nomes de colunas,
+aliases, funções SQL, tipos físicos, regras específicas de indicadores, nomes
+de consumidores ou subdomínios, nem detalhes de implementação.
+
+##### DECISIONS
+
+`DECISIONS` deve registrar escolhas conceituais que resolvem os Requirements.
+Pode conter definições conceituais, regras matemáticas, convenções de
+calendário, limites conceituais e critérios de identidade ou interpretação.
+Não pode conter nomes de colunas ou tabelas, SQL, nomes de modelos dbt,
+formatos físicos de saída, mapeamentos de campos ou detalhes de materialização.
+
+Quando uma regra puder ser escrita matematicamente, ela deve ser formulada com
+conceitos abstratos. Por exemplo, para uma data `d`, a semana é o intervalo
+fechado iniciado no domingo não posterior a `d` e encerrado seis dias depois.
+A composição física de uma chave ou saída pertence a `OPERATIONS`, não a
+`DECISIONS`.
+
+##### OPERATIONS
+
+`OPERATIONS` deve registrar como o conceito é calculado, transformado ou
+materializado. Quando aplicável, pode conter nomes de colunas, tabelas,
+campos de entrada e saída, funções SQL, modelos dbt, fórmulas de
+materialização, mapeamentos e validações técnicas.
+
+`OPERATIONS` não pode criar uma nova regra semântica que não esteja sustentada
+por Requirements e Decisions.
+
+##### Regras de fronteira
+
+- O domínio pai não deve citar nominalmente seus subdomínios. Usar consumidor,
+  uso especializado ou aplicação quando a referência genérica for suficiente.
+- Uma coluna não deve ser promovida a conceito sem evidência semântica
+  independente.
+- Uma regra não deve ser colocada em `DECISIONS` apenas porque existe em uma
+  query.
+- Regras específicas de um indicador permanecem no namespace do indicador.
+- Dúvida material sobre a camada correta deve permanecer como `REVIEW`; a IA
+  não deve decidir arbitrariamente.
+
+##### Gate obrigatório antes de concluir
+
+Antes de apresentar o RDO, a IA deve verificar:
+
+1. todo Requirement possui uma Decision correspondente;
+2. toda Decision possui uma Operation correspondente quando houver
+   materialização;
+3. nenhuma Decision contém coluna, tabela, SQL, modelo dbt ou nome concreto de
+   subdomínio;
+4. nenhuma Operation cria uma regra semântica nova;
+5. o RDO contém somente conceitos comuns ao namespace;
+6. detalhes específicos foram deslocados para o consumidor correto.
+
+O RDO só deve ser apresentado depois desse gate. Todo item ainda classificado
+como `REVIEW` deve ser listado e permanecer pendente de resolução.
+
 #### Regra de bloqueio
 
 Nome de arquivo não canônico, arquivo R/D/O com estrutura diferente, seção
@@ -2096,6 +2164,11 @@ Ao entrar em um namespace, a IA deve aplicar o padrão documental da seção
 23.3 antes de interpretar ou reorganizar seu conteúdo. `README.md` é opcional.
 Arquivos permanentes desconhecidos ou estruturas alternativas são violações
 estruturais e não devem ser convertidos automaticamente para um novo padrão.
+
+Antes de escrever ou concluir qualquer R/D/O, a IA deve aplicar a separação
+obrigatória e o gate definidos na seção 23.3. Um RDO não está concluído enquanto
+esse gate não passar; itens materialmente ambíguos devem ser apresentados como
+`REVIEW`.
 
 ### 24.2. Ao iniciar em implementação governada
 
@@ -2277,6 +2350,12 @@ Exemplos canônicos:
 decision_respects_requirements
 operation_respects_requirements
 operation_respects_decisions
+rdo_separation_gate_passes
+requirement_has_corresponding_decision
+materialized_decision_has_operation
+operation_does_not_create_new_semantic_rule
+rdo_contains_only_namespace_common_concepts
+layer_ambiguity_produces_review
 child_respects_ancestor_requirements
 child_does_not_duplicate_ancestor_text
 rdo_id_is_unique_within_namespace_and_type
@@ -2932,6 +3011,12 @@ Humano
 90. `CHANGE-INIT` é único por namespace, não consome `CHANGE-001` e segue o fluxo normal de CHANGE.
 91. `CHANGE-INIT` pode estar no caminho do namespace alvo mesmo quando ele estiver ausente do AS-IS do `base_commit`; o namespace pai não precisa de CHANGE.
 92. Em `CHANGE-INIT`, a ausência de predecessor não deve ser materializada como arquivo, entidade ou baseline vazio; a RECONCILIATION confronta o Semantic Diff aprovado com o primeiro AS-IS adicionado e valida a ausência de alterações ancestrais.
+93. Requirements registram somente verdades, necessidades e invariantes estáveis do domínio.
+94. Decisions registram escolhas conceituais e não podem conter detalhes de materialização física.
+95. Regras matemáticas em Decisions devem usar conceitos abstratos; sua composição física pertence a Operations.
+96. Operations registram cálculo, transformação e materialização sem criar regra semântica nova.
+97. O R/D/O de um namespace contém somente conhecimento comum ao namespace; detalhes específicos permanecem nos consumidores ou subdomínios.
+98. Antes de concluir R/D/O, a IA deve executar o gate de separação e listar itens materialmente ambíguos como REVIEW.
 
 ---
 

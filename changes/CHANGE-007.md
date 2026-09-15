@@ -1,5 +1,5 @@
 change: CHANGE-007
-status: IN_PROGRESS
+status: RECONCILED
 base_commit: 55434c50f6f7855bba6e50972a70ed1b358e69d7
 approved_semantic_commit: 278a2887a7c7c2038c25f9b8d085566977a0ff35
 approval_scope:

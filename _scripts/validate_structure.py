@@ -75,7 +75,7 @@ class Validator:
                 self.validate_rdo(path)
 
         for path in directories:
-            if path.name.casefold() == "changes":
+            if path.name.casefold() in {"_changes", "changes"}:
                 self.validate_changes_directory(path)
 
         self.validate_local_configuration()
@@ -204,8 +204,8 @@ class Validator:
             self.add("RDO_FRONTMATTER", path, "frontmatter is not allowed in R/D/O documents", 1)
 
     def validate_changes_directory(self, changes_dir: Path) -> None:
-        if changes_dir.name != "changes":
-            self.add("CHANGE_DIRECTORY", changes_dir, "the directory must be named exactly changes")
+        if changes_dir.name != "_changes":
+            self.add("CHANGE_DIRECTORY", changes_dir, "the directory must be named exactly _changes")
 
         archived_dirs = [entry for entry in changes_dir.iterdir() if entry.is_dir() and entry.name.casefold() == "archived"]
         for archived_dir in archived_dirs:
@@ -215,7 +215,7 @@ class Validator:
         for entry in changes_dir.iterdir():
             if entry.is_dir():
                 if entry.name.casefold() != "archived":
-                    self.add("CHANGE_PATH", entry, "changes may contain only files or the archived directory")
+                    self.add("CHANGE_PATH", entry, "_changes may contain only files or the archived directory")
                 continue
             self.validate_change_file(entry, archived=False)
 
@@ -265,7 +265,7 @@ class Validator:
             self.add("CHANGE_CONTRACT", path, "base_commit must contain a hexadecimal Git commit identifier", self.metadata_line(lines, "base_commit"))
 
         if archived is False and status == "MERGED":
-            self.add("CHANGE_ARCHIVE", path, "a MERGED CHANGE cannot remain in the active changes directory", self.metadata_line(lines, "status"))
+            self.add("CHANGE_ARCHIVE", path, "a MERGED CHANGE cannot remain in the active _changes directory", self.metadata_line(lines, "status"))
 
         if status in APPROVAL_STATUSES:
             approved_commit = metadata.get("approved_semantic_commit", "")

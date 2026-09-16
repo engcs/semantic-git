@@ -11,9 +11,9 @@ Ao iniciar uma tarefa:
 
 1. identifique o escopo conceitual da solicitação;
 2. consulte em `SEMANTIC_GIT.md` somente as regras necessárias;
-3. consulte `transformations/IES_RDO_Transform.md` quando a tarefa envolver IES e RDO;
-4. consulte `applications/mop/foundations/` quando a tarefa envolver as premissas semânticas dos indicadores MOP;
-5. consulte `applications/mop/` quando a tarefa envolver a aplicação MOP;
+3. consulte `_foundations/transformations/IES-RDO-TRANSFORMATION.md` quando a tarefa envolver IES e RDO;
+4. consulte `_applications/mop/_foundations/` quando a tarefa envolver as premissas semânticas dos indicadores MOP;
+5. consulte `_applications/mop/` quando a tarefa envolver a aplicação MOP;
 6. siga exclusivamente o padrão documental canônico da seção 23.3 de `SEMANTIC_GIT.md`;
 7. expanda o contexto apenas quando dependências ou conflitos exigirem.
 

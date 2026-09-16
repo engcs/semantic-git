@@ -1306,7 +1306,7 @@ A incorporação autorizada deve ser tratada como uma transação única. A IA d
 1. capturar o `HEAD` exato da branch candidata e o `HEAD` exato da `main`;
 2. confirmar a autorização explícita de merge para esses alvos;
 3. iniciar a integração sem finalizar o commit de merge;
-4. mover a CHANGE com `git mv` para o diretório `changes/archived/` do
+4. mover a CHANGE com `git mv` para o diretório `_changes/archived/` do
    namespace controlador;
 5. atualizar o estado para `MERGED` somente no resultado integrado;
 6. validar o AS-IS final, a ausência da origem e a integridade do histórico;
@@ -1689,9 +1689,9 @@ CHANGEs com estado `MERGED`, este repositório adota adicionalmente o
 arquivamento físico obrigatório:
 
 ```text
-<namespace-dir>/changes/<CHANGE-ID>.md
+<namespace-dir>/_changes/<CHANGE-ID>.md
                    ↓ merge confirmado
-<namespace-dir>/changes/archived/<CHANGE-ID>.md
+<namespace-dir>/_changes/archived/<CHANGE-ID>.md
 ```
 
 Os caminhos são relativos ao diretório documental do Semantic Namespace que
@@ -1704,12 +1704,12 @@ preservados. A atualização do campo de estado para `MERGED` é metadado de
 ciclo e somente pode ocorrer depois que o destino existir, a origem não existir
 mais e a integridade do movimento tiver sido validada.
 
-O diretório `changes/` de cada namespace é reservado para seus CHANGEs não
+O diretório `_changes/` de cada namespace é reservado para seus CHANGEs não
 incorporados. Uma CHANGE `MERGED` encontrada no caminho ativo de seu namespace
 produz `FAIL`. Não existe um novo estado `ARCHIVED`.
 
 Uma referência de `approval_scope` ao arquivo ativo de uma CHANGE continua
-resolvível após a relocação canônica para o `changes/archived/` do mesmo
+resolvível após a relocação canônica para o `_changes/archived/` do mesmo
 namespace. A resolução usa a identidade canônica e o namespace de origem do
 caminho aprovado; nunca busca globalmente por basename ou CHANGE-ID curto. A
 relocação histórica não constitui drift semântico e não exige nova aprovação.
@@ -1927,7 +1927,7 @@ semantic-knowledge/
         ├── REQUIREMENTS.md
         ├── DECISIONS.md
         ├── OPERATIONS.md
-        └── changes/
+        └── _changes/
 ```
 
 Nenhum arquivo R/D/O precisa existir vazio.
@@ -1935,6 +1935,33 @@ Nenhum arquivo R/D/O precisa existir vazio.
 Quando usada, `.semantic-repo.local.yaml` deve constar no `.gitignore`.
 
 Artefatos derivados por ferramentas, como manifestos, caches e logs, não constituem conhecimento oficial e devem ser regeneráveis.
+
+#### Diretórios reservados de organização
+
+Quando utilizados, diretórios reservados de governança, suporte e publicação
+devem usar o prefixo `_` para serem visualmente distinguíveis dos diretórios de
+domínio e subdomínio. O prefixo é uma convenção visível de organização, não uma
+regra de ocultação ou de rastreamento: esses diretórios continuam sendo
+rastreáveis pelo Git.
+
+`_changes/` é o diretório canônico de CHANGEs ativas e
+`_changes/archived/` é seu diretório canônico de arquivamento. O subdiretório
+`archived` não recebe prefixo adicional porque sua função já é determinada por
+`_changes/`.
+
+`_foundations/` é reservado para fundamentos e materiais de suporte que não
+constituem uma nova dimensão do AS-IS. Metodologias de transformação podem ser
+organizadas em `_foundations/transformations/`. Esse material não substitui
+REQUIREMENTS, DECISIONS ou OPERATIONS.
+
+`_publications/` é reservado para publicações derivadas rastreadas, como
+`REFERENCE.md` e seu manifesto. Uma publicação é regenerável e não é fonte de
+verdade semântica, mesmo quando for mantida no Git como entregável.
+
+Neste repositório core, aplicações de contexto são organizadas em
+`_applications/` e ferramentas executáveis em `_scripts/`. Essas convenções
+locais não criam dimensões semânticas nem transformam aplicações em parte do
+protocolo normativo.
 
 ### 23.1. Papel de `AGENTS.md`
 
@@ -2246,7 +2273,7 @@ Exemplos:
   controlador, sem usá-lo como fonte de autoridade;
 - caminho ativo e caminho canônico de arquivamento relativos ao namespace
   controlador para CHANGEs `MERGED`;
-- ausência de CHANGE `MERGED` no diretório ativo `changes/`;
+- ausência de CHANGE `MERGED` no diretório ativo `_changes/`;
 - ausência de cópia simultânea da mesma CHANGE em local ativo e arquivado.
 
 #### Identity / Reference
@@ -2617,7 +2644,7 @@ A IA deve:
 - atualizar o `approved_semantic_commit` somente após nova validação;
 - implementar somente o delta do novo ciclo e executar nova RECONCILIATION completa;
 - após merge confirmado, arquivar automaticamente toda CHANGE `MERGED` no
-  `changes/archived/` de seu namespace controlador usando `git mv`;
+  `_changes/archived/` de seu namespace controlador usando `git mv`;
 - migrar CHANGEs `MERGED` existentes para o caminho canônico quando a regra de arquivamento entrar em vigor;
 - atualizar o estado para `MERGED` somente depois de validar o movimento pós-merge;
 - produzir `FAIL` quando o arquivamento obrigatório não puder ser concluído;
@@ -2658,7 +2685,7 @@ A IA não deve:
 - criar outra branch ou CHANGE para alteração do mesmo escopo antes de `MERGED`;
 - resetar o `base_commit` ou apagar âncora de aprovação anterior em novo ciclo;
 - implementar a alteração material antes da nova aprovação;
-- deixar CHANGE `MERGED` no `changes/` ativo de seu namespace após o merge;
+- deixar CHANGE `MERGED` no `_changes/` ativo de seu namespace após o merge;
 - copiar uma CHANGE para o arquivo histórico em vez de usar `git mv`;
 - perguntar se deve executar arquivamento obrigatório já definido na especificação;
 - definir `ARCHIVED` como novo estado;
@@ -2981,11 +3008,11 @@ Humano
 60. Aprovação anterior permanece recuperável no histórico Git.
 61. Implementação de novo ciclo pré-merge limita-se ao delta aprovado, com RECONCILIATION completa.
 62. Escopo independente ou materialmente ampliado exige novo CHANGE.
-63. Toda CHANGE `MERGED` deve estar em `<namespace-dir>/changes/archived/<CHANGE-ID>.md` no namespace controlador.
+63. Toda CHANGE `MERGED` deve estar em `<namespace-dir>/_changes/archived/<CHANGE-ID>.md` no namespace controlador.
 64. A IA deve executar o arquivamento pós-merge sem solicitar autorização adicional.
 65. O arquivamento obrigatório usa `git mv` e preserva conteúdo semântico, identidade e histórico.
 66. `MERGED` somente pode ser registrado após o arquivamento pós-merge ser validado.
-67. CHANGE `MERGED` em `changes/` ativo ou duplicada entre ativo e arquivado produz `FAIL`.
+67. CHANGE `MERGED` em `_changes/` ativo ou duplicada entre ativo e arquivado produz `FAIL`.
 68. A relocação canônica da CHANGE não exige nova aprovação quando não altera seu significado.
 69. `DRAFT` não pode alocar recursos de implementação nem editar arquivos fora da própria CHANGE.
 70. Aprovação semântica não autoriza implementação, merge, tag, release ou push por inferência.
@@ -3017,6 +3044,12 @@ Humano
 96. Operations registram cálculo, transformação e materialização sem criar regra semântica nova.
 97. O R/D/O de um namespace contém somente conhecimento comum ao namespace; detalhes específicos permanecem nos consumidores ou subdomínios.
 98. Antes de concluir R/D/O, a IA deve executar o gate de separação e listar itens materialmente ambíguos como REVIEW.
+99. Diretórios reservados de governança, suporte e publicação usam prefixo `_` sem deixar de ser rastreáveis pelo Git.
+100. `_changes/` e `_changes/archived/` são os caminhos canônicos ativo e arquivado de CHANGE.
+101. `archived` não recebe prefixo adicional quando estiver dentro de `_changes/`.
+102. `_foundations/` contém suporte que não constitui uma nova dimensão R/D/O; transformações podem ser organizadas em `_foundations/transformations/`.
+103. `_publications/` contém publicações derivadas regeneráveis e não é fonte de verdade semântica.
+104. Neste repositório core, `_applications/` e `_scripts/` são convenções locais para aplicações de contexto e ferramentas executáveis.
 
 ---
 

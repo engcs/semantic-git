@@ -1,10 +1,6 @@
 change: CHANGE-010
-status: APPROVED
+status: DRAFT
 base_commit: 3749b5bbbda46c2f63746f57094ead71fc19ec0d
-approved_semantic_commit: f8e0660b2da3c7ee4368e31c70e8af14b2b4fa8a
-approval_scope:
-  - SEMANTIC_GIT.md
-  - _changes/CHANGE-010.md
 operation: SEMANTIC_BASELINE_RESET
 reason: null
 
@@ -18,6 +14,7 @@ reason: null
 - **ADD** - O reset deve revisar as referências internas do repositório antes de substituir a baseline vigente.
 - **ADD** - O reset deve preservar o histórico Git, mas pode invalidar referências externas à baseline anterior.
 - **ADD** - O risco de ruptura em documentos externos, publicados ou impressos deve ser aceito explicitamente antes da execução.
+- **ADD** - Toda aprovação governada deve tornar explícitos sua identidade, seu escopo e seus riscos, preferencialmente por formulário interativo quando o ambiente o suportar.
 
 ### DECISIONS
 
@@ -26,6 +23,8 @@ reason: null
 - **ADD** - Referências internas devem ser tratadas antes do reset; referências externas são consideradas potencialmente não resolvíveis após a substituição da baseline.
 - **ADD** - O reset exige duas aprovações independentes: uma para o novo conteúdo e o reinício dos IDs, e outra para a possível perda de referências externas.
 - **ADD** - A segunda aprovação deve confirmar claramente que documentos externos, inclusive publicados ou impressos, podem continuar apontando para conceitos que não existem mais na baseline vigente.
+- **ADD** - O formulário interativo é uma interface preferencial para aprovação, não uma nova autoridade; sua resposta deve ser registrada como autorização explícita e estruturada.
+- **ADD** - Quando o formulário não estiver disponível, uma confirmação textual equivalente deve identificar a CHANGE, a operação, o escopo e os riscos aplicáveis; uma confirmação vaga não substitui esses campos.
 
 ### OPERATIONS
 
@@ -33,6 +32,8 @@ reason: null
 - **ADD** - Auditar referências internas em R/D/O, CHANGEs, `approval_scope`, manifests e publicações rastreadas, classificando cada ocorrência como atualizada, removida, histórica ou não resolvida.
 - **ADD** - Bloquear a execução enquanto houver referência interna não tratada; não afirmar que referências externas foram localizadas ou preservadas.
 - **ADD** - Registrar separadamente a aprovação do novo RDO e a confirmação do risco de ruptura externa, incluindo o texto explícito de aceitação.
+- **ADD** - Apresentar formulário interativo antes de qualquer aprovação de CHANGE, implementação, merge, tag, push ou reset quando essa interface estiver disponível, e registrar a resposta obtida.
+- **ADD** - Na ausência da interface, solicitar a confirmação textual equivalente antes de prosseguir; não inferir autorização a partir de respostas ambíguas.
 - **ADD** - Substituir o R/D/O vigente pelo conteúdo aprovado, reiniciar os IDs locais e preservar o estado anterior somente no histórico Git, sem cópia de compatibilidade automática.
 - **ADD** - Executar validação estrutural, revisão semântica e RECONCILIATION antes de concluir o reset.
 - **ADD** - Manter o reset como operação excepcional, sem torná-lo uma consequência automática de qualquer alteração de R/D/O.

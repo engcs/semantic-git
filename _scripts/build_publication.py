@@ -210,13 +210,18 @@ def build(root: Path, spec: Path, create_pdf: bool) -> dict[str, Any]:
             raise PublicationError(detail)
 
     manifest = base_manifest(root, spec, sources, digest_text(markdown))
-    if paths["pdf"].is_file():
+    if create_pdf and paths["pdf"].is_file():
         manifest["pdf"] = {
             "path": paths["pdf"].relative_to(root).as_posix(),
             "sha256": digest_file(paths["pdf"], normalize=False),
+            "publication_sha256": digest_text(markdown),
         }
     write_text(paths["manifest"], json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
-    return {"status": "CURRENT", "root": str(root), "manifest": str(paths["manifest"]), "publication": str(paths["markdown"])}
+    status = "STALE" if paths["pdf"].is_file() and not create_pdf else "CURRENT"
+    payload: dict[str, Any] = {"status": status, "root": str(root), "manifest": str(paths["manifest"]), "publication": str(paths["markdown"])}
+    if status == "STALE":
+        payload["reason"] = "PUBLICATION.pdf was not regenerated; run build with --pdf"
+    return payload
 
 
 def check_status(root: Path, spec: Path) -> dict[str, Any]:
@@ -249,6 +254,8 @@ def check_status(root: Path, spec: Path) -> dict[str, Any]:
 
     pdf_entry = manifest.get("pdf")
     if pdf_entry:
+        if pdf_entry.get("publication_sha256") != manifest["publication"].get("sha256"):
+            return {"status": "STALE", "root": str(root), "reason": "PUBLICATION.pdf was generated from an older Markdown publication"}
         if not paths["pdf"].is_file() or digest_file(paths["pdf"], normalize=False) != pdf_entry.get("sha256"):
             return {"status": "DRIFT", "root": str(root), "reason": "PUBLICATION.pdf differs from its manifest"}
     elif paths["pdf"].is_file():

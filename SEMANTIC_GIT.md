@@ -2424,6 +2424,14 @@ merge_gate_identifies_canonical_change_branch_and_destination
 merge_transaction_is_atomic
 local_main_is_authoritative
 publication_is_not_incorporation
+semantic_baseline_reset_is_exceptional
+semantic_baseline_reset_revises_internal_references
+semantic_baseline_reset_preserves_git_history
+semantic_baseline_reset_does_not_remap_external_references
+semantic_baseline_reset_requires_two_approvals
+external_reference_risk_acknowledgment_is_explicit
+interactive_approval_form_is_preferred
+approval_fallback_is_structured
 ```
 
 ### 25.2. Determinístico antes de interpretativo
@@ -2558,6 +2566,88 @@ Esse manifesto:
 - deve ser regenerável;
 - pode acelerar testes e navegação.
 
+### 25.8. Reset excepcional da baseline semântica
+
+O Semantic Git permite uma operação excepcional denominada
+`SEMANTIC_BASELINE_RESET`. Ela substitui a baseline semântica vigente de um
+namespace por um novo R/D/O aprovado e pode reiniciar em `001` as sequências
+locais de Requirements, Decisions e Operations.
+
+O reset:
+
+- mantém a identidade do namespace;
+- não cria época, versão ou identidade adicional;
+- preserva a baseline anterior no histórico Git;
+- não cria aliases ou remapeamento automático para entidades anteriores;
+- não é consequência automática de uma alteração comum de R/D/O.
+
+Depois do reset, as referências da baseline anterior não são referências
+válidas da baseline nova. Uma referência externa antiga pode deixar de ser
+resolvida ou continuar apontando para um documento que perdeu seu significado;
+o Semantic Git não promete localizar, atualizar ou preservar documentos fora do
+repositório.
+
+Antes da execução, a IA deve auditar todas as referências internas conhecidas
+no repositório, incluindo R/D/O, CHANGEs, `approval_scope`, manifests e
+publicações rastreadas. Cada ocorrência deve ser classificada como:
+
+- `ATUALIZADA`;
+- `REMOVIDA`;
+- `HISTÓRICA`;
+- `NÃO RESOLVIDA`.
+
+Referência interna `NÃO RESOLVIDA` bloqueia o reset. Referências históricas
+podem permanecer nos documentos preservados no Git e não devem ser reescritas
+apenas para simular a nova baseline.
+
+O reset exige duas aprovações independentes e separadas:
+
+1. aprovação do novo R/D/O e do reinício dos IDs;
+2. aceitação explícita do risco de ruptura das referências externas.
+
+A segunda aprovação deve declarar que referências em outros repositórios,
+documentos publicados, documentos impressos ou cópias distribuídas podem
+perder a resolução. A aprovação deve reconhecer que o histórico Git será
+preservado, mas não haverá remapeamento automático.
+
+Uma confirmação suficiente deve declarar, de forma equivalente:
+
+```text
+Confirmo que o reset pode invalidar referências externas, inclusive em
+documentos publicados ou impressos. O histórico Git será preservado, mas não
+haverá remapeamento automático das referências antigas.
+```
+
+Uma CHANGE de reset deve capturar a baseline anterior, o resultado aprovado e
+a auditoria das referências internas antes de iniciar a implementação. A
+validação estrutural, a revisão semântica e a RECONCILIATION são obrigatórias
+antes da incorporação.
+
+### 25.9. Formulário interativo de aprovação
+
+Quando o ambiente oferecer formulário interativo, a IA deve utilizá-lo antes
+de qualquer aprovação governada, incluindo aprovação semântica,
+implementação, merge, tag, push e reset.
+
+O formulário deve apresentar, quando aplicável:
+
+- identidade canônica da CHANGE;
+- ação ou transição solicitada;
+- escopo aprovado;
+- branch e destino;
+- riscos e efeitos irreversíveis;
+- confirmação explícita do humano.
+
+O formulário é uma interface de coleta e não uma nova autoridade. Sua resposta
+deve ser registrada como autorização explícita e estruturada. Para um reset,
+as duas aprovações devem ser coletadas separadamente, com a segunda exibindo o
+risco de perda de referências externas.
+
+Se o ambiente não oferecer formulário, a IA deve solicitar confirmação textual
+equivalente contendo os mesmos elementos. Uma resposta vaga, como apenas
+`aprovado`, não substitui a confirmação estruturada quando a operação exigir
+identidade, escopo, destino ou reconhecimento de risco.
+
 ---
 
 ## 26. Comportamento esperado da IA
@@ -2596,6 +2686,10 @@ A IA deve:
   autorizações e gates de CHANGE por identidade canônica;
 - aceitar referências relativas quando úteis, mas normalizá-las para identidade absoluta durante validação;
 - não adivinhar referências ambíguas;
+- reconhecer `SEMANTIC_BASELINE_RESET` como operação excepcional e não como alteração comum de R/D/O;
+- auditar referências internas antes de um reset e bloquear ocorrências `NÃO RESOLVIDA`;
+- preservar o histórico Git sem inferir compatibilidade ou remapeamento de referências externas após um reset;
+- coletar cada aprovação governada por formulário interativo quando disponível e usar confirmação textual estruturada quando não estiver;
 - utilizar CHANGE para alterações semânticas materiais posteriores à existência
   do namespace;
 - capturar `base_commit` ao criar CHANGE em fluxo Git;
@@ -3050,6 +3144,13 @@ Humano
 102. `_foundations/` contém suporte que não constitui uma nova dimensão R/D/O; transformações podem ser organizadas em `_foundations/transformations/`.
 103. `_publications/` contém publicações derivadas regeneráveis e não é fonte de verdade semântica.
 104. Neste repositório core, `_applications/` e `_scripts/` são convenções locais para aplicações de contexto e ferramentas executáveis.
+105. `SEMANTIC_BASELINE_RESET` é uma operação excepcional e não uma consequência automática de alteração comum de R/D/O.
+106. O reset mantém a identidade do namespace, pode reiniciar as sequências locais em `001` e não cria época ou identidade adicional.
+107. A baseline anterior permanece recuperável no histórico Git, sem aliases ou remapeamento automático de entidades antigas.
+108. Referências internas devem ser auditadas antes do reset e ocorrências `NÃO RESOLVIDA` bloqueiam sua execução.
+109. O reset exige aprovações separadas para o novo R/D/O e para o risco de ruptura das referências externas.
+110. A aprovação do risco deve reconhecer explicitamente o possível impacto em documentos externos, publicados ou impressos.
+111. Formulário interativo é a interface preferencial para aprovações quando disponível; o fallback textual deve ser estruturado.
 
 ---
 

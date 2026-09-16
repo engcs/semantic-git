@@ -1,6 +1,10 @@
 change: CHANGE-010
-status: DRAFT
+status: APPROVED
 base_commit: 3749b5bbbda46c2f63746f57094ead71fc19ec0d
+approved_semantic_commit: f8e0660b2da3c7ee4368e31c70e8af14b2b4fa8a
+approval_scope:
+  - SEMANTIC_GIT.md
+  - _changes/CHANGE-010.md
 operation: SEMANTIC_BASELINE_RESET
 reason: null
 

@@ -4,12 +4,15 @@
 from __future__ import annotations
 
 import argparse
+import datetime
 import hashlib
+import html
 import json
 import re
 import shutil
 import subprocess
 import sys
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -119,20 +122,155 @@ def demote_headings(text: str, remove_first_h1: bool = False, extra_levels: int 
 
 
 def render_publication(root: Path, texts: dict[str, str]) -> str:
+    display_name = first_heading(texts.get("README.md", "")) or root.name
     lines = [
-        f"# {root.name}",
-        "",
-        "<!-- Generated publication. Do not edit manually. -->",
+        f"# GIT SEMÂNTICO - {display_name.upper()}",
         "",
     ]
 
     if "README.md" in texts:
-        lines.extend(["## README", "", demote_headings(texts["README.md"], extra_levels=2), ""])
+        lines.extend([demote_headings(texts["README.md"], remove_first_h1=True, extra_levels=0), ""])
 
     for filename, label in RDO_SOURCES:
-        lines.extend([f"## {label}", "", demote_headings(texts[filename], remove_first_h1=True), ""])
+        lines.extend(["---", "", demote_headings(texts[filename], extra_levels=0), ""])
 
     return "\n".join(lines).rstrip() + "\n"
+
+
+def first_heading(text: str) -> str:
+    for line in text.splitlines():
+        match = re.fullmatch(r"#(?!#)\s+(.+?)\s*", line)
+        if match:
+            return match.group(1)
+    return ""
+
+
+def publication_slug(value: str) -> str:
+    value = unicodedata.normalize("NFKD", value)
+    value = "".join(char for char in value if not unicodedata.combining(char))
+    return re.sub(r"[^A-Za-z0-9]+", "_", value).strip("_").upper()
+
+
+def pdf_inline(value: str, code_font: str = "PublicationCode") -> str:
+    value = html.escape(value)
+    value = re.sub(r"`([^`]+)`", rf'<font name="{code_font}" color="#9A6B00">\1</font>', value)
+    return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", value)
+
+
+def pdf_font_setup() -> tuple[str, str, str, str]:
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
+    font_directory = Path("C:/Windows/Fonts")
+    definitions = {
+        "PublicationSans": ("segoeui.ttf", "Segoe UI"),
+        "PublicationSans-Bold": ("segoeuib.ttf", "Segoe UI Bold"),
+        "PublicationCode": ("consola.ttf", "Consolas"),
+        "PublicationHeader": ("arial.ttf", "Arial"),
+    }
+    loaded: dict[str, bool] = {}
+    for alias, (filename, _) in definitions.items():
+        path = font_directory / filename
+        if path.is_file():
+            if alias not in pdfmetrics.getRegisteredFontNames():
+                pdfmetrics.registerFont(TTFont(alias, str(path)))
+            loaded[alias] = True
+
+    body = "PublicationSans" if loaded.get("PublicationSans") else "Helvetica"
+    bold = "PublicationSans-Bold" if loaded.get("PublicationSans-Bold") else "Helvetica-Bold"
+    code = "PublicationCode" if loaded.get("PublicationCode") else "Courier"
+    header = "PublicationHeader" if loaded.get("PublicationHeader") else "Helvetica"
+    if body == "PublicationSans" and bold == "PublicationSans-Bold":
+        pdfmetrics.registerFontFamily(body, normal=body, bold=bold)
+    return body, bold, code, header
+
+
+def pdf_source_flowables(text: str, body_style: Any, heading_style: Any, subheading_style: Any, item_style: Any, code_font: str) -> list[Any]:
+    from reportlab.platypus import HRFlowable, Paragraph, Spacer
+
+    result: list[Any] = []
+    heading_count = 0
+    previous_rule: str | None = None
+    for line in text.splitlines():
+        if not line.strip():
+            result.append(Spacer(1, 5.5 if previous_rule == "separator" else 8))
+            previous_rule = None
+            continue
+        if line.strip() == "---":
+            result.append(HRFlowable(width="100%", thickness=2, color="#808080", spaceBefore=7, spaceAfter=0))
+            previous_rule = "separator"
+            continue
+        heading = re.fullmatch(r"#\s+(.+?)\s*", line)
+        if heading:
+            heading_count += 1
+            underline_gap = 14.6 if heading_count == 1 else 9.4
+            result.extend([Paragraph(pdf_inline(heading.group(1), code_font), heading_style), HRFlowable(width="100%", thickness=0.6, color="#000000", spaceBefore=3, spaceAfter=underline_gap)])
+            previous_rule = "heading"
+            continue
+        subheading = re.fullmatch(r"##\s+(.+?)\s*", line)
+        if subheading:
+            result.append(Paragraph(pdf_inline(subheading.group(1), code_font), subheading_style))
+            continue
+        item = re.fullmatch(r"-\s+\*\*([^*]+)\*\*\s+-\s+(.+)", line)
+        if item:
+            result.append(Paragraph(f"<b>{pdf_inline(item.group(1), code_font)}</b> - {pdf_inline(item.group(2), code_font)}", item_style, bulletText="•"))
+            continue
+        result.append(Paragraph(pdf_inline(line, code_font), body_style))
+    return result
+
+
+def write_pdf_reportlab(root: Path, texts: dict[str, str], pdf_path: Path) -> str | None:
+    try:
+        from reportlab.lib import colors
+        from reportlab.lib.enums import TA_LEFT
+        from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+        from reportlab.lib.units import mm
+        from reportlab.pdfgen import canvas
+        from reportlab.platypus import Paragraph, SimpleDocTemplate
+    except ImportError:
+        return None
+
+    body_font, bold_font, code_font, header_font = pdf_font_setup()
+    styles = getSampleStyleSheet()
+    body = ParagraphStyle("PublicationBody", parent=styles["BodyText"], fontName=body_font, fontSize=10.5, leading=16.5, textColor=colors.black, alignment=TA_LEFT, spaceBefore=0, spaceAfter=0)
+    heading = ParagraphStyle("PublicationHeading", parent=styles["Heading1"], fontName=body_font, fontSize=21, leading=25.2, textColor=colors.black, alignment=TA_LEFT, spaceBefore=0, spaceAfter=0)
+    subheading = ParagraphStyle("PublicationSubheading", parent=styles["Heading2"], fontName=body_font, fontSize=15.75, leading=16.5, textColor=colors.black, alignment=TA_LEFT, spaceBefore=1.4, spaceAfter=8.84)
+    item = ParagraphStyle("PublicationItem", parent=body, fontName=body_font, leftIndent=30, firstLineIndent=0, bulletIndent=18, spaceBefore=0, spaceAfter=0)
+
+    display_name = first_heading(texts.get("README.md", "")) or root.name
+    footer_name = f"GIT_SEMANTICO_{publication_slug(display_name)}.md"
+    page_size = (595.92, 841.92)
+
+    class NumberedCanvas(canvas.Canvas):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            super().__init__(*args, **kwargs)
+            self.saved_pages: list[dict[str, Any]] = []
+
+        def showPage(self) -> None:
+            self.saved_pages.append(dict(self.__dict__))
+            self._startPage()
+
+        def save(self) -> None:
+            total = len(self.saved_pages)
+            for state in self.saved_pages:
+                self.__dict__.update(state)
+                self.saveState()
+                self.setFillColor(colors.black)
+                self.setFont(header_font, 6.75)
+                self.drawString(10 * mm, page_size[1] - 20, footer_name)
+                self.drawRightString(page_size[0] - 10 * mm, page_size[1] - 20, datetime.date.today().isoformat())
+                self.drawCentredString(page_size[0] / 2, 17, f"{self._pageNumber} / {total}")
+                self.restoreState()
+                super().showPage()
+            super().save()
+
+    publication = render_publication(root, texts)
+    story = pdf_source_flowables(publication, body, heading, subheading, item, code_font)
+
+    pdf_path.parent.mkdir(parents=True, exist_ok=True)
+    document = SimpleDocTemplate(str(pdf_path), pagesize=page_size, rightMargin=13 * mm, leftMargin=13 * mm, topMargin=15 * mm, bottomMargin=8 * mm)
+    document.build(story, canvasmaker=NumberedCanvas)
+    return "reportlab"
 
 
 def run_validator(root: Path, spec: Path) -> dict[str, Any]:
@@ -189,8 +327,6 @@ def build(root: Path, spec: Path, create_pdf: bool) -> dict[str, Any]:
     run_validator(root, spec)
     if not spec.is_file():
         raise PublicationError(f"normative spec is missing: {spec}")
-    if create_pdf and shutil.which("pandoc") is None:
-        raise PublicationError("--pdf requested but pandoc is not available")
 
     texts, sources = source_texts(root)
     markdown = render_publication(root, texts)
@@ -198,16 +334,23 @@ def build(root: Path, spec: Path, create_pdf: bool) -> dict[str, Any]:
     paths["directory"].mkdir(parents=True, exist_ok=True)
     write_text(paths["markdown"], markdown)
 
+    pdf_engine: str | None = None
     if create_pdf:
-        result = subprocess.run(
-            [shutil.which("pandoc") or "pandoc", str(paths["markdown"]), "-o", str(paths["pdf"])],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            detail = result.stderr.strip() or result.stdout.strip() or "pandoc failed"
-            raise PublicationError(detail)
+        pdf_engine = write_pdf_reportlab(root, texts, paths["pdf"])
+        if pdf_engine is None:
+            pandoc = shutil.which("pandoc")
+            if pandoc is None:
+                raise PublicationError("--pdf requested but reportlab and pandoc are unavailable")
+            result = subprocess.run(
+                [pandoc, str(paths["markdown"]), "-o", str(paths["pdf"])],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if result.returncode != 0:
+                detail = result.stderr.strip() or result.stdout.strip() or "pandoc failed"
+                raise PublicationError(detail)
+            pdf_engine = "pandoc"
 
     manifest = base_manifest(root, spec, sources, digest_text(markdown))
     if create_pdf and paths["pdf"].is_file():
@@ -215,6 +358,7 @@ def build(root: Path, spec: Path, create_pdf: bool) -> dict[str, Any]:
             "path": paths["pdf"].relative_to(root).as_posix(),
             "sha256": digest_file(paths["pdf"], normalize=False),
             "publication_sha256": digest_text(markdown),
+            "engine": pdf_engine,
         }
     write_text(paths["manifest"], json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
     status = "STALE" if paths["pdf"].is_file() and not create_pdf else "CURRENT"
@@ -276,7 +420,7 @@ def parse_args() -> argparse.Namespace:
 
     build_parser = commands.add_parser("build", help="generate the publication")
     add_root_and_spec(build_parser)
-    build_parser.add_argument("--pdf", action="store_true", help="also convert with pandoc")
+    build_parser.add_argument("--pdf", action="store_true", help="also generate the PDF")
 
     status_parser = commands.add_parser("status", help="check publication freshness")
     add_root_and_spec(status_parser)

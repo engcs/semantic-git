@@ -1,6 +1,11 @@
 change: CHANGE-009
-status: DRAFT
+status: APPROVED
 base_commit: 11a885ce1365839b711ef3eca5f7e7fd4f59cc92
+approved_semantic_commit: de2a72576245375fc4aaac94a380a1accdc6e2ca
+approval_scope:
+  - SEMANTIC_GIT.md
+  - AGENTS.md
+  - changes/CHANGE-009.md
 reason: null
 
 # CHANGE-009

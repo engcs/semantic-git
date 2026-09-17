@@ -2229,6 +2229,115 @@ dependências laterais somente quando necessárias
 
 A IA deve buscar mais contexto quando necessário, não antecipadamente por padrão.
 
+### 24.4. Execution Protocol
+
+Toda tarefa com possibilidade de escrita governada, transição de estado,
+aprovação, implementação, reconciliação, merge, tag, release ou publicação deve
+seguir esta sequência antes de executar a ação correspondente:
+
+```text
+intenção
+    ↓
+namespace e AS-IS aplicáveis
+    ↓
+CHANGE e estado efetivos
+    ↓
+autorização aplicável
+    ↓
+preflight objetivo
+    ↓
+ações permitidas
+    ↓
+execução limitada
+    ↓
+autoauditoria
+    ↓
+evidências
+    ↓
+próximo gate
+```
+
+A ordem é obrigatória. Uma etapa pode ser classificada como não aplicável quando
+houver evidência suficiente para essa conclusão; não pode ser simplesmente
+omitida por conveniência.
+
+Antes de interpretar significado, a IA deve verificar primeiro todos os fatos
+decidíveis por Git, filesystem, identidade, caminho, metadados ou referência que
+sejam necessários à ação pretendida. A ausência de automação dedicada não
+elimina essa obrigação: a verificação pode ser realizada manualmente com as
+ferramentas disponíveis, mas deve identificar a evidência observada.
+
+O preflight deve determinar, conforme aplicável:
+
+- Semantic Namespace controlador;
+- identidade canônica da CHANGE;
+- branch corrente e branch esperada;
+- estado efetivo da CHANGE;
+- `base_commit`;
+- `approved_semantic_commit` e `approval_scope` quando exigidos;
+- autorização humana correspondente à ação pretendida;
+- escopo de escrita permitido;
+- drift material conhecido;
+- dependências ou conflitos relevantes.
+
+Ações executáveis são consequência do estado, das autorizações e das evidências
+confirmadas. A IA não deve ampliar o escopo de escrita porque a intenção humana
+parece compatível nem inferir autorização ausente a partir de uma autorização
+diferente.
+
+Depois de qualquer escrita governada e antes de declarar conclusão, a IA deve
+realizar autoauditoria. Conforme aplicável, confrontar:
+
+- Semantic Diff aprovado versus resultado produzido;
+- Git Diff versus transformação declarada;
+- Requirements, Decisions e Operations afetados;
+- Requirements ancestrais aplicáveis;
+- integridade de referências e aliases;
+- escopo aprovado versus arquivos efetivamente alterados;
+- drift da `main` ou do contrato aprovado;
+- dependências e CHANGEs concorrentes relevantes;
+- presença de `FAIL` ou `REVIEW` impeditivo.
+
+Para RECONCILIATION, cada condição obrigatória da seção 19 deve ser confirmada
+ou explicitamente classificada como não aplicável. Uma condição necessária que
+não puder ser verificada não pode ser presumida como satisfeita.
+
+Resultados de sucesso críticos, incluindo `PASS`, `RECONCILED` e `READY`, devem
+ser acompanhados por evidências mínimas suficientes para que outra pessoa ou
+agente compreenda por que o resultado foi alcançado. O relatório deve conter,
+quando aplicável:
+
+```text
+result:
+change:
+branch:
+state:
+base_commit:
+approved_semantic_commit:
+approval_scope:
+checked:
+  - <fato verificado + fonte da evidência>
+pending:
+  - <condição não resolvida>
+next_gate:
+```
+
+No pre-merge, o relatório deve incluir também `main_head`, `candidate_head` e o
+snapshot final aplicável. Campos não aplicáveis podem ser omitidos. Campos
+obrigatórios não verificados não podem ser preenchidos por inferência.
+
+Se uma condição obrigatória não puder ser confirmada, o agente deve produzir o
+resultado canônico correspondente (`REVIEW`, `FAIL`, `IMPLEMENTATION_BLOCKED`,
+`MERGE_BLOCKED`, `RELEASE_BLOCKED` ou `PUBLICATION_BLOCKED`) e interromper a
+transição que dependa dela. O simples fato de um campo de estado já estar
+escrito no documento não constitui evidência suficiente para a condição que ele
+representa.
+
+Este protocolo não cria novos estados, novas autorizações nem uma fonte de
+verdade adicional. Ele define a ordem mínima de execução das regras já
+estabelecidas nesta especificação e permanece subordinado às regras específicas
+dos gates correspondentes.
+
 ---
 
 ## 25. Testes de conformidade
@@ -3151,6 +3260,10 @@ Humano
 109. O reset exige aprovações separadas para o novo R/D/O e para o risco de ruptura das referências externas.
 110. A aprovação do risco deve reconhecer explicitamente o possível impacto em documentos externos, publicados ou impressos.
 111. Formulário interativo é a interface preferencial para aprovações quando disponível; o fallback textual deve ser estruturado.
+112. Toda tarefa com possibilidade de escrita governada ou transição deve aplicar o Execution Protocol da seção 24.4 antes da ação correspondente.
+113. Condição obrigatória não verificada não pode ser presumida como satisfeita; deve resultar em REVIEW, FAIL ou bloqueio aplicável.
+114. Resultados críticos de sucesso devem ser sustentados por evidências explícitas suficientes para reconstruir a conclusão.
+115. Mesmo sem automação dedicada, fatos verificáveis por Git, filesystem, identidade, caminho, metadados ou referência devem ser verificados antes de julgamento semântico por IA.
 
 ---
 

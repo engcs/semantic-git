@@ -1,6 +1,10 @@
 change: CHANGE-013
-status: DRAFT
+status: IN_PROGRESS
 base_commit: f84c5c88f7d3587f4e15d66df638d7d4eb8456cc
+approved_semantic_commit: 31fed7efae85e53428111d8cadf6e9db2f743a27
+approval_scope:
+  - _changes/CHANGE-013.md
+operation: REFINE_EXECUTION_PROTOCOL
 reason: null
 
 # CHANGE-013

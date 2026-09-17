@@ -1,6 +1,9 @@
 change: CHANGE-014
-status: DRAFT
+status: APPROVED
 base_commit: 2bafd8c8b5279c8c1ed8e887d46d20d13ac137a5
+approved_semantic_commit: 0b87a643cc5eddcfdb5a15dd19a9507df0e5b64b
+approval_scope:
+  - _changes/CHANGE-014.md
 depends_on:
   - root:CHANGE-013
 reason: null

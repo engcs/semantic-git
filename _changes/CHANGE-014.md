@@ -1,5 +1,5 @@
 change: CHANGE-014
-status: IN_PROGRESS
+status: RECONCILED
 base_commit: 2bafd8c8b5279c8c1ed8e887d46d20d13ac137a5
 approved_semantic_commit: 0b87a643cc5eddcfdb5a15dd19a9507df0e5b64b
 approval_scope:
@@ -30,3 +30,12 @@ reason: null
 - **ADD O-B** - Orientar a skill a investigar evidências, classificar cada achado, formar propósito, fatos, variáveis, população, regras e recortes, subtrair herança e eliminar detalhes substituíveis antes de escrever R/D/O ou CHANGE.
 - **ADD O-C** - Incluir critérios negativos para impedir que lineage, caminhos, tabelas, colunas, flags, SQL, debug e outros detalhes físicos sejam promovidos por padrão ao contrato.
 - **ADD O-D** - Validar a skill por cenários contrastantes de extração mecânica e extração semanticamente econômica, verificando fidelidade, concisão e utilidade humana.
+
+## Validation Evidence
+
+- A skill declara compatibilidade com Semantic Git 1.5 e mantém `SEMANTIC_GIT.md` como única autoridade normativa.
+- A implementação separa mapa de evidências, classificação semântica e contrato persistente; aplica subtração, gates de compressão e o gate canônico R/D/O.
+- Os cenários contrastantes rejeitam inventário técnico como contrato e aceitam síntese semântica somente após os gates.
+- Revisão independente restrita concluiu `PASS`, sem achados remanescentes.
+- `validate_structure.py`, validação de frontmatter UTF-8 e `git diff --check` concluíram com `PASS`.
+- O Git Diff está restrito a esta CHANGE e a `.opencode/skills/semantic-extraction/SKILL.md`.

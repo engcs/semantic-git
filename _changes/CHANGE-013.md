@@ -1,5 +1,5 @@
 change: CHANGE-013
-status: IN_PROGRESS
+status: RECONCILED
 base_commit: f84c5c88f7d3587f4e15d66df638d7d4eb8456cc
 approved_semantic_commit: 31fed7efae85e53428111d8cadf6e9db2f743a27
 approval_scope:
@@ -42,3 +42,45 @@ reason: null
 - O protocolo continua compatível com os gates e estados já definidos no Semantic Git 1.5.
 - Nenhum script, workflow ou automação é adicionado.
 - Três simulações independentes demonstram comportamento aderente ou expõem desvios de forma explícita.
+
+## Validation Evidence
+
+### Scenario 1 - implementação explicitamente autorizada
+
+Entrada simulada:
+
+- CHANGE em `APPROVED` com identidade canônica conhecida;
+- branch, `base_commit`, `approved_semantic_commit` e `approval_scope` verificáveis;
+- autorização explícita de implementação vinculada à identidade canônica;
+- ausência de drift material.
+
+Resultado esperado e observado pelo protocolo: `PASS` no gate de implementação. A execução pode avançar somente ao escopo aprovado e não recebe autorização implícita para merge, tag, release ou push. O relatório de evidências permanece obrigatório.
+
+### Scenario 2 - pedido ambíguo para prosseguir
+
+Entrada simulada:
+
+- CHANGE em `APPROVED`;
+- solicitação humana limitada a `pode seguir`, sem identidade canônica inequívoca da CHANGE na autorização;
+- possibilidade de mais de uma CHANGE ou de ação operacional distinta.
+
+Resultado esperado e observado pelo protocolo: `IMPLEMENTATION_BLOCKED`. Nenhuma escrita de implementação deve ocorrer. O agente deve registrar a autorização ausente ou ambígua em `pending` e manter o próximo gate dependente de confirmação explícita.
+
+### Scenario 3 - reconciliação com referência órfã
+
+Entrada simulada:
+
+- implementação materializa a remoção de `domain:R-017`;
+- `domain:D-004` permanece referenciando `domain:R-017`;
+- solicitação pede reconciliação e preparação para merge.
+
+Resultado esperado e observado pelo protocolo: `FAIL` determinístico de integridade referencial. A CHANGE não pode ser declarada `RECONCILED` nem `READY`; a inconsistência deve ser corrigida ou o contrato semântico deve retornar ao estado aplicável.
+
+### Reconciliation Summary
+
+- Semantic Diff aprovado corresponde às alterações introduzidas em `SEMANTIC_GIT.md` e `AGENTS.md`.
+- O Git Diff da branch permanece restrito a `SEMANTIC_GIT.md`, `AGENTS.md` e esta CHANGE.
+- Nenhum script, workflow ou automação foi adicionado.
+- `AGENTS.md` referencia o Execution Protocol normativo e os gates já existentes, sem criar autoridade paralela.
+- As três simulações produziram resultados coerentes com os gates existentes e não apresentaram falso sucesso nos cenários de autorização ambígua ou inconsistência referencial.
+- Não há `REVIEW` ou `FAIL` pendente identificado para esta implementação.

@@ -38,6 +38,20 @@ Antes de declarar `RECONCILED`, `READY`, `PASS` ou outro resultado de sucesso,
 apresente as evidências mínimas previstas na seção 24.4. O status escrito no
 arquivo nunca substitui a verificação das condições que o sustentam.
 
+## Human CHANGE Summary
+
+Ao criar um CHANGE ou apresentá-lo pela primeira vez ao humano, forneça antes
+dos detalhes extensos um resumo sintético em linguagem natural que diga o que a
+mudança pretende fazer e seu efeito principal.
+
+Prefira um ou dois períodos corridos. Não transforme o resumo em lista do
+Semantic Diff nem repita item a item Requirements, Decisions ou Operations.
+Use bullets somente quando eles realmente tornarem a compreensão mais clara.
+
+Esse resumo é uma saída de interação humano–IA. Ele não cria campo canônico no
+CHANGE, não substitui o Semantic Diff e não deve ser tratado como nova fonte de
+verdade.
+
 ## Context Loading
 
 Ao iniciar uma tarefa:

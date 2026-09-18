@@ -27,6 +27,29 @@ SCRIPT_PATH = Path(__file__).resolve()
 HEADING_RE = re.compile(r"^(#{1,6})(\s+.*)$")
 H1_RE = re.compile(r"^#(?!#)\s+")
 
+PDF_THEMES = {
+    "blue": {
+        "body": "#263648",
+        "heading": "#102A56",
+        "namespace": "#1D2D45",
+        "subheading": "#1F78C8",
+        "source": "#6B7C8F",
+        "divider": "#9BB7D4",
+        "separator": "#88A8C8",
+        "code": "#315F93",
+    },
+    "mono": {
+        "body": "#000000",
+        "heading": "#000000",
+        "namespace": "#202020",
+        "subheading": "#202020",
+        "source": "#555555",
+        "divider": "#8A8A8A",
+        "separator": "#707070",
+        "code": "#333333",
+    },
+}
+
 
 class PublicationError(Exception):
     pass
@@ -83,6 +106,27 @@ def publication_paths(root: Path) -> dict[str, Path]:
     }
 
 
+def repository_root(root: Path) -> Path:
+    result = subprocess.run(
+        ["git", "-C", str(root), "rev-parse", "--show-toplevel"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise PublicationError("cannot resolve the Semantic Repository root")
+    return Path(result.stdout.strip()).resolve()
+
+
+def namespace_path(root: Path) -> str:
+    semantic_root = repository_root(root)
+    try:
+        relative = root.resolve().relative_to(semantic_root)
+    except ValueError as error:
+        raise PublicationError("namespace root is outside the Semantic Repository") from error
+    return "root" if relative == Path(".") else relative.as_posix()
+
+
 def source_texts(root: Path) -> tuple[dict[str, str], list[dict[str, str]]]:
     texts: dict[str, str] = {}
     sources: list[dict[str, str]] = []
@@ -122,9 +166,9 @@ def demote_headings(text: str, remove_first_h1: bool = False, extra_levels: int 
 
 
 def render_publication(root: Path, texts: dict[str, str]) -> str:
-    display_name = first_heading(texts.get("README.md", "")) or root.name
     lines = [
-        f"# GIT SEMÂNTICO - {display_name.upper()}",
+        "# GIT SEMÂNTICO:",
+        namespace_path(root),
         "",
     ]
 
@@ -132,7 +176,15 @@ def render_publication(root: Path, texts: dict[str, str]) -> str:
         lines.extend([demote_headings(texts["README.md"], remove_first_h1=True, extra_levels=0), ""])
 
     for filename, label in RDO_SOURCES:
-        lines.extend(["---", "", demote_headings(texts[filename], extra_levels=0), ""])
+        rendered = demote_headings(texts[filename], extra_levels=0)
+        rendered = re.sub(
+            r"^#\s+(Requirements|Decisions|Operations)\s+-\s+.+$",
+            lambda match: f"# {match.group(1)}",
+            rendered,
+            count=1,
+            flags=re.MULTILINE,
+        )
+        lines.extend(["---", "", rendered, ""])
 
     return "\n".join(lines).rstrip() + "\n"
 
@@ -151,9 +203,9 @@ def publication_slug(value: str) -> str:
     return re.sub(r"[^A-Za-z0-9]+", "_", value).strip("_").upper()
 
 
-def pdf_inline(value: str, code_font: str = "PublicationCode") -> str:
+def pdf_inline(value: str, code_font: str = "PublicationCode", code_color: str = "#315F93") -> str:
     value = html.escape(value)
-    value = re.sub(r"`([^`]+)`", rf'<font name="{code_font}" color="#9A6B00">\1</font>', value)
+    value = re.sub(r"`([^`]+)`", rf'<font name="{code_font}" color="{code_color}">\1</font>', value)
     return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", value)
 
 
@@ -185,7 +237,17 @@ def pdf_font_setup() -> tuple[str, str, str, str]:
     return body, bold, code, header
 
 
-def pdf_source_flowables(text: str, body_style: Any, heading_style: Any, subheading_style: Any, item_style: Any, code_font: str) -> list[Any]:
+def pdf_source_flowables(
+    text: str,
+    body_style: Any,
+    heading_style: Any,
+    namespace_style: Any,
+    subheading_style: Any,
+    item_style: Any,
+    code_font: str,
+    theme: dict[str, str],
+) -> list[Any]:
+    from reportlab.lib import colors
     from reportlab.platypus import HRFlowable, Paragraph, Spacer
 
     result: list[Any] = []
@@ -197,29 +259,40 @@ def pdf_source_flowables(text: str, body_style: Any, heading_style: Any, subhead
             previous_rule = None
             continue
         if line.strip() == "---":
-            result.append(HRFlowable(width="100%", thickness=2, color="#808080", spaceBefore=7, spaceAfter=0))
+            result.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor(theme["separator"]), spaceBefore=7, spaceAfter=0))
             previous_rule = "separator"
             continue
         heading = re.fullmatch(r"#\s+(.+?)\s*", line)
         if heading:
             heading_count += 1
             underline_gap = 14.6 if heading_count == 1 else 9.4
-            result.extend([Paragraph(pdf_inline(heading.group(1), code_font), heading_style), HRFlowable(width="100%", thickness=0.6, color="#000000", spaceBefore=3, spaceAfter=underline_gap)])
+            result.extend([
+                Paragraph(pdf_inline(heading.group(1), code_font, theme["code"]), heading_style),
+                HRFlowable(width="100%", thickness=0.6, color=colors.HexColor(theme["divider"]), spaceBefore=3, spaceAfter=underline_gap),
+            ])
             previous_rule = "heading"
+            continue
+        if heading_count == 1 and previous_rule == "heading":
+            result.append(Paragraph(pdf_inline(line, code_font, theme["code"]), namespace_style))
+            previous_rule = "namespace"
             continue
         subheading = re.fullmatch(r"##\s+(.+?)\s*", line)
         if subheading:
-            result.append(Paragraph(pdf_inline(subheading.group(1), code_font), subheading_style))
+            result.append(Paragraph(pdf_inline(subheading.group(1), code_font, theme["code"]), subheading_style))
             continue
         item = re.fullmatch(r"-\s+\*\*([^*]+)\*\*\s+-\s+(.+)", line)
         if item:
-            result.append(Paragraph(f"<b>{pdf_inline(item.group(1), code_font)}</b> - {pdf_inline(item.group(2), code_font)}", item_style, bulletText="•"))
+            result.append(Paragraph(
+                f"<b>{pdf_inline(item.group(1), code_font, theme['code'])}</b> - {pdf_inline(item.group(2), code_font, theme['code'])}",
+                item_style,
+                bulletText="•",
+            ))
             continue
-        result.append(Paragraph(pdf_inline(line, code_font), body_style))
+        result.append(Paragraph(pdf_inline(line, code_font, theme["code"]), body_style))
     return result
 
 
-def write_pdf_reportlab(root: Path, texts: dict[str, str], pdf_path: Path) -> str | None:
+def write_pdf_reportlab(root: Path, texts: dict[str, str], pdf_path: Path, theme_name: str) -> str | None:
     try:
         from reportlab.lib import colors
         from reportlab.lib.enums import TA_LEFT
@@ -230,16 +303,36 @@ def write_pdf_reportlab(root: Path, texts: dict[str, str], pdf_path: Path) -> st
     except ImportError:
         return None
 
+    theme = PDF_THEMES[theme_name]
     body_font, bold_font, code_font, header_font = pdf_font_setup()
     styles = getSampleStyleSheet()
-    body = ParagraphStyle("PublicationBody", parent=styles["BodyText"], fontName=body_font, fontSize=10.5, leading=16.5, textColor=colors.black, alignment=TA_LEFT, spaceBefore=0, spaceAfter=0)
-    heading = ParagraphStyle("PublicationHeading", parent=styles["Heading1"], fontName=body_font, fontSize=21, leading=25.2, textColor=colors.black, alignment=TA_LEFT, spaceBefore=0, spaceAfter=0)
-    subheading = ParagraphStyle("PublicationSubheading", parent=styles["Heading2"], fontName=body_font, fontSize=15.75, leading=16.5, textColor=colors.black, alignment=TA_LEFT, spaceBefore=1.4, spaceAfter=8.84)
-    item = ParagraphStyle("PublicationItem", parent=body, fontName=body_font, leftIndent=30, firstLineIndent=0, bulletIndent=18, spaceBefore=0, spaceAfter=0)
+    body = ParagraphStyle("PublicationBody", parent=styles["BodyText"], fontName=body_font, fontSize=9.5, leading=14.5, textColor=colors.HexColor(theme["body"]), alignment=TA_LEFT, spaceBefore=0, spaceAfter=0)
+    heading = ParagraphStyle("PublicationHeading", parent=styles["Heading1"], fontName=body_font, fontSize=17, leading=20.5, textColor=colors.HexColor(theme["heading"]), alignment=TA_LEFT, spaceBefore=0, spaceAfter=0)
+    namespace = ParagraphStyle("PublicationNamespace", parent=body, fontName=body_font, fontSize=10.5, leading=14, textColor=colors.HexColor(theme["namespace"]), alignment=TA_LEFT, spaceBefore=0, spaceAfter=0)
+    subheading = ParagraphStyle("PublicationSubheading", parent=styles["Heading2"], fontName=body_font, fontSize=13, leading=14.5, textColor=colors.HexColor(theme["subheading"]), alignment=TA_LEFT, spaceBefore=1.4, spaceAfter=7.5)
+    item = ParagraphStyle("PublicationItem", parent=body, fontName=body_font, leftIndent=28, firstLineIndent=0, bulletIndent=16, spaceBefore=0, spaceAfter=8)
+    source_style = ParagraphStyle(
+        "PublicationSource",
+        parent=styles["BodyText"],
+        fontName=header_font,
+        fontSize=6.25,
+        leading=7.5,
+        textColor=colors.HexColor(theme["source"]),
+        alignment=TA_LEFT,
+        splitLongWords=1,
+        wordWrap="CJK",
+        spaceBefore=0,
+        spaceAfter=0,
+    )
 
-    display_name = first_heading(texts.get("README.md", "")) or root.name
-    footer_name = f"GIT_SEMANTICO_{publication_slug(display_name)}.md"
+    source_path = str(publication_paths(root)["markdown"].resolve())
+    source_path_wrapped = html.escape(source_path).replace("\\", "\\&#8203;").replace("/", "/&#8203;")
+    source_markup = f"Fonte da publicação: {source_path_wrapped}"
     page_size = (595.92, 841.92)
+    source_width = page_size[0] - 20 * mm
+    source_probe = Paragraph(source_markup, source_style)
+    _, source_height = source_probe.wrap(source_width, 40 * mm)
+    top_margin = max(15 * mm, source_height + 30)
 
     class NumberedCanvas(canvas.Canvas):
         def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -255,20 +348,22 @@ def write_pdf_reportlab(root: Path, texts: dict[str, str], pdf_path: Path) -> st
             for state in self.saved_pages:
                 self.__dict__.update(state)
                 self.saveState()
-                self.setFillColor(colors.black)
+                self.setFillColor(colors.HexColor(theme["source"]))
                 self.setFont(header_font, 6.75)
-                self.drawString(10 * mm, page_size[1] - 20, footer_name)
-                self.drawRightString(page_size[0] - 10 * mm, page_size[1] - 20, datetime.date.today().isoformat())
+                self.drawRightString(page_size[0] - 10 * mm, page_size[1] - 14, datetime.date.today().isoformat())
+                source = Paragraph(source_markup, source_style)
+                _, current_source_height = source.wrap(source_width, 40 * mm)
+                source.drawOn(self, 10 * mm, page_size[1] - 22 - current_source_height)
                 self.drawCentredString(page_size[0] / 2, 17, f"{self._pageNumber} / {total}")
                 self.restoreState()
                 super().showPage()
             super().save()
 
     publication = render_publication(root, texts)
-    story = pdf_source_flowables(publication, body, heading, subheading, item, code_font)
+    story = pdf_source_flowables(publication, body, heading, namespace, subheading, item, code_font, theme)
 
     pdf_path.parent.mkdir(parents=True, exist_ok=True)
-    document = SimpleDocTemplate(str(pdf_path), pagesize=page_size, rightMargin=13 * mm, leftMargin=13 * mm, topMargin=15 * mm, bottomMargin=8 * mm)
+    document = SimpleDocTemplate(str(pdf_path), pagesize=page_size, rightMargin=13 * mm, leftMargin=13 * mm, topMargin=top_margin, bottomMargin=8 * mm)
     document.build(story, canvasmaker=NumberedCanvas)
     return "reportlab"
 
@@ -323,7 +418,7 @@ def manifest_matches_current(manifest: dict[str, Any], expected: dict[str, Any])
     return True
 
 
-def build(root: Path, spec: Path, create_pdf: bool) -> dict[str, Any]:
+def build(root: Path, spec: Path, create_pdf: bool, theme_name: str) -> dict[str, Any]:
     run_validator(root, spec)
     if not spec.is_file():
         raise PublicationError(f"normative spec is missing: {spec}")
@@ -336,8 +431,10 @@ def build(root: Path, spec: Path, create_pdf: bool) -> dict[str, Any]:
 
     pdf_engine: str | None = None
     if create_pdf:
-        pdf_engine = write_pdf_reportlab(root, texts, paths["pdf"])
+        pdf_engine = write_pdf_reportlab(root, texts, paths["pdf"], theme_name)
         if pdf_engine is None:
+            if theme_name != "mono":
+                raise PublicationError("--theme blue requires reportlab; pandoc fallback cannot preserve the selected palette")
             pandoc = shutil.which("pandoc")
             if pandoc is None:
                 raise PublicationError("--pdf requested but reportlab and pandoc are unavailable")
@@ -359,6 +456,7 @@ def build(root: Path, spec: Path, create_pdf: bool) -> dict[str, Any]:
             "sha256": digest_file(paths["pdf"], normalize=False),
             "publication_sha256": digest_text(markdown),
             "engine": pdf_engine,
+            "theme": theme_name,
         }
     write_text(paths["manifest"], json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
     status = "STALE" if paths["pdf"].is_file() and not create_pdf else "CURRENT"
@@ -421,6 +519,7 @@ def parse_args() -> argparse.Namespace:
     build_parser = commands.add_parser("build", help="generate the publication")
     add_root_and_spec(build_parser)
     build_parser.add_argument("--pdf", action="store_true", help="also generate the PDF")
+    build_parser.add_argument("--theme", choices=tuple(PDF_THEMES), default="blue", help="PDF color theme; default: blue")
 
     status_parser = commands.add_parser("status", help="check publication freshness")
     add_root_and_spec(status_parser)
@@ -446,7 +545,7 @@ def main() -> int:
     spec = Path(args.spec).expanduser().resolve() if args.spec else root / "SEMANTIC_GIT.md"
 
     try:
-        payload = build(root, spec, args.pdf) if args.command == "build" else check_status(root, spec)
+        payload = build(root, spec, args.pdf, args.theme) if args.command == "build" else check_status(root, spec)
     except (OSError, PublicationError) as error:
         payload = {"status": "INVALID", "root": str(root), "reason": str(error)}
 

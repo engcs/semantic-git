@@ -44,13 +44,21 @@ not behavior
 
 Remove SQL, tables, fields, aliases, pipeline stages and incidental architecture while preserving purpose, population, contribution rules, temporal boundaries, recuts, formulas, aggregation behavior and material edge cases.
 
-## Capability note
+## Capability advisory
 
-Reconstruction can often be performed efficiently by a general capable model because much of the work is evidence collection, dependency following and deterministic synthesis.
+Semantic reconstruction can be reasoning-intensive because it may require tracing distributed evidence, resolving dependencies and aliases, isolating semantic versions, synthesizing multiple physical conditions into one business rule, and deciding whether uncertainty is genuine or merely under-investigated.
 
-Do not assume a specific vendor or model family. Do not block execution because the current model is optimized for speed or cost.
+A skill cannot assume that it can change the runtime model. Model selection belongs to the host, agent, command or human operating the environment.
 
-When the result is intended for durable promotion, preserve enough evidence and structure for a later `semantic-conceptual-review`, which benefits more strongly from high-capability reasoning.
+Do not block execution solely because the current model is optimized for speed or cost. For simple or well-localized implementations, a general capable model may be sufficient.
+
+For materially complex implementations, especially when rules are distributed, version boundaries are subtle, or many `REVIEW` items are emerging, recommend a stronger reasoning configuration before treating the reconstruction as sufficiently exhaustive.
+
+When capability is unknown and the task is materially complex, emit this short advisory before deep reconstruction:
+
+> **Capability advisory:** this reconstruction involves distributed or ambiguous implementation evidence and may benefit materially from a higher-capability reasoning model. Continue here if desired, or switch to a stronger reasoning configuration to reduce missed dependencies, shallow synthesis, and premature `REVIEW`.
+
+Do not name a provider or model family in persistent skill logic. Preserve enough evidence and structure for later `semantic-conceptual-review`, which benefits even more strongly from high-capability reasoning.
 
 ## 1. Establish the semantic target
 

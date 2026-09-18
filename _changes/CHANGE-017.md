@@ -1,5 +1,5 @@
 change: CHANGE-017
-status: IN_PROGRESS
+status: RECONCILED
 base_commit: 2f423a975ac71af1f4a1adda6c0798ae99dcd035
 approved_semantic_commit: ce5283493815ae05f646ad2fe9062c0e1f1ca12f
 approval_scope:
@@ -34,3 +34,24 @@ reason: null
 - **ADD O-C** - Na revisão conceitual, formar primeiro uma explicação coerente do domínio em linguagem humana e somente depois produzir o R/D/O revisado.
 - **ADD O-D** - Implementar orientação de capacidade independente de modelo: recomendar um modelo/configuração de alta capacidade de raciocínio para revisão conceitual, sem assumir que a skill pode trocar o modelo em execução.
 - **ADD O-E** - Validar descoberta e compatibilidade das três skills verificando caminho, identificador, frontmatter reconhecido, descrições não sobrepostas, handoffs e ausência de dependência em modelo específico.
+
+## Validation Evidence
+
+- A branch parte exatamente de `main` em `2f423a975ac71af1f4a1adda6c0798ae99dcd035`, está à frente e não está atrás da base.
+- O conjunto contém exatamente as três responsabilidades semânticas pretendidas: `semantic-extraction`, `semantic-reconstruction` e `semantic-conceptual-review`.
+- `semantic-extraction` agora se anuncia para conhecimento já expresso em fontes humanas e encaminha engenharia reversa de implementação para `semantic-reconstruction`, removendo a principal sobreposição de descoberta entre as duas skills.
+- `semantic-reconstruction` preserva behavioral closure, isolamento de versão semântica, síntese determinística, subtração de herança, testes de reconstrução/reimplementação e passa a produzir explicitamente um pacote de handoff para revisão conceitual.
+- `semantic-conceptual-review` recebe candidato, herança, mapa de evidências e fontes originais; forma primeiro uma narrativa conceitual do domínio, pode reabrir evidências, desafia REVIEW prematuro e diferencia KEEP/REWRITE/MERGE/SPLIT/REMOVE/ADD antes de emitir R/D/O revisado.
+- A revisão conceitual não é definida como polimento de prosa e possui gates explícitos de evidência, elevação conceitual, leitura humana, reconstrução, reimplementação e não regressão.
+- Os três arquivos usam caminhos e identificadores distintos e compatíveis com descoberta por skill; os frontmatters usam apenas campos portáveis já utilizados pelo projeto (`name`, `description`, `compatibility`).
+- Nenhuma skill contém seleção automática, nome de fornecedor ou família específica de LLM. A revisão conceitual contém um `Capability advisory` que recomenda ao humano uma configuração de alta capacidade de raciocínio quando aplicável, sem bloquear execução.
+- A seleção de modelo fica fora da skill e pode ser feita pelo host/agente/comando; portanto não foi introduzido campo `model` não interpretado no frontmatter.
+- O diff da branch permanece limitado às três skills e a esta CHANGE; nenhum R/D/O de domínio, benchmark ou referência específica foi incluído.
+
+### Reconciliation Summary
+
+- As três skills possuem fronteiras de responsabilidade e handoffs explícitos.
+- O fluxo de engenharia reversa passa a ser `semantic-reconstruction -> semantic-conceptual-review`, preservando fontes e evidências entre as etapas.
+- O fluxo de conhecimento humano permanece `semantic-extraction`, com revisão conceitual opcional para contratos complexos ou de alto impacto.
+- A orientação de capacidade é host-agnostic e não acopla o repositório a um modelo específico.
+- Não foi identificado FAIL ou REVIEW impeditivo para a incorporação desta suite.

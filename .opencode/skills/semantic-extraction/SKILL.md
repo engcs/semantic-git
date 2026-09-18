@@ -1,35 +1,53 @@
 ---
 name: semantic-extraction
-description: Use when extracting human-readable semantic essence from code, SQL, dbt models, data pipelines, documents, or existing systems into Semantic Git CHANGE or R/D/O artifacts. Separates evidence from durable meaning, subtracts inherited knowledge, and prevents implementation detail from overwhelming the contract.
+description: Use when durable domain knowledge is already expressed in human-authored sources such as requirements, policies, decisions, specifications, interviews, diagrams, or documentation and must be compressed into Semantic Git R/D/O or CHANGE artifacts. Do not use as the primary method when the business meaning must be reverse-engineered from implementation behavior; use semantic-reconstruction instead.
 compatibility: Semantic Git 1.5
 ---
 
 # Semantic Extraction
 
-Produce the smallest faithful semantic contract that lets a human understand the subject and lets a future implementation preserve its meaning.
+Produce the smallest faithful semantic contract from knowledge that is already substantially expressed in human-readable form.
 
 This skill derives its authority from `SEMANTIC_GIT.md`. It summarizes a method; it does not create normative rules. Consult the specification progressively, especially sections 8-9, 13.8, 23.3, 24.4 and 26, plus applicable domain foundations.
+
+## Role in the semantic skill suite
+
+Use the three semantic skills according to the source of knowledge and the stage of work:
+
+```text
+human knowledge already expressed
+-> semantic-extraction
+
+business meaning hidden in an existing implementation
+-> semantic-reconstruction
+
+candidate R/D/O needs senior conceptual criticism
+-> semantic-conceptual-review
+```
+
+Extraction is not reverse engineering. Code snippets or physical artifacts may be used as supporting evidence, but if the essential business meaning must be inferred from behavior distributed through implementation, switch to `semantic-reconstruction`.
 
 ## Core distinction
 
 Keep three products separate:
 
-1. **Evidence map** - where each interpretation came from, with paths, lines, confidence and conflicts.
-2. **Semantic model** - the internal classification of purpose, facts, population, rules, boundaries and inheritance.
-3. **Persistent contract** - only the durable Requirements, Decisions and Operations that belong to the target namespace.
+1. **Evidence map** — where each interpretation came from, with source, confidence and conflicts.
+2. **Semantic model** — the internal classification of purpose, facts, population, rules, boundaries and inheritance.
+3. **Persistent contract** — only the durable Requirements, Decisions and Operations that belong to the target namespace.
 
 Evidence supports the contract. It does not automatically belong inside it.
 
-## Workflow
-
-### 1. Establish authority and scope
+## 1. Establish authority and scope
 
 - Identify the target Semantic Namespace and applicable ancestors.
 - Read their Requirements, then Decisions, then Operations.
-- Read only enough physical material to understand the subject and trace necessary dependencies.
-- For any governed writing, follow the complete Execution Protocol in section 24.4 and the authorization gates in section 13.8 before writing.
+- Identify which human-authored sources are authoritative, explanatory or merely contextual.
+- Respect any explicit evidence boundary imposed by the human.
+- For governed writing, follow the applicable authorization and execution rules in `SEMANTIC_GIT.md`.
 
-### 2. Build an evidence map
+Do not persist local knowledge before inheritance is understood.
+
+## 2. Build an evidence map
 
 For every relevant finding, record its source and classify it as:
 
@@ -42,23 +60,44 @@ For every relevant finding, record its source and classify it as:
 
 Do not write the persistent contract during this pass.
 
-### 3. Form the semantic core
+When sources conflict, preserve the conflict explicitly rather than silently choosing the most convenient wording.
 
-Explain the subject without implementation vocabulary:
+## 3. Form the semantic core
 
-- purpose: what problem or question it addresses;
-- elementary fact: the occurrence being classified or measured;
-- inputs or measures: what contributes to the result;
-- population: which occurrences are eligible;
-- contribution rules: when an occurrence contributes to each measure;
-- time: reference period, validity and relevant temporal boundaries;
-- recuts: business views or segments that change participation;
-- aggregation: how elementary contributions become published results;
-- edge cases: behavior that materially changes interpretation.
+Explain the subject without implementation vocabulary.
 
-If these cannot be stated clearly, continue investigating or produce `REVIEW`.
+Investigate, when applicable:
 
-### 4. Subtract before writing
+- purpose: what problem, need or question the subject addresses;
+- elementary fact or entity: what is independently meaningful;
+- population: which occurrences or entities are in scope;
+- inputs, measures or states: what contributes to meaning or outcome;
+- contribution or classification rules;
+- temporal semantics and validity boundaries;
+- business recuts or views;
+- aggregation or composition;
+- formulas when they are business rules;
+- material edge cases.
+
+Do not force every category to exist. The semantic model must follow the sources, not a template.
+
+If a material concept cannot be stated clearly from the available human knowledge, continue investigating the authorized sources or produce `REVIEW`.
+
+## 4. Distinguish stated meaning from implementation observation
+
+Human-authored sources can still contain technical detail.
+
+For each finding ask:
+
+- Is this a durable domain rule or only the current way of implementing it?
+- Would this statement remain true after a full technology rewrite?
+- Is this explaining intent, meaning or merely mechanism?
+
+Do not elevate observed physical behavior to human intent unless the sources support that interpretation.
+
+If the task requires deriving missing meaning from physical behavior, hand off that part to `semantic-reconstruction`.
+
+## 5. Subtract before writing
 
 Remove an item when any test below succeeds:
 
@@ -66,59 +105,72 @@ Remove an item when any test below succeeds:
 - **Rewrite test:** an equivalent reimplementation could replace it without changing meaning.
 - **Consumer test:** it belongs to another version, indicator or consumer.
 - **Evidence test:** it proves a conclusion but is not itself durable knowledge.
-- **Naming test:** it is only a table, column, flag, model, alias or pipeline-stage name without independent semantic evidence.
+- **Naming test:** it is only a table, column, flag, model, alias or pipeline-stage name without independent semantic meaning.
 
-Do not create one contract item for every topic investigated. Investigation must be broad; persistence must be selective.
+Do not create one contract item for every topic investigated. Investigation may be broad; persistence must be selective.
 
-### 5. Write R/D/O
+## 6. Write R/D/O
 
-- **Requirements:** truths necessary for the purpose to hold.
-- **Decisions:** durable choices that define how Requirements are satisfied, including formulas, population boundaries and interpretations.
-- **Operations:** only the behavior needed to realize and preserve those Decisions in practice.
+### Requirements
+
+Express durable truths, needs and invariants necessary for the subject's purpose.
+
+### Decisions
+
+Express durable choices that define how Requirements are satisfied, including formulas, population boundaries, semantic interpretations or conventions when supported.
+
+### Operations
+
+Express only the behavior needed to realize and preserve the Decisions in practice.
 
 Keep causal links visible, such as `Atende R-A`, but do not force one-to-one chains.
 
-Names of models, SQL expressions, paths and fields may appear in Operations only when they are durable operational dependencies. Do not use Operations as an evidence ledger or lineage dump.
+Names of models, SQL expressions, paths and fields may appear in Operations only when they are themselves durable operational dependencies. Do not use Operations as an evidence ledger or lineage dump.
 
-For a governed new namespace, use its unique `CHANGE-INIT` and express the proposed R/D/O as concise `ADD` entries in the Semantic Diff. Do not create `CHANGE-INIT` for a namespace with pre-existing AS-IS. Use local aliases until promotion under the repository policy.
+For a governed new namespace, use its unique `CHANGE-INIT` and local aliases until promotion under repository policy. Do not create `CHANGE-INIT` for a namespace with pre-existing AS-IS.
 
-## Compression gates
+## 7. Compression gates
 
 Before presenting the result, apply all gates:
 
-1. **Human reading:** can a domain reader explain the subject after one short reading?
-2. **Reimplementation:** would the contract remain valid if the physical solution were rewritten?
-3. **Inheritance:** was ancestral meaning referenced rather than copied?
-4. **Reconstruction:** can another person implement the essential behavior without inventing business rules?
-5. **Evidence:** does every persisted claim have support or explicit human intent?
-6. **Economy:** can any item be removed without losing meaning, boundary or reconstructibility?
+1. **Human reading** — can a domain reader explain the subject after one short reading?
+2. **Reimplementation** — would the contract remain valid if the physical solution were rewritten?
+3. **Inheritance** — was ancestral meaning referenced rather than copied?
+4. **Reconstruction** — can another person implement the essential behavior without inventing business rules?
+5. **Evidence** — does every persisted claim have support or explicit human intent?
+6. **Economy** — can any item be removed without losing meaning, boundary or reconstructibility?
+7. **R/D/O separation** — does each artifact have its canonical role under `SEMANTIC_GIT.md`?
 
 If an item fails economy, remove or merge it. If it fails evidence or reconstruction, use `REVIEW` rather than adding technical detail to hide the gap.
 
-Also execute the canonical R/D/O gate in section 23.3: every Requirement needs a corresponding Decision; every Decision needs an Operation when materialized; Decisions must remain free of physical details; and Operations must not create new semantic rules.
+## 8. Contrast check
 
-## Contrast check
+Reject both failure modes:
 
-Test the draft against both scenarios:
+### Mechanical extraction
 
-- **Mechanical extraction:** the output mirrors files, columns, lineage, flags and every investigated topic. Reject it even when fully traceable.
-- **Semantic extraction:** the output explains purpose, population, contribution rules, boundaries and aggregation, while evidence remains outside the persistent contract. Accept it only when the compression gates also pass.
+The output mirrors documents section by section, copies implementation names, or turns every sentence into a contract item.
 
-If removing implementation names makes the draft unintelligible, recover the missing business meaning instead of restoring the implementation inventory.
+### Semantic extraction
 
-## Anti-patterns
+The output explains purpose, population, rules, boundaries and material behavior while evidence remains outside the persistent contract.
+
+If removing source wording makes the draft unintelligible, recover the missing meaning instead of copying the source structure.
+
+## 9. Anti-patterns
 
 Reject outputs that:
 
 - copy the evidence map into the CHANGE or R/D/O;
-- turn every source column or status into a concept;
+- turn every source term into a concept;
 - repeat identity, publication, history or expurgo rules already inherited;
 - persist lineage, debug fields, joins or intermediate stages by default;
-- treat observed code behavior as human intent without evidence;
+- treat implementation behavior as human intent without evidence;
 - maximize coverage at the cost of readability;
-- use a passing structural validator as proof of semantic quality.
+- use a structural validator as proof of semantic quality;
+- attempt reverse engineering with this skill when `semantic-reconstruction` is the appropriate method.
 
-## Output discipline
+## 10. Output discipline
 
 Present in this order:
 
@@ -127,6 +179,28 @@ Present in this order:
 3. concise proposed Semantic Diff or R/D/O;
 4. gate result and unresolved decisions.
 
-The persistent artifact should contain item 3 and required CHANGE metadata, not the full analysis trail.
+The persistent artifact should contain the proposed contract and required governance metadata, not the full analysis trail.
 
-Prefer a short contract that preserves purpose and behavior over a comprehensive description of the current implementation.
+## Handoff to conceptual review
+
+When the extracted contract is materially complex, high-impact, or still reads like the wording of its source rather than a coherent domain model, pass the candidate to `semantic-conceptual-review` together with:
+
+- candidate R/D/O;
+- evidence map;
+- original relevant sources;
+- applicable ancestral R/D/O;
+- remaining `REVIEW` items.
+
+The conceptual reviewer must be allowed to preserve the candidate unchanged when it is already adequate.
+
+## Final rule
+
+Prefer a short contract that preserves purpose and behavior over a comprehensive restatement of the source material.
+
+```text
+understand the human knowledge
+-> separate evidence from meaning
+-> subtract inheritance
+-> compress without semantic loss
+-> persist durable R/D/O
+```

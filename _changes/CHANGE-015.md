@@ -1,5 +1,5 @@
 change: CHANGE-015
-status: IN_PROGRESS
+status: RECONCILED
 base_commit: bbcd72aea649fe07d55cbcdbb28640bf41220147
 approved_semantic_commit: 1332c4c5e99384bd3204aca9668e2dcd0e11a6cc
 approval_scope:
@@ -43,3 +43,23 @@ reason: null
 - A publicação Markdown continua determinística.
 - A publicação PDF mantém a identidade visual atual e permanece legível em escala de cinza.
 - Nenhum metadado interno adicional de PDF é introduzido nesta CHANGE.
+
+## Validation Evidence
+
+- O contrato aprovado está ancorado em `approved_semantic_commit: 1332c4c5e99384bd3204aca9668e2dcd0e11a6cc` e o escopo aprovado permanece restrito a esta CHANGE.
+- O Git Diff da branch está restrito a `_changes/CHANGE-015.md` e `_scripts/build_publication.py`.
+- O caminho de renderização alterado foi reproduzido localmente com o namespace aninhado `aderencia_execucao_framework/exec_prog/v1`.
+- A publicação resultante apresentou `GIT SEMÂNTICO:` e o caminho completo do namespace em linha própria.
+- Os títulos derivados apareceram como `Requirements`, `Decisions` e `Operations`, sem alterar os títulos canônicos dos arquivos R/D/O de origem.
+- O espaçamento posterior entre itens foi validado com `spaceAfter=9`, preservando o visual clean sem cards ou painéis.
+- O cabeçalho exibiu `Fonte da publicação:` seguido do caminho absoluto completo do `PUBLICATION.md`; o caminho foi renderizado sem truncamento.
+- O PDF de validação gerou 3 páginas e foi inspecionado visualmente; não foram observados cortes, sobreposições ou glyphs quebrados.
+- O harness local usado para validar o caminho de renderização passou em `py_compile`.
+- O diff final não introduz metadados internos adicionais de PDF.
+
+### Reconciliation Summary
+
+- Semantic Diff aprovado e Git Diff permanecem compatíveis.
+- Nenhum arquivo R/D/O, regra semântica de domínio ou outro gerador foi alterado.
+- A alteração permanece exclusivamente na apresentação derivada da publicação.
+- Não há `FAIL` ou `REVIEW` impeditivo identificado para esta implementação.

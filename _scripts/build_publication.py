@@ -83,6 +83,27 @@ def publication_paths(root: Path) -> dict[str, Path]:
     }
 
 
+def repository_root(root: Path) -> Path:
+    result = subprocess.run(
+        ["git", "-C", str(root), "rev-parse", "--show-toplevel"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise PublicationError("cannot resolve the Semantic Repository root")
+    return Path(result.stdout.strip()).resolve()
+
+
+def namespace_path(root: Path) -> str:
+    semantic_root = repository_root(root)
+    try:
+        relative = root.resolve().relative_to(semantic_root)
+    except ValueError as error:
+        raise PublicationError("namespace root is outside the Semantic Repository") from error
+    return "root" if relative == Path(".") else relative.as_posix()
+
+
 def source_texts(root: Path) -> tuple[dict[str, str], list[dict[str, str]]]:
     texts: dict[str, str] = {}
     sources: list[dict[str, str]] = []
@@ -122,9 +143,9 @@ def demote_headings(text: str, remove_first_h1: bool = False, extra_levels: int 
 
 
 def render_publication(root: Path, texts: dict[str, str]) -> str:
-    display_name = first_heading(texts.get("README.md", "")) or root.name
     lines = [
-        f"# GIT SEMÂNTICO - {display_name.upper()}",
+        "# GIT SEMÂNTICO:",
+        namespace_path(root),
         "",
     ]
 
@@ -132,7 +153,15 @@ def render_publication(root: Path, texts: dict[str, str]) -> str:
         lines.extend([demote_headings(texts["README.md"], remove_first_h1=True, extra_levels=0), ""])
 
     for filename, label in RDO_SOURCES:
-        lines.extend(["---", "", demote_headings(texts[filename], extra_levels=0), ""])
+        rendered = demote_headings(texts[filename], extra_levels=0)
+        rendered = re.sub(
+            r"^#\s+(Requirements|Decisions|Operations)\s+-\s+.+$",
+            lambda match: f"# {match.group(1)}",
+            rendered,
+            count=1,
+            flags=re.MULTILINE,
+        )
+        lines.extend(["---", "", rendered, ""])
 
     return "\n".join(lines).rstrip() + "\n"
 
@@ -185,7 +214,7 @@ def pdf_font_setup() -> tuple[str, str, str, str]:
     return body, bold, code, header
 
 
-def pdf_source_flowables(text: str, body_style: Any, heading_style: Any, subheading_style: Any, item_style: Any, code_font: str) -> list[Any]:
+def pdf_source_flowables(text: str, body_style: Any, heading_style: Any, namespace_style: Any, subheading_style: Any, item_style: Any, code_font: str) -> list[Any]:
     from reportlab.platypus import HRFlowable, Paragraph, Spacer
 
     result: list[Any] = []
@@ -206,6 +235,10 @@ def pdf_source_flowables(text: str, body_style: Any, heading_style: Any, subhead
             underline_gap = 14.6 if heading_count == 1 else 9.4
             result.extend([Paragraph(pdf_inline(heading.group(1), code_font), heading_style), HRFlowable(width="100%", thickness=0.6, color="#000000", spaceBefore=3, spaceAfter=underline_gap)])
             previous_rule = "heading"
+            continue
+        if heading_count == 1 and previous_rule == "heading":
+            result.append(Paragraph(pdf_inline(line, code_font), namespace_style))
+            previous_rule = "namespace"
             continue
         subheading = re.fullmatch(r"##\s+(.+?)\s*", line)
         if subheading:
@@ -234,12 +267,30 @@ def write_pdf_reportlab(root: Path, texts: dict[str, str], pdf_path: Path) -> st
     styles = getSampleStyleSheet()
     body = ParagraphStyle("PublicationBody", parent=styles["BodyText"], fontName=body_font, fontSize=10.5, leading=16.5, textColor=colors.black, alignment=TA_LEFT, spaceBefore=0, spaceAfter=0)
     heading = ParagraphStyle("PublicationHeading", parent=styles["Heading1"], fontName=body_font, fontSize=21, leading=25.2, textColor=colors.black, alignment=TA_LEFT, spaceBefore=0, spaceAfter=0)
+    namespace = ParagraphStyle("PublicationNamespace", parent=body, fontName=body_font, fontSize=12.5, leading=16.5, textColor=colors.black, alignment=TA_LEFT, spaceBefore=0, spaceAfter=0)
     subheading = ParagraphStyle("PublicationSubheading", parent=styles["Heading2"], fontName=body_font, fontSize=15.75, leading=16.5, textColor=colors.black, alignment=TA_LEFT, spaceBefore=1.4, spaceAfter=8.84)
-    item = ParagraphStyle("PublicationItem", parent=body, fontName=body_font, leftIndent=30, firstLineIndent=0, bulletIndent=18, spaceBefore=0, spaceAfter=0)
+    item = ParagraphStyle("PublicationItem", parent=body, fontName=body_font, leftIndent=30, firstLineIndent=0, bulletIndent=18, spaceBefore=0, spaceAfter=9)
+    source_style = ParagraphStyle(
+        "PublicationSource",
+        parent=styles["BodyText"],
+        fontName=header_font,
+        fontSize=6.75,
+        leading=8,
+        textColor=colors.black,
+        alignment=TA_LEFT,
+        splitLongWords=1,
+        wordWrap="CJK",
+        spaceBefore=0,
+        spaceAfter=0,
+    )
 
-    display_name = first_heading(texts.get("README.md", "")) or root.name
-    footer_name = f"GIT_SEMANTICO_{publication_slug(display_name)}.md"
+    source_path = str(publication_paths(root)["markdown"].resolve())
+    source_markup = f"Fonte da publicação: {html.escape(source_path)}"
     page_size = (595.92, 841.92)
+    source_width = page_size[0] - 20 * mm
+    source_probe = Paragraph(source_markup, source_style)
+    _, source_height = source_probe.wrap(source_width, 40 * mm)
+    top_margin = max(15 * mm, source_height + 30)
 
     class NumberedCanvas(canvas.Canvas):
         def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -257,18 +308,20 @@ def write_pdf_reportlab(root: Path, texts: dict[str, str], pdf_path: Path) -> st
                 self.saveState()
                 self.setFillColor(colors.black)
                 self.setFont(header_font, 6.75)
-                self.drawString(10 * mm, page_size[1] - 20, footer_name)
-                self.drawRightString(page_size[0] - 10 * mm, page_size[1] - 20, datetime.date.today().isoformat())
+                self.drawRightString(page_size[0] - 10 * mm, page_size[1] - 14, datetime.date.today().isoformat())
+                source = Paragraph(source_markup, source_style)
+                _, current_source_height = source.wrap(source_width, 40 * mm)
+                source.drawOn(self, 10 * mm, page_size[1] - 22 - current_source_height)
                 self.drawCentredString(page_size[0] / 2, 17, f"{self._pageNumber} / {total}")
                 self.restoreState()
                 super().showPage()
             super().save()
 
     publication = render_publication(root, texts)
-    story = pdf_source_flowables(publication, body, heading, subheading, item, code_font)
+    story = pdf_source_flowables(publication, body, heading, namespace, subheading, item, code_font)
 
     pdf_path.parent.mkdir(parents=True, exist_ok=True)
-    document = SimpleDocTemplate(str(pdf_path), pagesize=page_size, rightMargin=13 * mm, leftMargin=13 * mm, topMargin=15 * mm, bottomMargin=8 * mm)
+    document = SimpleDocTemplate(str(pdf_path), pagesize=page_size, rightMargin=13 * mm, leftMargin=13 * mm, topMargin=top_margin, bottomMargin=8 * mm)
     document.build(story, canvasmaker=NumberedCanvas)
     return "reportlab"
 

@@ -1,5 +1,5 @@
 change: CHANGE-015
-status: RECONCILED
+status: DRAFT
 base_commit: bbcd72aea649fe07d55cbcdbb28640bf41220147
 approved_semantic_commit: 1332c4c5e99384bd3204aca9668e2dcd0e11a6cc
 approval_scope:
@@ -22,6 +22,8 @@ reason: null
 - **ADD** - Na publicação derivada, os títulos das dimensões devem aparecer somente como `Requirements`, `Decisions` e `Operations`; o caminho do namespace permanece nos documentos R/D/O canônicos, mas não deve ser repetido nos títulos da publicação.
 - **ADD** - A melhoria de legibilidade deve ser cirúrgica: manter fundo, tipografia, cores e estrutura atuais, alterando somente espaçamento vertical, tratamento do título e identificação da fonte.
 - **ADD** - O cabeçalho do PDF deve exibir `Fonte da publicação: <caminho absoluto de PUBLICATION.md>`; caminhos longos devem quebrar linha sem perda de caracteres.
+- **ADD** - A renderização PDF deve oferecer paletas selecionáveis por `--theme`, com `blue` como padrão para leitura digital e `mono` para impressão monocromática; a escolha de tema não altera o conteúdo nem a estrutura da publicação.
+- **ADD** - O tema efetivamente usado deve ser registrado no manifesto da publicação para preservar rastreabilidade do artefato visual.
 - **ADD** - Metadados internos adicionais do PDF ficam fora do escopo desta CHANGE.
 
 ### OPERATIONS
@@ -30,7 +32,9 @@ reason: null
 - **MODIFY** - Simplificar somente na publicação derivada os títulos R/D/O, sem modificar `REQUIREMENTS.md`, `DECISIONS.md` ou `OPERATIONS.md`.
 - **MODIFY** - Aumentar o espaçamento posterior dos parágrafos de itens R/D/O no PDF, sem introduzir cards, painéis ou novos elementos gráficos.
 - **MODIFY** - Substituir o rótulo sintético `GIT_SEMANTICO_<NAMESPACE>.md` pelo caminho absoluto completo do `PUBLICATION.md` no cabeçalho do PDF, com quebra automática quando necessário.
-- **ADD** - Validar a saída em namespace aninhado, confirmando título, fonte completa, títulos simplificados e separação visual entre itens.
+- **ADD** - Adicionar `--theme {blue,mono}` ao comando `build`, usando `blue` por padrão e aplicando a paleta escolhida apenas ao PDF.
+- **ADD** - Registrar o tema selecionado na entrada `pdf` do `PUBLICATION.manifest.json`.
+- **ADD** - Validar a saída em namespace aninhado nos temas `blue` e `mono`, confirmando título, fonte completa, títulos simplificados, separação visual entre itens e equivalência estrutural entre as duas renderizações.
 
 ## Acceptance Criteria
 
@@ -42,24 +46,6 @@ reason: null
 - Não há redesign por cards, caixas ou painéis.
 - A publicação Markdown continua determinística.
 - A publicação PDF mantém a identidade visual atual e permanece legível em escala de cinza.
+- `--theme blue` é o padrão e `--theme mono` produz a mesma publicação em paleta monocromática apropriada para impressão.
+- O manifesto registra o tema usado para gerar o PDF.
 - Nenhum metadado interno adicional de PDF é introduzido nesta CHANGE.
-
-## Validation Evidence
-
-- O contrato aprovado está ancorado em `approved_semantic_commit: 1332c4c5e99384bd3204aca9668e2dcd0e11a6cc` e o escopo aprovado permanece restrito a esta CHANGE.
-- O Git Diff da branch está restrito a `_changes/CHANGE-015.md` e `_scripts/build_publication.py`.
-- O caminho de renderização alterado foi reproduzido localmente com o namespace aninhado `aderencia_execucao_framework/exec_prog/v1`.
-- A publicação resultante apresentou `GIT SEMÂNTICO:` e o caminho completo do namespace em linha própria.
-- Os títulos derivados apareceram como `Requirements`, `Decisions` e `Operations`, sem alterar os títulos canônicos dos arquivos R/D/O de origem.
-- A tipografia foi reduzida de forma moderada (`heading` 17 pt, namespace 10,5 pt, subheading 13 pt e corpo 9,5 pt) e o espaçamento posterior entre itens foi mantido em 8 pt, preservando o visual clean sem cards ou painéis.
-- O cabeçalho exibiu `Fonte da publicação:` seguido do caminho absoluto completo do `PUBLICATION.md`; pontos de quebra invisíveis são inseridos após separadores de caminho para permitir quebra em múltiplas linhas sem remoção de caracteres.
-- O PDF de validação principal passou de 3 para 2 páginas após o refinamento tipográfico e foi inspecionado visualmente; não foram observados cortes, sobreposições ou glyphs quebrados.
-- Um segundo teste com caminho absoluto artificialmente longo confirmou quebra em múltiplas linhas no cabeçalho sem truncamento; o harness local usado para validar o caminho de renderização passou em `py_compile`.
-- O diff final não introduz metadados internos adicionais de PDF.
-
-### Reconciliation Summary
-
-- Semantic Diff aprovado e Git Diff permanecem compatíveis.
-- Nenhum arquivo R/D/O, regra semântica de domínio ou outro gerador foi alterado.
-- A alteração permanece exclusivamente na apresentação derivada da publicação.
-- Não há `FAIL` ou `REVIEW` impeditivo identificado para esta implementação.

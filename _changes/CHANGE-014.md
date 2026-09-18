@@ -39,3 +39,8 @@ reason: null
 - Revisão independente restrita concluiu `PASS`, sem achados remanescentes.
 - `validate_structure.py`, validação de frontmatter UTF-8 e `git diff --check` concluíram com `PASS`.
 - O Git Diff está restrito a esta CHANGE e a `.opencode/skills/semantic-extraction/SKILL.md`.
+
+- Reconciliação pré-merge executada contra a `main` em `ee5021c53378527e3a576a037db4bddb4600262b`.
+- A dependência `root:CHANGE-013` está arquivada na `main` com status `MERGED`.
+- O delta da `main` desde o `base_commit` não altera `.opencode/skills/semantic-extraction/SKILL.md` nem `_changes/CHANGE-014.md`; não houve conflito técnico ou semântico na reconciliação.
+

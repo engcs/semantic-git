@@ -21,4 +21,4 @@ reason: null
 ### OPERATIONS
 
 - **ADD O-A** - Incluir a síntese humana imediatamente após a criação ou apresentação inicial de um CHANGE e antes de expor detalhes extensos, mantendo-a curta, sem repetir item a item Requirements, Decisions ou Operations.
-- **ADD O-B** - Incorporar essa orientação à ergonomia humano–IA e ao Execution Protocol de `SEMANTIC_GIT.md`, para que qualquer agente que opere CHANGEs siga a mesma convenção.
+- **ADD O-B** - Registrar a convenção em `AGENTS.md` como orientação operacional obrigatória aos agentes deste repositório, sem criar novo campo no formato canônico do CHANGE nem alterar `SEMANTIC_GIT.md` apenas por uma preferência de apresentação. Atende R-A.

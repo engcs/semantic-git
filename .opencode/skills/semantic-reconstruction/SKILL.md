@@ -1,6 +1,6 @@
 ---
 name: semantic-reconstruction
-description: Use when reconstructing the durable semantic contract of an existing or legacy implementation into Semantic Git R/D/O or CHANGE artifacts. Reconstructs business behavior through behavioral closure, distinguishes semantic versions from Git chronology, translates deterministic physical behavior into domain meaning, subtracts inherited knowledge, and uses REVIEW only after relevant evidence has been exhausted.
+description: Use when durable business meaning must be reverse-engineered from an existing or legacy implementation. Reconstructs behavior through behavioral closure, separates semantic versions from Git chronology, translates deterministic physical behavior into domain meaning, subtracts inheritance, and produces evidence-backed candidate R/D/O for later conceptual review when needed.
 compatibility: Semantic Git 1.5
 ---
 
@@ -10,7 +10,22 @@ Reconstruct the smallest complete semantic contract capable of reproducing the b
 
 This skill derives all normative authority from `SEMANTIC_GIT.md`. It does not create a second specification. Consult that specification progressively, especially sections 8-9, 13.8, 23.3, 24.4 and 26, plus applicable domain foundations.
 
-Use the general principles of semantic extraction, but apply the stricter reconstruction procedure below when the source of truth being investigated is an existing implementation.
+## Role in the semantic skill suite
+
+Use the three semantic skills according to the source of knowledge and stage of work:
+
+```text
+human knowledge already expressed
+-> semantic-extraction
+
+business meaning hidden in implementation
+-> semantic-reconstruction
+
+candidate R/D/O needs senior conceptual criticism
+-> semantic-conceptual-review
+```
+
+`semantic-reconstruction` is responsible for discovering what the implementation proves. It should produce a faithful behavioral semantic model and candidate R/D/O. It is not responsible for making the result look human at the expense of evidence; difficult conceptual elevation belongs in `semantic-conceptual-review`.
 
 ## Fundamental objective
 
@@ -28,6 +43,14 @@ not behavior
 ```
 
 Remove SQL, tables, fields, aliases, pipeline stages and incidental architecture while preserving purpose, population, contribution rules, temporal boundaries, recuts, formulas, aggregation behavior and material edge cases.
+
+## Capability note
+
+Reconstruction can often be performed efficiently by a general capable model because much of the work is evidence collection, dependency following and deterministic synthesis.
+
+Do not assume a specific vendor or model family. Do not block execution because the current model is optimized for speed or cost.
+
+When the result is intended for durable promotion, preserve enough evidence and structure for a later `semantic-conceptual-review`, which benefits more strongly from high-capability reasoning.
 
 ## 1. Establish the semantic target
 
@@ -97,7 +120,7 @@ Physical boundaries do not define semantic boundaries.
 
 Investigation is complete only when the semantic core can be stated without implementation vocabulary or when evidence needed for one of its material parts is genuinely unavailable.
 
-## 4. Keep three products separate
+## 4. Keep four products separate
 
 ### Evidence map
 
@@ -111,7 +134,7 @@ Record:
 - conflicts;
 - inheritance classification.
 
-### Semantic model
+### Behavioral semantic model
 
 Internally reconstruct:
 
@@ -125,11 +148,18 @@ Internally reconstruct:
 - business recuts;
 - aggregation;
 - formulas;
-- material edge cases.
+- material edge cases;
+- relationships among these concepts.
 
-### Persistent contract
+This model should explain behavior, not physical lineage.
 
-Persist only durable local R/D/O after inheritance subtraction and implementation-detail removal.
+### Candidate persistent contract
+
+Draft only durable local R/D/O after inheritance subtraction and implementation-detail removal.
+
+### Review package
+
+Preserve enough evidence, classifications and unresolved questions for `semantic-conceptual-review` to challenge the candidate without restarting blindly.
 
 Evidence supports the contract. It is not the contract.
 
@@ -139,7 +169,7 @@ Do not confuse interpretation with invention.
 
 When multiple physical conditions deterministically compose one business rule, synthesize their semantic meaning.
 
-For example, several physical activity flags may jointly support a semantic rule describing the eligible organizational population.
+For example, several physical activity flags may jointly support a semantic rule describing an eligible organizational population.
 
 Physical names are evidence. The durable rule is the semantic result.
 
@@ -160,7 +190,7 @@ Do not write R/D/O until the following questions are answered or explicitly left
 
 What business question does the subject answer?
 
-Do not replace the purpose with an intermediate calculation.
+Do not replace the purpose with an intermediate calculation when stronger evidence exists.
 
 ### Elementary fact
 
@@ -172,13 +202,13 @@ Which occurrences are eligible?
 
 Include material eligibility boundaries.
 
-### Measures
+### Measures or states
 
-What contributes independently to the result?
+What contributes independently to the result or meaning?
 
-### Contribution rules
+### Contribution or classification rules
 
-Under which conditions does an eligible occurrence contribute to each measure?
+Under which conditions does an eligible occurrence contribute or change state?
 
 ### Time
 
@@ -190,7 +220,7 @@ Which business views or segments alter participation?
 
 ### Aggregation
 
-How do elementary contributions become published results?
+How do elementary contributions become published or actionable results?
 
 ### Formula
 
@@ -200,7 +230,7 @@ When a final metric exists, what mathematical relationship transforms its measur
 
 What happens for zero denominators, missing values, cancellations, expurgos or other materially different situations?
 
-If one of these dimensions is necessary to reproduce observed behavior, continue investigating before using `REVIEW`.
+Do not force every dimension to exist. If one is necessary to reproduce observed behavior, continue investigating before using `REVIEW`.
 
 ## 7. REVIEW is the last semantic resort
 
@@ -234,6 +264,8 @@ unknown after relevant evidence is exhausted
 = REVIEW
 ```
 
+A later conceptual reviewer may still reopen a `REVIEW`; the first reconstruction is not authority over its own uncertainty.
+
 ## 8. Subtract inheritance semantically
 
 After reconstructing the complete behavior, classify each finding as:
@@ -264,12 +296,14 @@ Requirements may capture:
 
 - purpose;
 - eligible population;
-- semantic meaning of measures;
+- semantic meaning of measures or states;
 - validity conditions;
 - required business recuts;
 - material invariants.
 
 Do not create one Requirement per physical field or transformation step.
+
+If the evidence only proves mechanism and not a higher-level purpose, do not invent a human-sounding purpose. Preserve the narrower truth and flag the conceptual limitation for review.
 
 ## 10. Write Decisions from durable conceptual choices
 
@@ -286,7 +320,7 @@ They may contain:
 - temporal interpretations;
 - material edge-case semantics.
 
-They must not contain table names, column names, SQL, dbt model names, aliases or incidental architecture.
+They must not contain table names, column names, SQL, dbt model names, aliases or incidental architecture unless such an identity is itself durable domain knowledge.
 
 A business formula belongs in Decisions. Its physical computation belongs in Operations.
 
@@ -294,18 +328,18 @@ A business formula belongs in Decisions. Its physical computation belongs in Ope
 
 Operations must make behavior reproducible without becoming an implementation inventory.
 
-Prefer the conceptual sequence:
+Prefer a conceptual sequence such as:
 
 ```text
 elementary occurrence
 -> temporal context
--> organizational context
+-> organizational or domain context
 -> eligibility
--> contribution classification
+-> contribution/classification
 -> inherited mechanisms
--> aggregation
--> formula
--> organizational consolidation
+-> aggregation or composition
+-> formula/outcome
+-> consolidation/publication when applicable
 ```
 
 Include a step when removing it would force a future implementer to rediscover a business rule or materially important processing order.
@@ -380,6 +414,8 @@ Only prose-literal statements are persisted and distributed but resolvable busin
 
 Purpose, population, measures, contribution rules, time, validity, recuts, formula, aggregation and edge cases are reconstructed from evidence and persisted independently of physical form.
 
+A reconstruction may still be behaviorally correct but conceptually awkward. That is a valid reason for later `semantic-conceptual-review`, not for hiding evidence or inventing meaning here.
+
 ## 17. Canonical gates
 
 Before presenting the result, verify:
@@ -387,20 +423,20 @@ Before presenting the result, verify:
 1. **Authority** — applicable ancestral R/D/O was actually read.
 2. **Behavioral closure** — relevant implementation dependencies were exhausted.
 3. **Semantic-version isolation** — no rule exclusive to another semantic version contaminated the target.
-4. **Purpose** — the business question is explicit.
+4. **Purpose** — the business question is explicit to the level supported by evidence.
 5. **Population** — eligibility is reconstructible.
-6. **Contribution** — each measure has reconstructible contribution rules.
+6. **Contribution/classification** — each material measure or state has reconstructible rules.
 7. **Temporal semantics** — material dates, validity and timeliness rules are known.
-8. **Recuts** — material business views are defined.
+8. **Recuts** — material business views are defined when applicable.
 9. **Formula** — final mathematical behavior is preserved when applicable.
-10. **Aggregation** — elementary contributions to published result are reconstructible.
+10. **Aggregation/composition** — elementary behavior to published outcome is reconstructible.
 11. **Inheritance** — ancestral definitions were not duplicated.
 12. **Reimplementation** — the contract survives physical rewrite.
 13. **Reconstruction** — equivalent behavior can be recreated without inventing business rules.
 14. **Evidence** — every persisted semantic claim is supported.
 15. **Economy** — no persisted item can be removed without meaningful loss.
-16. **R/D/O separation** — apply the canonical Semantic Git separation gate in section 23.3.
-17. **REVIEW exhaustion** — every `REVIEW` represents genuine residual ambiguity.
+16. **R/D/O separation** — apply the canonical Semantic Git separation gate.
+17. **REVIEW exhaustion** — every `REVIEW` represents genuine residual ambiguity after the investigation performed.
 
 Failure of reconstruction must not be hidden by implementation detail. Failure of evidence must produce `REVIEW`.
 
@@ -410,18 +446,35 @@ When analysis is requested, present:
 
 1. applicable inherited R/D/O;
 2. evidence map;
-3. reconstructed semantic core;
+3. behavioral semantic model;
 4. classifications;
 5. genuine `REVIEW` items;
-6. proposed local R/D/O;
+6. candidate local R/D/O;
 7. CHANGE or CHANGE-INIT Semantic Diff when applicable;
-8. gate results.
+8. gate results;
+9. review package for `semantic-conceptual-review` when the contract is materially complex or intended for durable promotion.
 
 Keep the evidence map outside persistent R/D/O.
 
 For a governed new namespace, use aliases such as `R-A`, `D-A` and `O-A` until promotion is authorized under Semantic Git.
 
 Do not create a version namespace merely because the implementation contains semantic versions.
+
+## Handoff to conceptual review
+
+When a candidate contract is complex, high-impact, behaviorally correct but linguistically mechanical, or contains important `REVIEW` items, hand off to `semantic-conceptual-review` with:
+
+- target namespace and semantic-version boundary;
+- applicable ancestral R/D/O;
+- evidence map;
+- behavioral semantic model;
+- candidate R/D/O or Semantic Diff;
+- unresolved `REVIEW` items;
+- original relevant sources or enough access to reopen them.
+
+Do not provide a hidden benchmark or reference answer as input to production review.
+
+The conceptual reviewer may revise, merge, split, remove or add candidate items only when supported by the evidence.
 
 ## Final rule
 
@@ -434,5 +487,6 @@ understand broadly
 -> reconstruct behavior
 -> subtract inheritance
 -> remove physical detail
--> persist the smallest complete semantic contract
+-> produce a faithful candidate contract
+-> hand off for conceptual review when warranted
 ```

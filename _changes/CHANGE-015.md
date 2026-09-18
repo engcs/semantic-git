@@ -1,5 +1,5 @@
 change: CHANGE-015
-status: IN_PROGRESS
+status: RECONCILED
 base_commit: bbcd72aea649fe07d55cbcdbb28640bf41220147
 approved_semantic_commit: e5246a6775618f39d843bba33d5cb59a6e776ddb
 approval_scope:
@@ -49,3 +49,25 @@ reason: null
 - `--theme blue` é o padrão e `--theme mono` produz a mesma publicação em paleta monocromática apropriada para impressão.
 - O manifesto registra o tema usado para gerar o PDF.
 - Nenhum metadado interno adicional de PDF é introduzido nesta CHANGE.
+
+## Validation Evidence
+
+- O contrato refinado aprovado está ancorado em `approved_semantic_commit: e5246a6775618f39d843bba33d5cb59a6e776ddb`.
+- O Git Diff permanece restrito a `_changes/CHANGE-015.md` e `_scripts/build_publication.py`.
+- O comando `build` oferece `--theme {blue,mono}`, com `blue` como padrão.
+- A paleta `blue` usa azul-marinho nos títulos, azul discreto nos subtítulos, texto azul-acinzentado escuro e divisores azul-acinzentados, sem alterar o layout.
+- A paleta `mono` usa somente preto e cinza e preserva a mesma hierarquia e espaçamento da versão colorida.
+- O tema selecionado é registrado em `pdf.theme` no `PUBLICATION.manifest.json`.
+- O Markdown gerado é independente do tema; somente a renderização PDF é afetada.
+- A quebra do caminho absoluto de `PUBLICATION.md` permanece ativa nos dois temas, sem truncamento.
+- Um harness local equivalente ao caminho de renderização passou em `py_compile` e gerou os temas `blue` e `mono` com 2 páginas cada.
+- As duas renderizações foram inspecionadas visualmente após renderização para PNG; não foram observados cortes, sobreposições ou glyphs quebrados.
+- Quando ReportLab não estiver disponível, o fallback Pandoc é permitido somente para `mono`; `blue` bloqueia em vez de produzir uma paleta incorreta silenciosamente.
+- Nenhum metadado interno adicional de PDF foi introduzido.
+
+### Reconciliation Summary
+
+- Semantic Diff aprovado e Git Diff permanecem compatíveis.
+- Nenhum arquivo R/D/O ou regra semântica de domínio foi alterado.
+- O refinamento permanece limitado à apresentação derivada e à seleção explícita de paleta.
+- Não há `FAIL` ou `REVIEW` impeditivo identificado.

@@ -265,17 +265,17 @@ def write_pdf_reportlab(root: Path, texts: dict[str, str], pdf_path: Path) -> st
 
     body_font, bold_font, code_font, header_font = pdf_font_setup()
     styles = getSampleStyleSheet()
-    body = ParagraphStyle("PublicationBody", parent=styles["BodyText"], fontName=body_font, fontSize=10.5, leading=16.5, textColor=colors.black, alignment=TA_LEFT, spaceBefore=0, spaceAfter=0)
-    heading = ParagraphStyle("PublicationHeading", parent=styles["Heading1"], fontName=body_font, fontSize=21, leading=25.2, textColor=colors.black, alignment=TA_LEFT, spaceBefore=0, spaceAfter=0)
-    namespace = ParagraphStyle("PublicationNamespace", parent=body, fontName=body_font, fontSize=12.5, leading=16.5, textColor=colors.black, alignment=TA_LEFT, spaceBefore=0, spaceAfter=0)
-    subheading = ParagraphStyle("PublicationSubheading", parent=styles["Heading2"], fontName=body_font, fontSize=15.75, leading=16.5, textColor=colors.black, alignment=TA_LEFT, spaceBefore=1.4, spaceAfter=8.84)
-    item = ParagraphStyle("PublicationItem", parent=body, fontName=body_font, leftIndent=30, firstLineIndent=0, bulletIndent=18, spaceBefore=0, spaceAfter=9)
+    body = ParagraphStyle("PublicationBody", parent=styles["BodyText"], fontName=body_font, fontSize=9.5, leading=14.5, textColor=colors.black, alignment=TA_LEFT, spaceBefore=0, spaceAfter=0)
+    heading = ParagraphStyle("PublicationHeading", parent=styles["Heading1"], fontName=body_font, fontSize=17, leading=20.5, textColor=colors.black, alignment=TA_LEFT, spaceBefore=0, spaceAfter=0)
+    namespace = ParagraphStyle("PublicationNamespace", parent=body, fontName=body_font, fontSize=10.5, leading=14, textColor=colors.black, alignment=TA_LEFT, spaceBefore=0, spaceAfter=0)
+    subheading = ParagraphStyle("PublicationSubheading", parent=styles["Heading2"], fontName=body_font, fontSize=13, leading=14.5, textColor=colors.black, alignment=TA_LEFT, spaceBefore=1.4, spaceAfter=7.5)
+    item = ParagraphStyle("PublicationItem", parent=body, fontName=body_font, leftIndent=28, firstLineIndent=0, bulletIndent=16, spaceBefore=0, spaceAfter=8)
     source_style = ParagraphStyle(
         "PublicationSource",
         parent=styles["BodyText"],
         fontName=header_font,
-        fontSize=6.75,
-        leading=8,
+        fontSize=6.25,
+        leading=7.5,
         textColor=colors.black,
         alignment=TA_LEFT,
         splitLongWords=1,
@@ -285,7 +285,8 @@ def write_pdf_reportlab(root: Path, texts: dict[str, str], pdf_path: Path) -> st
     )
 
     source_path = str(publication_paths(root)["markdown"].resolve())
-    source_markup = f"Fonte da publicação: {html.escape(source_path)}"
+    source_path_wrapped = html.escape(source_path).replace("\\", "\\&#8203;").replace("/", "/&#8203;")
+    source_markup = f"Fonte da publicação: {source_path_wrapped}"
     page_size = (595.92, 841.92)
     source_width = page_size[0] - 20 * mm
     source_probe = Paragraph(source_markup, source_style)

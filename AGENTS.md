@@ -130,3 +130,22 @@ Quando existir, `README.md` contém somente orientação essencial. A aplicaçã
 é um contexto de uso do Semantic Git, não uma substituição da especificação.
 Conhecimento específico de outras aplicações deve permanecer em seus namespaces
 ou repositórios próprios.
+
+## Publication Operation
+
+Quando a solicitação envolver publicação:
+
+1. determine explicitamente o diretório do namespace solicitado;
+2. não inclua namespaces descendentes automaticamente;
+3. execute `_scripts/build_publication.py build` com `--root` e `--spec`;
+4. use `--pdf` quando a publicação PDF for solicitada;
+5. confirme o resultado com `build_publication.py status`;
+6. trate `PUBLICATION.*` como artefatos derivados, nunca como fonte semântica;
+7. não interprete publicação como autorização de aprovação, merge, tag ou push.
+
+Exemplo genérico:
+
+```powershell
+python _scripts\build_publication.py build --root "path\to\namespace" --spec "path\to\SEMANTIC_GIT.md" --pdf --json
+python _scripts\build_publication.py status --root "path\to\namespace" --spec "path\to\SEMANTIC_GIT.md" --json
+```

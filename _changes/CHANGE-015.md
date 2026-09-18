@@ -11,23 +11,32 @@ reason: null
 
 - **MODIFY** - A publicação de namespace deve identificar inequivocamente o namespace publicado pelo seu caminho completo, em vez de apresentar apenas o nome do diretório terminal.
 - **MODIFY** - A publicação PDF deve preservar o visual clean atual com espaçamento vertical suficiente entre itens R/D/O para leitura confortável.
+- **ADD** - A publicação PDF deve registrar visivelmente o caminho absoluto completo do `PUBLICATION.md` que originou a renderização, sem truncamento.
 
 ### DECISIONS
 
 - **ADD** - O título da publicação deve usar duas linhas: `GIT SEMÂNTICO:` e, abaixo, o caminho completo do namespace relativo à raiz do Semantic Repository.
-- **ADD** - A melhoria de legibilidade deve ser cirúrgica: manter fundo, tipografia, cores e estrutura atuais, alterando somente o espaçamento vertical entre itens e o tratamento do título.
+- **ADD** - Na publicação derivada, os títulos das dimensões devem aparecer somente como `Requirements`, `Decisions` e `Operations`; o caminho do namespace permanece nos documentos R/D/O canônicos, mas não deve ser repetido nos títulos da publicação.
+- **ADD** - A melhoria de legibilidade deve ser cirúrgica: manter fundo, tipografia, cores e estrutura atuais, alterando somente espaçamento vertical, tratamento do título e identificação da fonte.
+- **ADD** - O cabeçalho do PDF deve exibir `Fonte da publicação: <caminho absoluto de PUBLICATION.md>`; caminhos longos devem quebrar linha sem perda de caracteres.
+- **ADD** - Metadados internos adicionais do PDF ficam fora do escopo desta CHANGE.
 
 ### OPERATIONS
 
 - **MODIFY** - Ajustar `_scripts/build_publication.py` para resolver o caminho completo do namespace a partir da raiz Git e utilizá-lo no título da publicação Markdown/PDF.
-- **MODIFY** - Aumentar somente o espaçamento posterior dos parágrafos de itens R/D/O no PDF, sem introduzir cards, painéis ou novos elementos gráficos.
-- **ADD** - Validar a saída em um namespace aninhado, confirmando o título em duas linhas e a separação visual entre itens.
+- **MODIFY** - Simplificar somente na publicação derivada os títulos R/D/O, sem modificar `REQUIREMENTS.md`, `DECISIONS.md` ou `OPERATIONS.md`.
+- **MODIFY** - Aumentar o espaçamento posterior dos parágrafos de itens R/D/O no PDF, sem introduzir cards, painéis ou novos elementos gráficos.
+- **MODIFY** - Substituir o rótulo sintético `GIT_SEMANTICO_<NAMESPACE>.md` pelo caminho absoluto completo do `PUBLICATION.md` no cabeçalho do PDF, com quebra automática quando necessário.
+- **ADD** - Validar a saída em namespace aninhado, confirmando título, fonte completa, títulos simplificados e separação visual entre itens.
 
 ## Acceptance Criteria
 
 - O título apresenta exatamente `GIT SEMÂNTICO:` na primeira linha e o caminho completo do namespace na segunda.
 - Um namespace como `aderencia_execucao_framework/exec_prog/v1` não é reduzido a `V1`.
+- A publicação mostra `Requirements`, `Decisions` e `Operations` sem repetir o caminho do namespace.
 - Os itens R/D/O possuem maior respiro vertical entre si.
+- O cabeçalho mostra o caminho absoluto completo do `PUBLICATION.md`, sem reticências ou truncamento e com quebra de linha quando necessária.
 - Não há redesign por cards, caixas ou painéis.
 - A publicação Markdown continua determinística.
 - A publicação PDF mantém a identidade visual atual e permanece legível em escala de cinza.
+- Nenhum metadado interno adicional de PDF é introduzido nesta CHANGE.

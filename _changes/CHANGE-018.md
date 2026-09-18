@@ -1,8 +1,9 @@
 change: CHANGE-018
-status: DRAFT
+status: IN_PROGRESS
 base_commit: 002a7f4de618d6331a35366abdf5cfcf6afaee46
-approved_semantic_commit: null
-approval_scope: null
+approved_semantic_commit: abda08469329371f4c51a12fd8c27e6087c57176
+approval_scope:
+  - _changes/CHANGE-018.md
 depends_on: []
 reason: null
 

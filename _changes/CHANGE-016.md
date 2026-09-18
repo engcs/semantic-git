@@ -1,5 +1,5 @@
 change: CHANGE-016
-status: IN_PROGRESS
+status: RECONCILED
 base_commit: a9afd06f03318635e9cc36d87d8789947d32336b
 approved_semantic_commit: 12f5cedb04dde108723df784416fd322e6a3fada
 approval_scope:
@@ -37,3 +37,25 @@ reason: null
 - **ADD O-E** - Validar a skill por reexecução da reconstrução do EXEC_PROG-V1 sobre os anexos de implementação fornecidos, comparando o resultado com a referência humana `EXEC_PROG-V1_SEMANTIC-GIT(1).MD` por natureza semântica, cobertura comportamental, abstração física e reconstrutibilidade, sem exigir identidade textual.
 - **ADD O-F** - Considerar a validação aprovada somente se o resultado reconstruído recuperar, sem copiar a referência como fonte, os mesmos núcleos semânticos materiais: propósito de aderência, população organizacional elegível, critérios de Executado e Programado, vigência por estado, visões Geral/Obra/ANS, fórmula e denominador zero, fluxo de temporalização e agregação, expurgo e roll-up organizacional.
 - **ADD O-G** - Registrar evidências objetivas da validação no próprio CHANGE antes de declarar reconciliação ou conclusão.
+
+
+## Validation Evidence
+
+- A implementação foi limitada a `.opencode/skills/semantic-reconstruction/SKILL.md` e a esta CHANGE; `SEMANTIC_GIT.md`, R/D/O e a skill genérica `semantic-extraction` não foram alterados.
+- A skill mantém `SEMANTIC_GIT.md` como única autoridade normativa e implementa explicitamente behavioral closure, separação entre versão semântica e cronologia Git, síntese semântica determinística, REVIEW após esgotamento de evidência, subtração semântica de herança e os testes complementares de reconstrução e reimplementação.
+- A validação do EXEC_PROG-V1 carregou primeiro o R/D/O ancestral de `mop` e `mop/programacao` e usou os anexos de implementação como fonte do domínio; a referência humana foi usada somente depois da reconstrução, como alvo de comparação.
+- A investigação seguiu o behavioral closure da V1 através das camadas de programação, elegibilidade organizacional, apontamento/tempestividade, KPI fato, cálculo final e consolidação, isolando regras V1 de acréscimos semanticamente posteriores.
+- A reconstrução independente recuperou 6 Requirements e 6 Decisions da mesma natureza semântica da referência e 11 Operations semanticamente equivalentes, mais comprimidas que as 14 Operations da referência.
+- A matriz de cobertura validou 21/21 núcleos materiais exigidos por O-F: propósito de aderência; universo elegível; Executado e tempestividade; Programado por situação; vigência por estado; visões; fórmula; denominador zero; empreiteira ativa; existência de equipe ativa; equipe ativa na competência; apontamento positivo; ausência de data de alteração; programação elementar; dia de referência; competência semanal/mensal; expurgo; agregação mensal direta; soma separada das componentes; acumulado; e roll-up contrato → regional → distribuidora.
+- A comparação não exigiu identidade textual: as diferenças remanescentes são principalmente compressão de Operations e formulação. O comportamento aceito para Programado foi recuperado; parte dos rótulos humanos dos códigos físicos depende de mapeamentos não materializados estaticamente no conjunto analisado, sem comprometer a natureza semântica central validada.
+- O resultado passa os testes de reimplementação e reconstrução: não depende de SQL/dbt/tabelas/campos para ser compreendido e preserva conhecimento suficiente para reimplementar o comportamento sem redescobrir as regras materiais validadas.
+- A `main` permanece exatamente em `a9afd06f03318635e9cc36d87d8789947d32336b`, idêntica ao `base_commit`; não há drift desde a criação da CHANGE.
+- A dependência `root:CHANGE-014` está arquivada na `main` com status `MERGED`.
+- O Git Diff da branch permanece restrito a `_changes/CHANGE-016.md` e `.opencode/skills/semantic-reconstruction/SKILL.md`; nenhum arquivo fora do escopo aprovado foi modificado.
+
+### Reconciliation Summary
+
+- O Semantic Diff aprovado em `approved_semantic_commit: 12f5cedb04dde108723df784416fd322e6a3fada` está materializado pela nova skill.
+- A validação específica do EXEC_PROG-V1 atingiu o critério de proximidade por natureza semântica definido em O-E/O-F, sem usar a referência como fonte de reconstrução.
+- Não há drift da `main`, conflito com `root:CHANGE-014` ou alteração de R/D/O/SEMANTIC_GIT.
+- Não foi identificado FAIL ou REVIEW impeditivo para a implementação da skill.

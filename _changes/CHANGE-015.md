@@ -1,5 +1,5 @@
 change: CHANGE-015
-status: IN_PROGRESS
+status: RECONCILED
 base_commit: bbcd72aea649fe07d55cbcdbb28640bf41220147
 approved_semantic_commit: 1332c4c5e99384bd3204aca9668e2dcd0e11a6cc
 approval_scope:
@@ -51,10 +51,10 @@ reason: null
 - O caminho de renderização alterado foi reproduzido localmente com o namespace aninhado `aderencia_execucao_framework/exec_prog/v1`.
 - A publicação resultante apresentou `GIT SEMÂNTICO:` e o caminho completo do namespace em linha própria.
 - Os títulos derivados apareceram como `Requirements`, `Decisions` e `Operations`, sem alterar os títulos canônicos dos arquivos R/D/O de origem.
-- O espaçamento posterior entre itens foi validado com `spaceAfter=9`, preservando o visual clean sem cards ou painéis.
-- O cabeçalho exibiu `Fonte da publicação:` seguido do caminho absoluto completo do `PUBLICATION.md`; o caminho foi renderizado sem truncamento.
-- O PDF de validação gerou 3 páginas e foi inspecionado visualmente; não foram observados cortes, sobreposições ou glyphs quebrados.
-- O harness local usado para validar o caminho de renderização passou em `py_compile`.
+- A tipografia foi reduzida de forma moderada (`heading` 17 pt, namespace 10,5 pt, subheading 13 pt e corpo 9,5 pt) e o espaçamento posterior entre itens foi mantido em 8 pt, preservando o visual clean sem cards ou painéis.
+- O cabeçalho exibiu `Fonte da publicação:` seguido do caminho absoluto completo do `PUBLICATION.md`; pontos de quebra invisíveis são inseridos após separadores de caminho para permitir quebra em múltiplas linhas sem remoção de caracteres.
+- O PDF de validação principal passou de 3 para 2 páginas após o refinamento tipográfico e foi inspecionado visualmente; não foram observados cortes, sobreposições ou glyphs quebrados.
+- Um segundo teste com caminho absoluto artificialmente longo confirmou quebra em múltiplas linhas no cabeçalho sem truncamento; o harness local usado para validar o caminho de renderização passou em `py_compile`.
 - O diff final não introduz metadados internos adicionais de PDF.
 
 ### Reconciliation Summary

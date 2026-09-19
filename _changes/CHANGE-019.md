@@ -1,8 +1,9 @@
 change: CHANGE-019
-status: DRAFT
+status: IN_PROGRESS
 base_commit: 7735ce340df437329054dda4181559ea3e6cc3eb
-approved_semantic_commit: null
-approval_scope: null
+approved_semantic_commit: 30c1d39ca96c7903a5d9d46f8635b89693a84ec3
+approval_scope:
+  - _changes/CHANGE-019.md
 depends_on:
   - root:CHANGE-017
 reason: null

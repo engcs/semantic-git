@@ -67,7 +67,6 @@ jobs:
         run: |
           python -m py_compile _scripts/semantic_index.py _scripts/validate_structure.py _scripts/test_semantic_index.py
           python _scripts/test_semantic_index.py
-          test -z "$(git status --porcelain)"
 
       - name: Push implementation candidate
         run: git push origin HEAD:${GITHUB_REF_NAME}

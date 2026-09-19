@@ -27,6 +27,10 @@ candidate R/D/O needs senior conceptual criticism
 
 `semantic-memory` is a transversal capability rather than a fourth semantic stage. Reconstruction is its primary producer of physical findings: use it when the investigation proves a material exception, risk, evidence gap or unresolved behavior that should survive beyond the session but should not become authoritative R/D/O.
 
+`semantic-mathematical-review` is another transversal capability. Delegate to it when reconstructed behavior depends materially on formulas, aggregations, limits, piecewise rules or other quantitative logic whose domain, totality, uniqueness, boundaries, aggregation order, precision or dimensional consistency are not already demonstrated.
+
+`semantic-reconstruction` remains responsible for semantic scope, behavioral closure and candidate R/D/O. Mathematical review returns specialized evidence and classifications; it does not take ownership of the domain contract.
+
 `semantic-reconstruction` is responsible for discovering what the implementation proves. It should produce a faithful behavioral semantic model and candidate R/D/O. It is not responsible for making the result look human at the expense of evidence; difficult conceptual elevation belongs in `semantic-conceptual-review`.
 
 ## Fundamental objective
@@ -260,6 +264,29 @@ Do not force every dimension to exist. If one is necessary to reproduce observed
 
 Material edge cases that remain physical or semantically unresolved are strong memory candidates when their omission could alter reimplementation behavior.
 
+### Mathematical closure when quantitative behavior is material
+
+Do not treat a formula as reconstructed merely because its ordinary-case expression was found. When the result depends materially on quantitative logic and mathematical closure is not obvious, invoke `semantic-mathematical-review` and verify, as applicable:
+
+- admissible domain;
+- division-by-zero and `0/0` behavior;
+- totality of piecewise rules;
+- overlap and uniqueness;
+- exact boundary cases;
+- aggregation order;
+- rounding/truncation stage;
+- unit/dimensional compatibility.
+
+Keep three conclusions separate:
+
+```text
+mathematical behavior
+physical engine behavior
+semantic rule
+```
+
+If authoritative R/D/O already resolves a special case and the implementation disagrees, classify the issue as materialization divergence rather than reopening the business rule automatically. If no semantic convention resolves a material indetermination, preserve the gap as `REVIEW` and/or a retention-worthy mathematical finding instead of inventing the missing convention.
+
 ## 7. REVIEW is the last semantic resort
 
 Do not use `REVIEW` merely because:
@@ -295,6 +322,8 @@ unknown after relevant evidence is exhausted
 A later conceptual reviewer may still reopen a `REVIEW`; the first reconstruction is not authority over its own uncertainty.
 
 `_memory` is not a shortcut for investigation and must not justify premature `REVIEW`. It preserves material unresolved findings after relevant evidence has been exhausted or records a known risk while investigation continues.
+
+A mathematical finding is likewise not a shortcut: use `semantic-mathematical-review` to prove or demonstrate the gap before preserving it as memory.
 
 ## 8. Subtract inheritance semantically
 
@@ -357,6 +386,8 @@ They must not contain table names, column names, SQL, dbt model names, aliases o
 
 A business formula belongs in Decisions. Its physical computation belongs in Operations.
 
+A mathematically undefined case that requires a domain convention also belongs in Decisions only after evidence or governed human approval determines that convention. Engine fallback alone is not enough.
+
 A one-off or unexplained hardcoded exception must not become a Decision merely because it affects output. Preserve it as a finding when the semantic evidence is insufficient and the risk of forgetting it is material.
 
 ## 11. Write Operations as reconstructible behavioral flow
@@ -392,6 +423,8 @@ If no, recover the missing business meaning.
 Do not solve reconstruction failure by copying implementation detail.
 
 Known non-semantic risks in `_memory` can warn a reimplementer about unresolved divergence, but they do not make an incomplete semantic contract complete.
+
+For quantitative rules, reconstruction fails if a future implementer must invent behavior for an admissible mathematical edge case that materially affects the result.
 
 ## 13. Reimplementation test
 
@@ -461,6 +494,10 @@ Purpose, population, measures, contribution rules, time, validity, recuts, formu
 
 Material physical or unresolved findings that should not pollute R/D/O are retained selectively with evidence, risk and semantic status rather than being silently discarded.
 
+### Mathematical review
+
+Material quantitative rules are challenged for domain, totality, uniqueness, boundaries, aggregation order, precision and dimensions when those properties are not already proven. Mathematical gaps are kept separate from engine behavior and from semantic decisions.
+
 A reconstruction may still be behaviorally correct but conceptually awkward. That is a valid reason for later `semantic-conceptual-review`, not for hiding evidence or inventing meaning here.
 
 ## 17. Canonical gates
@@ -476,15 +513,16 @@ Before presenting the result, verify:
 7. **Temporal semantics** — material dates, validity and timeliness rules are known.
 8. **Recuts** — material business views are defined when applicable.
 9. **Formula** — final mathematical behavior is preserved when applicable.
-10. **Aggregation/composition** — elementary behavior to published outcome is reconstructible.
-11. **Inheritance** — ancestral definitions were not duplicated.
-12. **Reimplementation** — the contract survives physical rewrite.
-13. **Reconstruction** — equivalent behavior can be recreated without inventing business rules.
-14. **Evidence** — every persisted semantic claim is supported.
-15. **Economy** — no persisted item can be removed without meaningful loss.
-16. **R/D/O separation** — apply the canonical Semantic Git separation gate.
-17. **REVIEW exhaustion** — every `REVIEW` represents genuine residual ambiguity after the investigation performed.
-18. **Memory retention** — material excluded findings that are costly or dangerous to rediscover were reconciled through `semantic-memory` without treating memory as authority.
+10. **Mathematical closure** — material quantitative rules have evidence-backed domain, edge-case and aggregation behavior, or a genuine mathematical `REVIEW`/finding remains explicit.
+11. **Aggregation/composition** — elementary behavior to published outcome is reconstructible.
+12. **Inheritance** — ancestral definitions were not duplicated.
+13. **Reimplementation** — the contract survives physical rewrite.
+14. **Reconstruction** — equivalent behavior can be recreated without inventing business rules.
+15. **Evidence** — every persisted semantic claim is supported.
+16. **Economy** — no persisted item can be removed without meaningful loss.
+17. **R/D/O separation** — apply the canonical Semantic Git separation gate.
+18. **REVIEW exhaustion** — every `REVIEW` represents genuine residual ambiguity after the investigation performed.
+19. **Memory retention** — material excluded findings that are costly or dangerous to rediscover were reconciled through `semantic-memory` without treating memory as authority.
 
 Failure of reconstruction must not be hidden by implementation detail. Failure of evidence must produce `REVIEW`. Exclusion from R/D/O must not silently erase a material known risk.
 
@@ -496,12 +534,13 @@ When analysis is requested, present:
 2. evidence map;
 3. behavioral semantic model;
 4. classifications;
-5. genuine `REVIEW` items;
-6. candidate local R/D/O;
-7. CHANGE or CHANGE-INIT Semantic Diff when applicable;
-8. material `_memory` finding updates, when warranted;
-9. gate results;
-10. review package for `semantic-conceptual-review` when the contract is materially complex or intended for durable promotion.
+5. mathematical review findings when quantitative logic required specialized analysis;
+6. genuine `REVIEW` items;
+7. candidate local R/D/O;
+8. CHANGE or CHANGE-INIT Semantic Diff when applicable;
+9. material `_memory` finding updates, when warranted;
+10. gate results;
+11. review package for `semantic-conceptual-review` when the contract is materially complex or intended for durable promotion.
 
 Keep the evidence map outside persistent R/D/O. Keep analytical findings in `_memory/FINDINGS.yaml`, not in the semantic contract.
 
@@ -519,6 +558,7 @@ When a candidate contract is complex, high-impact, behaviorally correct but ling
 - behavioral semantic model;
 - candidate R/D/O or Semantic Diff;
 - unresolved `REVIEW` items;
+- mathematical review findings/proofs when quantitative closure was material;
 - relevant analytical findings from `_memory`;
 - original relevant sources or enough access to reopen them.
 
@@ -535,6 +575,7 @@ It is the durable semantic specification that the current implementation proves,
 ```text
 understand broadly
 -> reconstruct behavior
+-> prove material quantitative closure when needed
 -> subtract inheritance
 -> remove physical detail from R/D/O
 -> retain material non-semantic findings when warranted

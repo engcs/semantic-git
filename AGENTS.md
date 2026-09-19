@@ -119,6 +119,37 @@ Quando o humano perguntar por "gaps matemáticos", "inconsistências matemática
 apresentar, para cada caso material, a regra afetada, domínio/condição, prova ou
 contraexemplo, consequência, classificação e situação semântica.
 
+## Semantic Index
+
+`_index/SEMANTIC_INDEX.json`, quando materializado, é um mapa derivado e não
+normativo do Semantic Namespace escolhido. Ele existe para reduzir descoberta e
+carregamento de contexto, não para substituir a fonte governada.
+
+Regras operacionais:
+
+- prefira o índice do menor Semantic Namespace que contenha integralmente a tarefa;
+- `root` é apenas o maior escopo: seu índice pode enxergar toda a árvore, enquanto índices descendentes contêm o namespace escolhido e seus descendentes;
+- stubs marcados como `external: true` apontam para dependências fora do escopo e devem permanecer terminais no índice local; abra a fonte apontada ou suba seletivamente para um índice ancestral quando precisar de mais contexto;
+- use o índice para localizar IDs, relações, caminhos e locators antes de abrir documentos completos;
+- para qualquer conclusão semântica material, reabra `source.path`/`source.locator`; o índice é roteador de contexto, não evidência substituta;
+- não trate texto resumido do índice como nova regra nem como cópia autoritativa de R/D/O, CHANGE ou `_memory`;
+- `build`, `validate` e `query` devem operar sobre índice estruturalmente válido e atual; `STALE`, `DRIFT`, referência órfã ou source ausente é `FAIL`, nunca convite para a IA adivinhar;
+- não carregue automaticamente o índice de `root` quando um índice local suficiente existir;
+- não crie índices vazios ou múltiplos índices apenas para completar estrutura; materialize somente quando houver uso operacional real;
+- SQLite, NetworkX, embeddings ou bancos de grafos não fazem parte desta versão do índice e não devem ser assumidos como autoridade adicional.
+
+Fluxo recomendado:
+
+```text
+pergunta / tarefa
+→ menor scope suficiente
+→ SEMANTIC_INDEX.json do scope, se atual
+→ localizar poucos nós/edges relevantes
+→ reabrir fontes autoritativas
+→ expandir para ancestral/externo somente quando necessário
+→ raciocinar
+```
+
 ## Context Loading
 
 Ao iniciar uma tarefa:
@@ -130,8 +161,9 @@ Ao iniciar uma tarefa:
 5. consulte `_applications/mop/_foundations/` quando a tarefa envolver as premissas semânticas dos indicadores MOP;
 6. consulte `_applications/mop/` quando a tarefa envolver a aplicação MOP;
 7. siga exclusivamente o padrão documental canônico da seção 23.3 de `SEMANTIC_GIT.md`;
-8. consulte `_memory/FINDINGS.yaml` do namespace somente quando a natureza da tarefa tornar a memória analítica materialmente relevante;
-9. expanda o contexto apenas quando dependências, conflitos, findings ou evidências exigirem.
+8. quando existir índice atual no menor escopo suficiente, use-o primeiro para descoberta e abra apenas as fontes apontadas necessárias à conclusão;
+9. consulte `_memory/FINDINGS.yaml` do namespace somente quando a natureza da tarefa tornar a memória analítica materialmente relevante;
+10. expanda o contexto apenas quando dependências, conflitos, findings ou evidências exigirem.
 
 ## Preflight Before Writing
 
@@ -159,7 +191,7 @@ por inferência.
 
 ## Semantic Work
 
-- diferencie AS-IS, CHANGE, memória analítica e materialização física;
+- diferencie AS-IS, CHANGE, memória analítica, índice derivado e materialização física;
 - trate Requirements, Decisions e Operations como dimensões distintas;
 - não invente intenção, justificativa, identidade ou decisão humana;
 - preserve identidade, referências e histórico;
@@ -168,8 +200,9 @@ por inferência.
 - retenha em `_memory` somente achados não normativos que sejam materialmente caros ou perigosos de esquecer;
 - evite duplicação de significado entre R/D/O e findings ativos; depois de promoção, mantenha na memória somente a proveniência analítica necessária;
 - use `_memory` como mapa dos riscos analíticos conhecidos quando a tarefa pedir fragilidades, exceções, lacunas ou riscos conhecidos do namespace;
+- use o índice scoped para localizar contexto e relações, mas reabra as fontes antes de conclusões materiais;
 - use `semantic-mathematical-review` quando fórmulas ou regras quantitativas materiais precisarem de prova de totalidade, unicidade, fronteira, agregação, precisão ou dimensão;
-- nunca use `_memory` para contornar governança semântica;
+- nunca use `_memory` nem `_index` para contornar governança semântica;
 - prefira validações determinísticas quando a regra puder ser verificada por estrutura, Git, matemática ou referência;
 - sinalize ambiguidades materiais para revisão humana;
 - execute somente ações compatíveis com o estado, a autorização e o escopo confirmados no preflight.
@@ -190,6 +223,7 @@ era permitido e declarado. Verifique, conforme aplicável:
 - integridade de `_memory/FINDINGS.yaml` quando a tarefa o tiver criado ou alterado;
 - ausência de finding ativo que simplesmente replique conhecimento já autoritativo em R/D/O;
 - ausência de promoção implícita de finding para R/D/O;
+- quando `_index` for usado ou materializado, validade do scope, source fingerprint, endpoints, sources e ausência de `STALE`/`DRIFT`;
 - para revisão matemática, distinção explícita entre gap semântico, matemática pura e divergência de materialização;
 - presença de `FAIL` ou `REVIEW` impeditivo.
 
@@ -229,6 +263,10 @@ ou repositórios próprios.
 `_memory/` é auxiliar e local ao namespace. Não cria subdomínio, não participa de
 herança automática e não deve ser interpretado como uma quarta dimensão do
 AS-IS.
+
+`_index/` também é auxiliar, derivado e local ao namespace cujo scope representa.
+Não cria subdomínio, não participa de herança e pode ser apagado e reconstruído
+sem perda de conhecimento semântico.
 
 ## Publication Operation
 

@@ -1601,7 +1601,7 @@ Um CHANGE somente pode chegar a RECONCILED quando:
 - Requirements ancestrais aplicáveis foram respeitados;
 - Decisions necessárias foram persistidas;
 - Operations necessárias foram atualizadas;
-- conhecimento duradouro surgido em PRD/SPEC/TODO não consolidado quando necessário;
+- conhecimento duradouro surgido em PRD, SPEC ou TODO foi consolidado quando aplicável;
 - materializações físicas estão coerentes com o estado proposto;
 - testes necessários foram concluídos;
 - documentação vigente representa o novo estado proposto;

@@ -67,6 +67,9 @@ Regras operacionais:
 - use a skill `semantic-memory` para criar, ler, reconciliar ou atualizar findings;
 - faça upsert por identidade estável `F-*`; não use append cego nem substituição cega;
 - não remova finding existente apenas porque a execução atual não o reencontrou;
+- criação ou upsert de `_memory/FINDINGS.yaml` é escrita analítica permitida durante investigação em `DRAFT` quando limitada à memória não normativa do namespace aplicável;
+- a exceção de escrita em `DRAFT` não autoriza editar R/D/O, `SEMANTIC_GIT.md`, materializações físicas ou qualquer outro arquivo de implementação;
+- a atualização de memória, por si só, não exige CHANGE semântico; promoção de finding ou mudança de significado continua sujeita ao fluxo normal de CHANGE e aprovação;
 - um finding só pode virar R/D/O por CHANGE, revisão e aprovação normal do Semantic Git;
 - `_memory` não entra em publicação canônica por padrão.
 
@@ -104,6 +107,10 @@ verifique, conforme aplicável:
 - escopo de escrita permitido;
 - drift material conhecido;
 - dependências ou conflitos que possam bloquear a ação.
+
+A única exceção pré-aprovação é a manutenção de `_memory/FINDINGS.yaml` durante
+investigação em `DRAFT`, quando a escrita satisfizer integralmente os critérios
+da memória analítica e não materializar significado aprovado nem implementação.
 
 Verifique fatos decidíveis por Git, filesystem, identidade, caminho, metadados ou
 referência antes de interpretação semântica. Não substitua ausência de evidência

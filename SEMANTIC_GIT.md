@@ -1743,6 +1743,18 @@ Quando alguém perguntar qual era literalmente o conteúdo físico, Git é a fon
 
 Um CHANGE MERGED não deve ser reescrito para fingir que nunca existiu.
 
+Depois de arquivada, uma CHANGE concluída é registro histórico imutável. Regras,
+campos ou validações introduzidos posteriormente não autorizam nem exigem
+migração retroativa de seu conteúdo. Validadores devem aceitar a forma histórica
+preservada e aplicar requisitos novos às CHANGEs ainda governáveis pelo ciclo
+ativo antes do arquivamento; metadados modernos já presentes em artefatos
+históricos continuam sujeitos à validação de sua própria forma.
+
+Informação histórica ausente não deve ser inventada nem inserida retroativamente
+no arquivo arquivado. Quando sua ausência for material, a correção deve ocorrer
+por mecanismo atual governado — por exemplo novo CHANGE, evidência externa ou
+regra de compatibilidade do validador — sem reescrever o registro histórico.
+
 Reversão material deve ser representada por novo CHANGE.
 
 `git revert` não substitui CHANGE quando o significado for alterado.

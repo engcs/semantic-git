@@ -195,6 +195,7 @@ por inferência.
 - trate Requirements, Decisions e Operations como dimensões distintas;
 - não invente intenção, justificativa, identidade ou decisão humana;
 - preserve identidade, referências e histórico;
+- nunca edite uma CHANGE já arquivada para satisfazer regra, campo ou validator introduzido depois; trate incompatibilidade histórica no fluxo atual, preservando o artefato arquivado byte a byte;
 - governe alterações semânticas materiais por CHANGE;
 - valide a coerência entre significado, documentação e materialização;
 - retenha em `_memory` somente achados não normativos que sejam materialmente caros ou perigosos de esquecer;

@@ -295,10 +295,21 @@ class Validator:
 
         if status in APPROVAL_STATUSES:
             approved_commit = metadata.get("approved_semantic_commit", "")
-            if not COMMIT_RE.fullmatch(approved_commit):
-                self.add("CHANGE_APPROVAL", path, "approved_semantic_commit is required after approval", self.metadata_line(lines, "approved_semantic_commit"))
-            if not lists.get("approval_scope"):
-                self.add("CHANGE_APPROVAL", path, "approval_scope must contain at least one path after approval", self.metadata_line(lines, "approval_scope"))
+            approval_scope_present = "approval_scope" in metadata or "approval_scope" in lists
+            if archived:
+                # Archived CHANGEs are immutable historical records. Metadata rules
+                # introduced later must not force retroactive edits. When modern
+                # approval anchors are present, validate them; when they are absent,
+                # preserve the historical artifact as-is.
+                if approved_commit not in {"", "null"} and not COMMIT_RE.fullmatch(approved_commit):
+                    self.add("CHANGE_APPROVAL", path, "approved_semantic_commit is invalid", self.metadata_line(lines, "approved_semantic_commit"))
+                if approval_scope_present and not lists.get("approval_scope"):
+                    self.add("CHANGE_APPROVAL", path, "approval_scope is present but empty", self.metadata_line(lines, "approval_scope"))
+            else:
+                if not COMMIT_RE.fullmatch(approved_commit):
+                    self.add("CHANGE_APPROVAL", path, "approved_semantic_commit is required after approval", self.metadata_line(lines, "approved_semantic_commit"))
+                if not lists.get("approval_scope"):
+                    self.add("CHANGE_APPROVAL", path, "approval_scope must contain at least one path after approval", self.metadata_line(lines, "approval_scope"))
 
     def parse_change_metadata(self, path: Path, lines: list[str]) -> tuple[dict[str, str], dict[str, list[str]]]:
         metadata: dict[str, str] = {}

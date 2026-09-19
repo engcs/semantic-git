@@ -49,12 +49,11 @@ Escolhas.
 
 - **D-001** - Escolha global. Atende R-001.
 """)
+        # Legacy archived CHANGEs may predate approval-anchor metadata.
+        # They remain valid historical inputs and must never require retroactive edits.
         write(self.root / "_changes" / "archived" / "CHANGE-001.md", """change: CHANGE-001
 status: MERGED
 base_commit: 1111111
-approved_semantic_commit: 2222222
-approval_scope:
-  - _changes/CHANGE-001.md
 reason: null
 
 # CHANGE-001

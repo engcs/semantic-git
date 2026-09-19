@@ -1,6 +1,6 @@
 ---
 name: semantic-memory
-description: Use to read, create, reconcile or update a Semantic Namespace analytical memory in _memory/FINDINGS.yaml. Preserves material findings, exceptions, risks, unresolved meaning and evidence that are costly or dangerous to rediscover but are not authoritative R/D/O. This skill is transversal and does not replace Semantic Git governance.
+description: Use to read, create, reconcile or update a Semantic Namespace analytical memory in _memory/FINDINGS.yaml. Preserves material findings, exceptions, risks, unresolved meaning, mathematical gaps and evidence that are costly or dangerous to rediscover but are not authoritative R/D/O. This skill is transversal and does not replace Semantic Git governance.
 compatibility: Semantic Git 1.5
 ---
 
@@ -8,7 +8,7 @@ compatibility: Semantic Git 1.5
 
 Manage the analytical memory of a Semantic Namespace without turning analysis into semantic authority.
 
-This skill derives all normative authority from `SEMANTIC_GIT.md`. It is a transversal capability used by `semantic-extraction`, `semantic-reconstruction`, `semantic-conceptual-review`, reimplementation, risk analysis and debugging when analytical findings must survive beyond one session.
+This skill derives all normative authority from `SEMANTIC_GIT.md`. It is a transversal capability used by `semantic-extraction`, `semantic-reconstruction`, `semantic-conceptual-review`, `semantic-mathematical-review`, reimplementation, risk analysis and debugging when analytical findings must survive beyond one session.
 
 ## Fundamental distinction
 
@@ -40,6 +40,8 @@ its durable business meaning is unknown
 ```
 
 Do not force that observation into R/D/O and do not discard it. Preserve it as analytical memory when the retention criteria are met.
+
+The same principle applies to mathematical analysis. A proven indetermination, contradiction, boundary gap or quantitative divergence may be materially important even when it does not itself define the business rule.
 
 ## 1. Location and scope
 
@@ -100,7 +102,12 @@ Good candidates include:
 - evidence gaps that materially limit reconstruction;
 - historical artifacts that explain otherwise surprising behavior;
 - cross-version observations that must not contaminate the target semantic version;
-- physical constraints that are important to preserve but not yet justified as domain rules.
+- physical constraints that are important to preserve but not yet justified as domain rules;
+- mathematical indeterminations or contradictions with a concrete witness;
+- material boundary gaps or overlaps;
+- aggregation-order or precision ambiguity capable of changing the result;
+- dimensional inconsistencies;
+- materialization behavior that contradicts a mathematical convention already governed by R/D/O.
 
 Do not retain merely because something was observed.
 
@@ -116,7 +123,9 @@ Do not use `_memory` as:
 - duplicate of R/D/O;
 - duplicate of CHANGE history;
 - substitute for original source evidence;
-- hidden place to persist a semantic rule without governance.
+- hidden place to persist a semantic rule without governance;
+- dump of every mathematical check that passed;
+- separate mathematical specification.
 
 A finding with `status: active` must not simply restate knowledge already adequately represented in authoritative R/D/O. If a finding becomes authoritative through promotion, move semantic ownership to R/D/O and keep the memory record only as non-authoritative provenance with `status: promoted` and semantic references when useful.
 
@@ -181,7 +190,43 @@ semantic_refs:
 superseded_by: F-014
 ```
 
-Do not fabricate source paths, commits, certainty, rationale or human intent.
+### Optional mathematical structure
+
+A mathematical finding remains a normal `F-*` finding. Do not create a separate `MATHEMATICS.yaml` merely because its evidence is quantitative.
+
+Use a category that makes the mathematical nature explicit, for example:
+
+```text
+mathematical_indeterminacy
+mathematical_contradiction
+mathematical_boundary_gap
+mathematical_overlap
+mathematical_aggregation_order
+mathematical_precision
+mathematical_dimension
+```
+
+When machine-readable detail is useful, add an optional `mathematics:` block. It may contain only the fields supported by the investigation, for example:
+
+```yaml
+mathematics:
+  expression: "100 * executado / programado"
+  domain_condition: "programado = 0"
+  witness:
+    executado: 0
+    programado: 0
+  semantic_expected:
+    kpi: 0
+  observed:
+    kpi: null
+  classification: contradiction
+```
+
+The block may also record proof, interval, boundary, units, aggregation order or precision convention when those are the material evidence. Do not force empty subfields.
+
+`mathematics:` is analytical structure only. It does not create a mathematical source of truth parallel to R/D/O. If the authoritative rule already lives in R/D/O, the finding should preserve the inconsistency, witness, risk and provenance rather than duplicate the rule as an active semantic proposition.
+
+Do not fabricate source paths, commits, certainty, rationale, mathematical domain or human intent.
 
 ## 5. Finding identity
 
@@ -203,6 +248,8 @@ Rules:
 - do not use a finding as a normative cross-namespace dependency.
 
 Before creating a new ID, search existing findings for semantic equivalence.
+
+For mathematical findings, a new witness for the same underlying gap normally enriches the existing finding rather than allocating another ID.
 
 ## 6. Upsert, never blind append or blind replace
 
@@ -271,6 +318,8 @@ Interpretation:
 - `candidate` — evidence suggests durable semantic meaning, but normal CHANGE/governance is still required;
 - `promoted` — the semantic meaning has entered R/D/O through approved governance.
 
+A mathematical contradiction between a governed rule and one consumer is commonly `non_semantic`: the semantic rule may already be settled while the implementation diverges. A genuine missing mathematical convention can remain `unresolved` or become `candidate` if evidence suggests a durable domain rule.
+
 Do not mark a finding `promoted` merely because an AI believes it sounds semantic.
 
 ## 9. Risk
@@ -286,7 +335,10 @@ Prefer concrete consequences such as:
 - a reimplementation may produce different results for a known boundary case;
 - one semantic version may accidentally inherit behavior from another;
 - a missing external calendar prevents exact reconstruction;
-- an apparently anomalous condition may be removed as a bug without understanding its historical role.
+- an apparently anomalous condition may be removed as a bug without understanding its historical role;
+- a consumer may return `NULL` where the governed metric requires zero;
+- two aggregation orders may produce different published results;
+- an uncovered interval may make a rule partial for admissible inputs.
 
 Risk is analytical context, not proof of semantic meaning.
 
@@ -299,6 +351,7 @@ quais riscos conhecidos existem neste domínio?
 quais fragilidades conhecidas existem neste namespace?
 o que pode dar errado numa reimplementação?
 quais exceções ou lacunas merecem atenção?
+quais inconsistências matemáticas conhecidas existem?
 ```
 
 use relevant findings as the evidence-backed map of **known analytical risks** for the namespace. Prefer active or otherwise still-relevant findings, and summarize for each material item:
@@ -308,11 +361,12 @@ use relevant findings as the evidence-backed map of **known analytical risks** f
 - risk level when recorded;
 - concrete consequence;
 - evidence/certainty when relevant;
+- mathematical witness/classification when present;
 - whether semantic meaning is unresolved, non-semantic, candidate or promoted.
 
 Do not silently broaden this into a generic enterprise, operational, security or business-risk register unless evidence in scope supports those categories. `_memory` answers what is **known and recorded analytically**, not every risk that could hypothetically exist.
 
-Absence of matching findings means only that no analytical risk was recorded or recovered in the consulted scope. It does not prove that the domain has no risk.
+Absence of matching findings means only that no analytical risk was recorded or recovered in the consulted scope. It does not prove that the domain has no risk or no mathematical gap.
 
 ## 10. Provenance and evidence
 
@@ -327,6 +381,8 @@ Prefer stable locators when available:
 - source document;
 - evidence boundary or version applicability.
 
+For mathematical findings, also preserve the smallest useful proof artifact: witness input, boundary, interval, algebraic relation, unit mismatch or deterministic check result.
+
 Do not copy large source fragments into memory when a durable locator is sufficient.
 
 The original evidence remains authoritative for what physically existed. `_memory` is an index of material understanding, not a replacement for evidence.
@@ -340,6 +396,7 @@ Consult it when the task materially benefits from analytical history, including:
 - semantic reconstruction;
 - reimplementation;
 - conceptual review of a reconstruction;
+- mathematical review of known quantitative fragilities;
 - risk assessment;
 - debugging surprising behavior;
 - resolving or reopening `REVIEW`;
@@ -372,6 +429,8 @@ During reconstruction, retain findings such as:
 - unresolved evidence gaps that materially affect reconstruction;
 - implementation hazards that a future rewrite could accidentally erase.
 
+When reconstruction delegates quantitative analysis to `semantic-mathematical-review`, retain only the resulting mathematical issues that independently pass this skill's retention test.
+
 A finding is not a substitute for continuing the authorized investigation. Do not use memory to justify premature `REVIEW`.
 
 ## 14. Interaction with semantic-conceptual-review
@@ -391,7 +450,27 @@ It must not silently delete a material finding merely because that finding was e
 
 It should also challenge duplication: if revised R/D/O now adequately owns a semantic proposition, the corresponding active finding must either be resolved/reclassified or, after approved promotion, retained only as `promoted` provenance rather than a parallel semantic statement.
 
-## 15. Promotion to R/D/O
+## 15. Interaction with semantic-mathematical-review
+
+`semantic-mathematical-review` discovers whether a quantitative rule is undefined, underdetermined, contradictory, incomplete at boundaries, order-sensitive, precision-sensitive or dimensionally inconsistent. This skill decides only whether that analytical result deserves persistence and how to reconcile it with existing findings.
+
+Typical flow:
+
+```text
+semantic-mathematical-review
+-> proof / counterexample / witness
+-> classify mathematical issue
+-> semantic-memory retention test
+-> upsert F-* only if material
+```
+
+Do not store all mathematical checks. Preserve the issue, not the whole reasoning process.
+
+When authoritative R/D/O already determines the special case, store a material implementation mismatch as a divergence/risk finding rather than pretending the semantic rule is unresolved.
+
+When the mathematical review proves a gap that requires a new business convention, memory may preserve the unresolved gap, but only CHANGE + human approval can define the new semantic rule.
+
+## 16. Promotion to R/D/O
 
 Promotion follows the normal Semantic Git flow:
 
@@ -420,13 +499,13 @@ The authoritative current semantic statement now lives in R/D/O. Do not maintain
 
 Do not rewrite history to pretend the semantic meaning was always known.
 
-## 16. Publication boundary
+## 17. Publication boundary
 
 `_memory` is excluded from canonical publication by default.
 
 A publication intended to explain analytical history may include selected findings only through an explicit, separate publication mode or human request. Such publication does not make findings authoritative.
 
-## 17. Memory gates
+## 18. Memory gates
 
 Before writing or updating `FINDINGS.yaml`, verify:
 
@@ -444,6 +523,7 @@ Before writing or updating `FINDINGS.yaml`, verify:
 12. **Draft boundary** — when the related CHANGE is `DRAFT`, the write is analytical memory only, derives from the authorized investigation, and does not edit or materialize R/D/O or implementation.
 13. **R/D/O exclusivity** — an active finding does not duplicate a proposition already adequately owned by authoritative R/D/O; promoted findings point to semantic authority instead of becoming a second source of truth.
 14. **Risk-query discipline** — risk summaries report evidence-backed analytical risks actually present in relevant findings and do not infer absence of risk from absence of findings.
+15. **Mathematical discipline** — mathematical findings preserve the issue, proof/witness and risk without turning engine behavior into semantic authority or creating a parallel mathematical specification.
 
 If a required fact is unknown, represent it as unknown or unresolved instead of inventing it.
 

@@ -37,6 +37,11 @@ H1_RE = re.compile(r"^#(?!#)\s+(.+?)\s*$")
 H2_RE = re.compile(r"^##(?!#)\s+(.+?)\s*$")
 ITEM_RE = re.compile(r"^- \*\*([RDO]-\d{3,})\*\* - (.+\S)\s*$")
 FIELD_RE = re.compile(r"^([a-z][a-z0-9_]*)\s*:\s*(.*?)\s*$")
+FINDING_ID_RE = re.compile(r"^F-\d{3,}$")
+FINDING_STATUS_VALUES = {"active", "resolved", "superseded", "promoted"}
+FINDING_REQUIRED_FIELDS = {"id", "status", "category", "summary", "evidence", "risk", "semantic_status"}
+FINDING_START_RE = re.compile(r"^  - id:\s*(\S.*?)\s*$")
+FINDING_FIELD_RE = re.compile(r"^    ([a-z][a-z0-9_]*)\s*:\s*(.*?)\s*$")
 
 
 class Validator:
@@ -46,6 +51,7 @@ class Validator:
         self.findings: list[dict[str, Any]] = []
         self.rdo_count = 0
         self.change_count = 0
+        self.memory_count = 0
         self.rdo_ids: dict[tuple[Path, str], dict[str, Path]] = {}
 
     def relative_path(self, path: Path) -> str:
@@ -77,6 +83,8 @@ class Validator:
         for path in directories:
             if path.name.casefold() in {"_changes", "changes"}:
                 self.validate_changes_directory(path)
+            if path.name.casefold() in {"_memory", "memory"}:
+                self.validate_memory_directory(path)
 
         self.validate_local_configuration()
 
@@ -119,6 +127,12 @@ class Validator:
             if path.suffix.casefold() in {".md", ".markdown"} and path.stem.casefold() in DOCUMENT_STEMS:
                 if path.name not in CANONICAL_DOCUMENTS:
                     self.add("CANONICAL_NAME", path, "dimension documents must use REQUIREMENTS.md, DECISIONS.md or OPERATIONS.md")
+
+            if path.name.casefold() == "findings.yaml":
+                if path.name != "FINDINGS.yaml":
+                    self.add("MEMORY_FILENAME", path, "analytical memory must use the exact name FINDINGS.yaml")
+                if path.parent.name != "_memory":
+                    self.add("MEMORY_PATH", path, "FINDINGS.yaml is valid only inside a namespace _memory directory")
 
     def read_lines(self, path: Path, rule: str) -> list[str] | None:
         try:
@@ -315,6 +329,91 @@ class Validator:
                 return number
         return None
 
+    def validate_memory_directory(self, memory_dir: Path) -> None:
+        if memory_dir.name != "_memory":
+            self.add("MEMORY_DIRECTORY", memory_dir, "the analytical memory directory must be named exactly _memory")
+
+        entries = list(memory_dir.iterdir())
+        if not entries:
+            self.add("MEMORY_EMPTY", memory_dir, "_memory must not exist without at least one material finding")
+            return
+
+        for entry in entries:
+            if entry.is_dir():
+                self.add("MEMORY_PATH", entry, "_memory may contain only FINDINGS.yaml")
+            elif entry.name != "FINDINGS.yaml":
+                self.add("MEMORY_PATH", entry, "_memory may contain only the canonical FINDINGS.yaml file")
+
+        findings_file = memory_dir / "FINDINGS.yaml"
+        if not findings_file.is_file():
+            self.add("MEMORY_FILE", memory_dir, "_memory must contain FINDINGS.yaml")
+            return
+
+        self.validate_memory_file(findings_file)
+
+    def validate_memory_file(self, path: Path) -> None:
+        self.memory_count += 1
+        lines = self.read_lines(path, "MEMORY_ENCODING")
+        if lines is None:
+            return
+        if not any(line.strip() for line in lines):
+            self.add("MEMORY_EMPTY", path, "FINDINGS.yaml must contain at least one material finding")
+            return
+
+        namespace_lines = [(number, line.split(":", 1)[1].strip()) for number, line in enumerate(lines, 1) if line.startswith("namespace:")]
+        if len(namespace_lines) != 1 or not namespace_lines[0][1]:
+            self.add("MEMORY_CONTRACT", path, "FINDINGS.yaml must contain exactly one non-empty top-level namespace field")
+
+        findings_lines = [number for number, line in enumerate(lines, 1) if line.strip() == "findings:"]
+        if len(findings_lines) != 1:
+            self.add("MEMORY_CONTRACT", path, "FINDINGS.yaml must contain exactly one top-level findings sequence")
+            return
+
+        findings_start = findings_lines[0]
+        starts: list[tuple[int, str]] = []
+        for number, line in enumerate(lines[findings_start:], findings_start + 1):
+            match = FINDING_START_RE.fullmatch(line)
+            if match:
+                starts.append((number, match.group(1)))
+
+        if not starts:
+            self.add("MEMORY_EMPTY", path, "FINDINGS.yaml must contain at least one finding in the form '  - id: F-001'", findings_start)
+            return
+
+        seen_ids: dict[str, int] = {}
+        for index, (start_line, finding_id) in enumerate(starts):
+            end_line = starts[index + 1][0] - 1 if index + 1 < len(starts) else len(lines)
+            if not FINDING_ID_RE.fullmatch(finding_id):
+                self.add("MEMORY_ID", path, "finding id must use F-NNN with at least three decimal digits", start_line)
+            elif finding_id in seen_ids:
+                self.add("MEMORY_ID_DUPLICATE", path, f"{finding_id} is duplicated; first occurrence is line {seen_ids[finding_id]}", start_line)
+            else:
+                seen_ids[finding_id] = start_line
+
+            fields: dict[str, tuple[int, str]] = {"id": (start_line, finding_id)}
+            for number in range(start_line + 1, end_line + 1):
+                match = FINDING_FIELD_RE.fullmatch(lines[number - 1])
+                if not match:
+                    continue
+                key, value = match.groups()
+                if key in fields:
+                    self.add("MEMORY_CONTRACT", path, f"finding {finding_id} duplicates field {key}", number)
+                else:
+                    fields[key] = (number, value)
+
+            missing = sorted(FINDING_REQUIRED_FIELDS - set(fields))
+            for field in missing:
+                self.add("MEMORY_CONTRACT", path, f"finding {finding_id} is missing required field {field}", start_line)
+
+            status = fields.get("status")
+            if status is not None and status[1] not in FINDING_STATUS_VALUES:
+                self.add("MEMORY_STATUS", path, f"finding {finding_id} status must be one of {sorted(FINDING_STATUS_VALUES)}", status[0])
+
+            for required_scalar in ("category", "summary"):
+                field = fields.get(required_scalar)
+                if field is not None and not field[1]:
+                    self.add("MEMORY_CONTRACT", path, f"finding {finding_id} field {required_scalar} must not be empty", field[0])
+
     def validate_local_configuration(self) -> None:
         result = subprocess.run(
             ["git", "-C", str(self.root), "rev-parse", "--show-toplevel"],
@@ -357,6 +456,7 @@ class Validator:
             "spec": str(self.spec),
             "rdo_documents": self.rdo_count,
             "change_files": self.change_count,
+            "memory_files": self.memory_count,
             "findings": self.findings,
         }
 
@@ -366,7 +466,10 @@ class Validator:
             print(json.dumps(payload, ensure_ascii=False, indent=2))
             return
 
-        print(f"{payload['result']}: checked {self.rdo_count} R/D/O documents and {self.change_count} CHANGE files")
+        print(
+            f"{payload['result']}: checked {self.rdo_count} R/D/O documents, "
+            f"{self.change_count} CHANGE files and {self.memory_count} memory files"
+        )
         for finding in self.findings:
             location = finding["path"]
             if "line" in finding:

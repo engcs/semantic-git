@@ -52,6 +52,36 @@ Esse resumo é uma saída de interação humano–IA. Ele não cria campo canôn
 CHANGE, não substitui o Semantic Diff e não deve ser tratado como nova fonte de
 verdade.
 
+## Analytical Memory
+
+`_memory/FINDINGS.yaml`, quando existir em um Semantic Namespace, contém memória
+analítica versionada e não normativa. Ela preserva somente achados materiais que
+seriam caros ou perigosos de redescobrir, como exceções físicas, riscos de
+reimplementação, lacunas de evidência e significados ainda não resolvidos.
+
+Regras operacionais:
+
+- `_memory` não é R/D/O, não cria verdade semântica e não substitui evidência original;
+- mantenha separação de estado entre R/D/O e `_memory`: um finding ativo não deve duplicar conhecimento já adequadamente representado no R/D/O vigente;
+- após promoção, a regra autoritativa deve viver somente em R/D/O; o finding pode permanecer como `promoted` apenas para preservar proveniência, evidência histórica, risco anterior e `semantic_refs`, sem funcionar como segunda cópia normativa da regra;
+- não carregue `_memory` no bootstrap normal apenas porque o arquivo existe;
+- consulte memória sob demanda em reconstrução, reimplementação, revisão conceitual, debug, análise de risco, investigação de `REVIEW` ou origem de uma regra;
+- quando o humano perguntar pelos riscos conhecidos de um domínio ou namespace, consulte os findings relevantes e apresente os riscos analíticos conhecidos, suas consequências, evidências e estados; não transforme isso em um inventário genérico de riscos de negócio sem evidência;
+- ausência de findings de risco não prova ausência de risco; diga apenas que não há riscos analíticos registrados ou recuperados no escopo consultado;
+- use a skill `semantic-memory` para criar, ler, reconciliar ou atualizar findings;
+- faça upsert por identidade estável `F-*`; não use append cego nem substituição cega;
+- não remova finding existente apenas porque a execução atual não o reencontrou;
+- criação ou upsert de `_memory/FINDINGS.yaml` é escrita analítica permitida durante investigação em `DRAFT` quando limitada à memória não normativa do namespace aplicável;
+- a exceção de escrita em `DRAFT` não autoriza editar R/D/O, `SEMANTIC_GIT.md`, materializações físicas ou qualquer outro arquivo de implementação;
+- a atualização de memória, por si só, não exige CHANGE semântico; promoção de finding ou mudança de significado continua sujeita ao fluxo normal de CHANGE e aprovação;
+- um finding só pode virar R/D/O por CHANGE, revisão e aprovação normal do Semantic Git;
+- `_memory` não entra em publicação canônica por padrão.
+
+As skills `semantic-extraction`, `semantic-reconstruction` e
+`semantic-conceptual-review` devem conhecer essa capacidade transversal e
+aplicá-la somente quando um achado satisfizer os critérios de retenção de
+`semantic-memory`.
+
 ## Context Loading
 
 Ao iniciar uma tarefa:
@@ -63,7 +93,8 @@ Ao iniciar uma tarefa:
 5. consulte `_applications/mop/_foundations/` quando a tarefa envolver as premissas semânticas dos indicadores MOP;
 6. consulte `_applications/mop/` quando a tarefa envolver a aplicação MOP;
 7. siga exclusivamente o padrão documental canônico da seção 23.3 de `SEMANTIC_GIT.md`;
-8. expanda o contexto apenas quando dependências ou conflitos exigirem.
+8. consulte `_memory/FINDINGS.yaml` do namespace somente quando a natureza da tarefa tornar a memória analítica materialmente relevante;
+9. expanda o contexto apenas quando dependências, conflitos, findings ou evidências exigirem.
 
 ## Preflight Before Writing
 
@@ -81,18 +112,26 @@ verifique, conforme aplicável:
 - drift material conhecido;
 - dependências ou conflitos que possam bloquear a ação.
 
+A única exceção pré-aprovação é a manutenção de `_memory/FINDINGS.yaml` durante
+investigação em `DRAFT`, quando a escrita satisfizer integralmente os critérios
+da memória analítica e não materializar significado aprovado nem implementação.
+
 Verifique fatos decidíveis por Git, filesystem, identidade, caminho, metadados ou
 referência antes de interpretação semântica. Não substitua ausência de evidência
 por inferência.
 
 ## Semantic Work
 
-- diferencie AS-IS, CHANGE e materialização física;
+- diferencie AS-IS, CHANGE, memória analítica e materialização física;
 - trate Requirements, Decisions e Operations como dimensões distintas;
 - não invente intenção, justificativa, identidade ou decisão humana;
 - preserve identidade, referências e histórico;
 - governe alterações semânticas materiais por CHANGE;
 - valide a coerência entre significado, documentação e materialização;
+- retenha em `_memory` somente achados não normativos que sejam materialmente caros ou perigosos de esquecer;
+- evite duplicação de significado entre R/D/O e findings ativos; depois de promoção, mantenha na memória somente a proveniência analítica necessária;
+- use `_memory` como mapa dos riscos analíticos conhecidos quando a tarefa pedir fragilidades, exceções, lacunas ou riscos conhecidos do namespace;
+- nunca use `_memory` para contornar governança semântica;
 - prefira validações determinísticas quando a regra puder ser verificada por estrutura, Git ou referência;
 - sinalize ambiguidades materiais para revisão humana;
 - execute somente ações compatíveis com o estado, a autorização e o escopo confirmados no preflight.
@@ -110,6 +149,9 @@ era permitido e declarado. Verifique, conforme aplicável:
 - escopo aprovado versus arquivos efetivamente alterados;
 - drift da `main` ou do contrato aprovado;
 - dependências e CHANGEs concorrentes relevantes;
+- integridade de `_memory/FINDINGS.yaml` quando a tarefa o tiver criado ou alterado;
+- ausência de finding ativo que simplesmente replique conhecimento já autoritativo em R/D/O;
+- ausência de promoção implícita de finding para R/D/O;
 - presença de `FAIL` ou `REVIEW` impeditivo.
 
 Se uma verificação necessária não puder ser concluída, não declare sucesso.
@@ -145,17 +187,22 @@ Quando existir, `README.md` contém somente orientação essencial. A aplicaçã
 Conhecimento específico de outras aplicações deve permanecer em seus namespaces
 ou repositórios próprios.
 
+`_memory/` é auxiliar e local ao namespace. Não cria subdomínio, não participa de
+herança automática e não deve ser interpretado como uma quarta dimensão do
+AS-IS.
+
 ## Publication Operation
 
 Quando a solicitação envolver publicação:
 
 1. determine explicitamente o diretório do namespace solicitado;
 2. não inclua namespaces descendentes automaticamente;
-3. execute `_scripts/build_publication.py build` com `--root` e `--spec`;
-4. use `--pdf` quando a publicação PDF for solicitada;
-5. confirme o resultado com `build_publication.py status`;
-6. trate `PUBLICATION.*` como artefatos derivados, nunca como fonte semântica;
-7. não interprete publicação como autorização de aprovação, merge, tag ou push.
+3. não inclua `_memory/` na publicação canônica por padrão;
+4. execute `_scripts/build_publication.py build` com `--root` e `--spec`;
+5. use `--pdf` quando a publicação PDF for solicitada;
+6. confirme o resultado com `build_publication.py status`;
+7. trate `PUBLICATION.*` como artefatos derivados, nunca como fonte semântica;
+8. não interprete publicação como autorização de aprovação, merge, tag ou push.
 
 Exemplo genérico:
 

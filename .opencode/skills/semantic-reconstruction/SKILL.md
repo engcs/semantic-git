@@ -25,6 +25,8 @@ candidate R/D/O needs senior conceptual criticism
 -> semantic-conceptual-review
 ```
 
+`semantic-memory` is a transversal capability rather than a fourth semantic stage. Reconstruction is its primary producer of physical findings: use it when the investigation proves a material exception, risk, evidence gap or unresolved behavior that should survive beyond the session but should not become authoritative R/D/O.
+
 `semantic-reconstruction` is responsible for discovering what the implementation proves. It should produce a faithful behavioral semantic model and candidate R/D/O. It is not responsible for making the result look human at the expense of evidence; difficult conceptual elevation belongs in `semantic-conceptual-review`.
 
 ## Fundamental objective
@@ -43,6 +45,8 @@ not behavior
 ```
 
 Remove SQL, tables, fields, aliases, pipeline stages and incidental architecture while preserving purpose, population, contribution rules, temporal boundaries, recuts, formulas, aggregation behavior and material edge cases.
+
+Compression into R/D/O must not imply forgetting. A material physical fact can fail the reimplementation test and still deserve retention in `_memory` because losing it would make a future investigation or reimplementation materially riskier.
 
 ## Capability advisory
 
@@ -71,6 +75,8 @@ Before reading implementation details:
 - identify any explicit evidence boundary imposed by the human.
 
 Do not persist local knowledge before inheritance is understood.
+
+When the namespace already contains `_memory/FINDINGS.yaml`, consult only relevant findings when they may affect the target version, known edge cases, reimplementation risk, unresolved `REVIEW` or the scope of investigation. Memory is context, not authority: material conclusions must still be checked against original evidence when available.
 
 ## 2. Semantic version is not Git chronology
 
@@ -104,6 +110,8 @@ When the task prohibits use of later versions, interpret "later version" semanti
 
 Do not borrow rules that belong exclusively to another semantic version.
 
+Existing memory about another version may guide investigation but must not contaminate the reconstructed contract.
+
 ## 3. Build the behavioral closure
 
 Do not stop at the target file, folder, model or commit.
@@ -128,7 +136,9 @@ Physical boundaries do not define semantic boundaries.
 
 Investigation is complete only when the semantic core can be stated without implementation vocabulary or when evidence needed for one of its material parts is genuinely unavailable.
 
-## 4. Keep four products separate
+A prior finding in `_memory` never proves behavioral closure. Treat it as a pointer to evidence or a known risk that may need revalidation.
+
+## 4. Keep five products separate
 
 ### Evidence map
 
@@ -165,11 +175,17 @@ This model should explain behavior, not physical lineage.
 
 Draft only durable local R/D/O after inheritance subtraction and implementation-detail removal.
 
+### Analytical memory
+
+Preserve only selected findings that pass the `semantic-memory` retention test: material observations, exceptions, risks, evidence gaps or unresolved meanings that are costly or dangerous to rediscover but should not be authoritative R/D/O.
+
+Do not copy the evidence map into `_memory`. Reconcile findings by stable `F-*` identity using upsert rather than blind append or blind replacement.
+
 ### Review package
 
-Preserve enough evidence, classifications and unresolved questions for `semantic-conceptual-review` to challenge the candidate without restarting blindly.
+Preserve enough evidence, classifications, relevant memory and unresolved questions for `semantic-conceptual-review` to challenge the candidate without restarting blindly.
 
-Evidence supports the contract. It is not the contract.
+Evidence supports the contract. Memory preserves selected analytical understanding. Neither is the contract.
 
 ## 5. Deterministic semantic interpretation is allowed
 
@@ -189,6 +205,8 @@ This synthesis is valid when:
 4. the result does not introduce unsupported motivation, intent or rationale.
 
 Do not keep physical names merely because they were used to derive the rule.
+
+When deterministic behavior is proven but its durable business meaning is not, do not force it into a human-sounding Decision. If forgetting that behavior creates material risk, retain it through `semantic-memory` with explicit unresolved semantic status.
 
 ## 6. Reconstruct the semantic core before R/D/O
 
@@ -240,6 +258,8 @@ What happens for zero denominators, missing values, cancellations, expurgos or o
 
 Do not force every dimension to exist. If one is necessary to reproduce observed behavior, continue investigating before using `REVIEW`.
 
+Material edge cases that remain physical or semantically unresolved are strong memory candidates when their omission could alter reimplementation behavior.
+
 ## 7. REVIEW is the last semantic resort
 
 Do not use `REVIEW` merely because:
@@ -274,6 +294,8 @@ unknown after relevant evidence is exhausted
 
 A later conceptual reviewer may still reopen a `REVIEW`; the first reconstruction is not authority over its own uncertainty.
 
+`_memory` is not a shortcut for investigation and must not justify premature `REVIEW`. It preserves material unresolved findings after relevant evidence has been exhausted or records a known risk while investigation continues.
+
 ## 8. Subtract inheritance semantically
 
 After reconstructing the complete behavior, classify each finding as:
@@ -284,6 +306,7 @@ After reconstructing the complete behavior, classify each finding as:
 - specific to another consumer;
 - specific to another semantic version;
 - physical evidence only;
+- material non-semantic or unresolved analytical finding;
 - `REVIEW`.
 
 Do not persist inherited rules as new local identities.
@@ -293,6 +316,8 @@ However, inheritance subtraction must not make the local behavior impossible to 
 A local Operation may describe where or how an inherited mechanism participates in the local flow when that information is necessary for reconstructibility. This does not redefine the ancestral rule.
 
 Subtraction is semantic, not merely textual.
+
+For findings excluded from R/D/O, apply `semantic-memory` selectively. Exclusion from the semantic contract is not sufficient by itself to justify retention.
 
 ## 9. Write Requirements from business truth
 
@@ -311,7 +336,7 @@ Requirements may capture:
 
 Do not create one Requirement per physical field or transformation step.
 
-If the evidence only proves mechanism and not a higher-level purpose, do not invent a human-sounding purpose. Preserve the narrower truth and flag the conceptual limitation for review.
+If the evidence only proves mechanism and not a higher-level purpose, do not invent a human-sounding purpose. Preserve the narrower truth where semantically justified, flag the conceptual limitation for review, and retain a material physical exception in memory when forgetting it would be risky.
 
 ## 10. Write Decisions from durable conceptual choices
 
@@ -331,6 +356,8 @@ They may contain:
 They must not contain table names, column names, SQL, dbt model names, aliases or incidental architecture unless such an identity is itself durable domain knowledge.
 
 A business formula belongs in Decisions. Its physical computation belongs in Operations.
+
+A one-off or unexplained hardcoded exception must not become a Decision merely because it affects output. Preserve it as a finding when the semantic evidence is insufficient and the risk of forgetting it is material.
 
 ## 11. Write Operations as reconstructible behavioral flow
 
@@ -352,7 +379,7 @@ elementary occurrence
 
 Include a step when removing it would force a future implementer to rediscover a business rule or materially important processing order.
 
-Do not include a step merely because it exists physically.
+Do not include a step merely because it exists physically. Physical details that must not be forgotten but fail the durable semantic test belong in analytical memory, not Operations.
 
 ## 12. Reconstruction test
 
@@ -363,6 +390,8 @@ After drafting R/D/O, ask:
 If no, recover the missing business meaning.
 
 Do not solve reconstruction failure by copying implementation detail.
+
+Known non-semantic risks in `_memory` can warn a reimplementer about unresolved divergence, but they do not make an incomplete semantic contract complete.
 
 ## 13. Reimplementation test
 
@@ -380,6 +409,8 @@ reconstructible enough to preserve behavior
 abstract enough to survive reimplementation
 ```
 
+When a material observation fails this test but is dangerous to forget, remove it from R/D/O and consider `_memory` rather than discarding it.
+
 ## 14. Economy test
 
 Economy means minimum semantic knowledge without loss of:
@@ -394,6 +425,8 @@ Remove redundant evidence, duplicated inheritance, physical lineage and incident
 
 Do not remove a business rule merely to make the contract shorter.
 
+Economy of R/D/O does not require analytical amnesia. After compression, retain only the small set of excluded findings whose rediscovery cost or risk is material.
+
 ## 15. Version isolation test
 
 When reconstructing one semantic version:
@@ -405,6 +438,8 @@ When reconstructing one semantic version:
 - do not infer semantic evolution merely from physical chronology.
 
 When multiple versions coexist physically, isolate each rule by semantic applicability.
+
+A material cross-version observation that must not contaminate the target may be retained in memory with explicit version applicability.
 
 ## 16. Contrast check
 
@@ -421,6 +456,10 @@ Only prose-literal statements are persisted and distributed but resolvable busin
 ### Semantic reconstruction
 
 Purpose, population, measures, contribution rules, time, validity, recuts, formula, aggregation and edge cases are reconstructed from evidence and persisted independently of physical form.
+
+### Analytical memory
+
+Material physical or unresolved findings that should not pollute R/D/O are retained selectively with evidence, risk and semantic status rather than being silently discarded.
 
 A reconstruction may still be behaviorally correct but conceptually awkward. That is a valid reason for later `semantic-conceptual-review`, not for hiding evidence or inventing meaning here.
 
@@ -445,8 +484,9 @@ Before presenting the result, verify:
 15. **Economy** — no persisted item can be removed without meaningful loss.
 16. **R/D/O separation** — apply the canonical Semantic Git separation gate.
 17. **REVIEW exhaustion** — every `REVIEW` represents genuine residual ambiguity after the investigation performed.
+18. **Memory retention** — material excluded findings that are costly or dangerous to rediscover were reconciled through `semantic-memory` without treating memory as authority.
 
-Failure of reconstruction must not be hidden by implementation detail. Failure of evidence must produce `REVIEW`.
+Failure of reconstruction must not be hidden by implementation detail. Failure of evidence must produce `REVIEW`. Exclusion from R/D/O must not silently erase a material known risk.
 
 ## 18. Output discipline
 
@@ -459,10 +499,11 @@ When analysis is requested, present:
 5. genuine `REVIEW` items;
 6. candidate local R/D/O;
 7. CHANGE or CHANGE-INIT Semantic Diff when applicable;
-8. gate results;
-9. review package for `semantic-conceptual-review` when the contract is materially complex or intended for durable promotion.
+8. material `_memory` finding updates, when warranted;
+9. gate results;
+10. review package for `semantic-conceptual-review` when the contract is materially complex or intended for durable promotion.
 
-Keep the evidence map outside persistent R/D/O.
+Keep the evidence map outside persistent R/D/O. Keep analytical findings in `_memory/FINDINGS.yaml`, not in the semantic contract.
 
 For a governed new namespace, use aliases such as `R-A`, `D-A` and `O-A` until promotion is authorized under Semantic Git.
 
@@ -478,23 +519,25 @@ When a candidate contract is complex, high-impact, behaviorally correct but ling
 - behavioral semantic model;
 - candidate R/D/O or Semantic Diff;
 - unresolved `REVIEW` items;
+- relevant analytical findings from `_memory`;
 - original relevant sources or enough access to reopen them.
 
 Do not provide a hidden benchmark or reference answer as input to production review.
 
-The conceptual reviewer may revise, merge, split, remove or add candidate items only when supported by the evidence.
+The conceptual reviewer may revise, merge, split, remove or add candidate items only when supported by the evidence. Findings are non-authoritative context and should be reconciled through `semantic-memory` when the review changes their analytical status.
 
 ## Final rule
 
 The desired artifact is not a description of the current implementation.
 
-It is the durable semantic specification that the current implementation proves.
+It is the durable semantic specification that the current implementation proves, plus a small non-authoritative memory of material findings that would be costly or dangerous to forget.
 
 ```text
 understand broadly
 -> reconstruct behavior
 -> subtract inheritance
--> remove physical detail
+-> remove physical detail from R/D/O
+-> retain material non-semantic findings when warranted
 -> produce a faithful candidate contract
 -> hand off for conceptual review when warranted
 ```

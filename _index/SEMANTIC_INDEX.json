@@ -1,0 +1,926 @@
+{
+  "schema_version": 1,
+  "generator": {
+    "name": "semantic-git-index",
+    "version": 1
+  },
+  "scope": {
+    "identity": "root",
+    "path": "."
+  },
+  "source_commit": "7e52e8cd8ca889605bdbdbc64fbe7298c46c3144",
+  "source_fingerprint": "ebed5d98243fa011689ff7fd642d940c0180ce4bfd2d37008552014f29eebdf3",
+  "nodes": [
+    {
+      "id": "mop:D-001",
+      "type": "decision",
+      "namespace": "mop",
+      "text": "Estruturar cada indicador nas etapas fato detalhado, KPI fato, catálogo e KPI final. Atende R-007 e R-009.",
+      "source": {
+        "path": "_applications/mop/DECISIONS.md",
+        "locator": "D-001"
+      }
+    },
+    {
+      "id": "mop:D-002",
+      "type": "decision",
+      "namespace": "mop",
+      "text": "Identificar a série por uma chave CCIO composta pelo indicador base, visão, grão temporal e versão. Atende R-001.",
+      "source": {
+        "path": "_applications/mop/DECISIONS.md",
+        "locator": "D-002"
+      }
+    },
+    {
+      "id": "mop:D-003",
+      "type": "decision",
+      "namespace": "mop",
+      "text": "Usar o grão mensal como padrão de publicação, permitindo que cada indicador defina outros grãos temporais, preservando as datas de referência, apuração e congelamento. Atende R-002.",
+      "source": {
+        "path": "_applications/mop/DECISIONS.md",
+        "locator": "D-003"
+      }
+    },
+    {
+      "id": "mop:D-004",
+      "type": "decision",
+      "namespace": "mop",
+      "text": "Preservar as ocorrências no menor grão do indicador, agregá-las inicialmente no nível contrato e consolidar as medidas nos níveis regional e distribuidora. Atende R-003 e R-007.",
+      "source": {
+        "path": "_applications/mop/DECISIONS.md",
+        "locator": "D-004"
+      }
+    },
+    {
+      "id": "mop:D-005",
+      "type": "decision",
+      "namespace": "mop",
+      "text": "Manter fatos e resultados nas apurações `VIVA` e `CONGELADA` e reuni-los no catálogo do indicador. Atende R-004 e R-009.",
+      "source": {
+        "path": "_applications/mop/DECISIONS.md",
+        "locator": "D-005"
+      }
+    },
+    {
+      "id": "mop:D-006",
+      "type": "decision",
+      "namespace": "mop",
+      "text": "Apurar versões em paralelo e incorporar versão, status da versão e origem à identidade de cada resultado. Atende R-005.",
+      "source": {
+        "path": "_applications/mop/DECISIONS.md",
+        "locator": "D-006"
+      }
+    },
+    {
+      "id": "mop:D-007",
+      "type": "decision",
+      "namespace": "mop",
+      "text": "Incorporar a visão à identidade da série como recorte da população apurada. Atende R-008.",
+      "source": {
+        "path": "_applications/mop/DECISIONS.md",
+        "locator": "D-007"
+      }
+    },
+    {
+      "id": "mop:D-008",
+      "type": "decision",
+      "namespace": "mop",
+      "text": "Dar precedência ao controle manual de expurgo e zerar a contribuição da linha sem removê-la do detalhe. Atende R-006.",
+      "source": {
+        "path": "_applications/mop/DECISIONS.md",
+        "locator": "D-008"
+      }
+    },
+    {
+      "id": "mop:D-009",
+      "type": "decision",
+      "namespace": "mop",
+      "text": "Compor medidas auditáveis no KPI fato a partir de valores base e, quando aplicável, suplementos, preservando separadamente sua origem e seu grão antes de calcular a fórmula específica no KPI final. Atende R-007.",
+      "source": {
+        "path": "_applications/mop/DECISIONS.md",
+        "locator": "D-009"
+      }
+    },
+    {
+      "id": "mop:O-001",
+      "type": "operation",
+      "namespace": "mop",
+      "text": "Cada indicador define sua unidade elementar no menor grão disponível, preservando o dia e a equipe quando fizerem parte da ocorrência.",
+      "source": {
+        "path": "_applications/mop/OPERATIONS.md",
+        "locator": "O-001"
+      }
+    },
+    {
+      "id": "mop:O-002",
+      "type": "operation",
+      "namespace": "mop",
+      "text": "Cada unidade recebe uma data de referência, da qual são derivadas as competências temporais necessárias à apuração.",
+      "source": {
+        "path": "_applications/mop/OPERATIONS.md",
+        "locator": "O-002"
+      }
+    },
+    {
+      "id": "mop:O-003",
+      "type": "operation",
+      "namespace": "mop",
+      "text": "Cada unidade é situada na hierarquia organizacional formada por equipe, contrato, regional e distribuidora.",
+      "source": {
+        "path": "_applications/mop/OPERATIONS.md",
+        "locator": "O-003"
+      }
+    },
+    {
+      "id": "mop:O-004",
+      "type": "operation",
+      "namespace": "mop",
+      "text": "A unidade é relacionada às demais entidades necessárias para receber suas classificações de negócio.",
+      "source": {
+        "path": "_applications/mop/OPERATIONS.md",
+        "locator": "O-004"
+      }
+    },
+    {
+      "id": "mop:O-005",
+      "type": "operation",
+      "namespace": "mop",
+      "text": "As classificações determinam a população apurada e a contribuição individual para cada medida do indicador.",
+      "source": {
+        "path": "_applications/mop/OPERATIONS.md",
+        "locator": "O-005"
+      }
+    },
+    {
+      "id": "mop:O-006",
+      "type": "operation",
+      "namespace": "mop",
+      "text": "Ocorrências expurgadas permanecem no detalhe e na auditoria, mas deixam de contribuir para as medidas agregadas.",
+      "source": {
+        "path": "_applications/mop/OPERATIONS.md",
+        "locator": "O-006"
+      }
+    },
+    {
+      "id": "mop:O-007",
+      "type": "operation",
+      "namespace": "mop",
+      "text": "As contribuições são inicialmente preservadas no menor grão temporal e organizacional necessário ao indicador.",
+      "source": {
+        "path": "_applications/mop/OPERATIONS.md",
+        "locator": "O-007"
+      }
+    },
+    {
+      "id": "mop:O-008",
+      "type": "operation",
+      "namespace": "mop",
+      "text": "As contribuições no menor grão do indicador são consolidadas no período e no nível organizacional definidos para publicação.",
+      "source": {
+        "path": "_applications/mop/OPERATIONS.md",
+        "locator": "O-008"
+      }
+    },
+    {
+      "id": "mop:O-009",
+      "type": "operation",
+      "namespace": "mop",
+      "text": "No nível contrato, as unidades são agrupadas por competência, visão, versão e demais dimensões próprias do indicador.",
+      "source": {
+        "path": "_applications/mop/OPERATIONS.md",
+        "locator": "O-009"
+      }
+    },
+    {
+      "id": "mop:O-010",
+      "type": "operation",
+      "namespace": "mop",
+      "text": "Quando uma medida prevê suplementos, eles são associados aos valores base no mesmo grão antes da agregação do período, preservando separadamente sua origem.",
+      "source": {
+        "path": "_applications/mop/OPERATIONS.md",
+        "locator": "O-010"
+      }
+    },
+    {
+      "id": "mop:O-011",
+      "type": "operation",
+      "namespace": "mop",
+      "text": "As medidas do nível contrato são posteriormente consolidadas nos níveis regional e distribuidora.",
+      "source": {
+        "path": "_applications/mop/OPERATIONS.md",
+        "locator": "O-011"
+      }
+    },
+    {
+      "id": "mop:O-012",
+      "type": "operation",
+      "namespace": "mop",
+      "text": "Os valores acumulados são obtidos pela soma temporal das medidas dentro de cada série e nível organizacional.",
+      "source": {
+        "path": "_applications/mop/OPERATIONS.md",
+        "locator": "O-012"
+      }
+    },
+    {
+      "id": "mop:O-013",
+      "type": "operation",
+      "namespace": "mop",
+      "text": "A fórmula específica do indicador é aplicada às medidas já agregadas para produzir os resultados do período e acumulado.",
+      "source": {
+        "path": "_applications/mop/OPERATIONS.md",
+        "locator": "O-013"
+      }
+    },
+    {
+      "id": "mop:R-001",
+      "type": "requirement",
+      "namespace": "mop",
+      "text": "Identificar inequivocamente cada série por indicador, visão, grão temporal e versão da regra de negócio.",
+      "source": {
+        "path": "_applications/mop/REQUIREMENTS.md",
+        "locator": "R-001"
+      }
+    },
+    {
+      "id": "mop:R-002",
+      "type": "requirement",
+      "namespace": "mop",
+      "text": "Organizar o detalhe e os resultados por competência, preservando a data de referência, a data de apuração e, quando aplicável, a data de congelamento.",
+      "source": {
+        "path": "_applications/mop/REQUIREMENTS.md",
+        "locator": "R-002"
+      }
+    },
+    {
+      "id": "mop:R-003",
+      "type": "requirement",
+      "namespace": "mop",
+      "text": "Disponibilizar resultados consistentes nos níveis organizacionais aplicáveis, incluindo contrato, regional e distribuidora.",
+      "source": {
+        "path": "_applications/mop/REQUIREMENTS.md",
+        "locator": "R-003"
+      }
+    },
+    {
+      "id": "mop:R-004",
+      "type": "requirement",
+      "namespace": "mop",
+      "text": "Distinguir a apuração recalculável da fotografia histórica preservada.",
+      "source": {
+        "path": "_applications/mop/REQUIREMENTS.md",
+        "locator": "R-004"
+      }
+    },
+    {
+      "id": "mop:R-005",
+      "type": "requirement",
+      "namespace": "mop",
+      "text": "Permitir a apuração paralela de diferentes versões, preservando a identidade, o estado e a origem de cada resultado.",
+      "source": {
+        "path": "_applications/mop/REQUIREMENTS.md",
+        "locator": "R-005"
+      }
+    },
+    {
+      "id": "mop:R-006",
+      "type": "requirement",
+      "namespace": "mop",
+      "text": "Permitir expurgos de negócio sem remover a ocorrência original nem perder a justificativa da exceção.",
+      "source": {
+        "path": "_applications/mop/REQUIREMENTS.md",
+        "locator": "R-006"
+      }
+    },
+    {
+      "id": "mop:R-007",
+      "type": "requirement",
+      "namespace": "mop",
+      "text": "Permitir reconciliar o resultado do indicador com suas medidas componentes, incluindo eventuais suplementos, e com as ocorrências consideradas ou desconsideradas na apuração.",
+      "source": {
+        "path": "_applications/mop/REQUIREMENTS.md",
+        "locator": "R-007"
+      }
+    },
+    {
+      "id": "mop:R-008",
+      "type": "requirement",
+      "namespace": "mop",
+      "text": "Tratar cada visão como um recorte explícito das ocorrências que podem participar da apuração.",
+      "source": {
+        "path": "_applications/mop/REQUIREMENTS.md",
+        "locator": "R-008"
+      }
+    },
+    {
+      "id": "mop:R-009",
+      "type": "requirement",
+      "namespace": "mop",
+      "text": "Proteger os resultados históricos contra recálculo ou substituição silenciosa.",
+      "source": {
+        "path": "_applications/mop/REQUIREMENTS.md",
+        "locator": "R-009"
+      }
+    },
+    {
+      "id": "namespace:mop",
+      "type": "namespace",
+      "namespace": "mop",
+      "source": {
+        "path": "_applications/mop",
+        "locator": "mop"
+      }
+    },
+    {
+      "id": "namespace:root",
+      "type": "namespace",
+      "namespace": "root",
+      "source": {
+        "path": ".",
+        "locator": "root"
+      }
+    },
+    {
+      "id": "root:CHANGE-001",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-001.md",
+        "locator": "CHANGE-001"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-002",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-002.md",
+        "locator": "CHANGE-002"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-003",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-003.md",
+        "locator": "CHANGE-003"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-004",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-004.md",
+        "locator": "CHANGE-004"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-005",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-005.md",
+        "locator": "CHANGE-005"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-006",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-006.md",
+        "locator": "CHANGE-006"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-007",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-007.md",
+        "locator": "CHANGE-007"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-008",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-008.md",
+        "locator": "CHANGE-008"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-009",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-009.md",
+        "locator": "CHANGE-009"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-010",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-010.md",
+        "locator": "CHANGE-010"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-011",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-011.md",
+        "locator": "CHANGE-011"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-012",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-012.md",
+        "locator": "CHANGE-012"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-013",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-013.md",
+        "locator": "CHANGE-013"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-014",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-014.md",
+        "locator": "CHANGE-014"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-015",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-015.md",
+        "locator": "CHANGE-015"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-016",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-016.md",
+        "locator": "CHANGE-016"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-017",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-017.md",
+        "locator": "CHANGE-017"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-018",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-018.md",
+        "locator": "CHANGE-018"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-019",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-019.md",
+        "locator": "CHANGE-019"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-020",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-020.md",
+        "locator": "CHANGE-020"
+      },
+      "archived": true
+    },
+    {
+      "id": "root:CHANGE-021",
+      "type": "change",
+      "namespace": "root",
+      "status": "MERGED",
+      "source": {
+        "path": "_changes/archived/CHANGE-021.md",
+        "locator": "CHANGE-021"
+      },
+      "archived": true
+    }
+  ],
+  "edges": [
+    {
+      "from": "mop:D-001",
+      "type": "satisfies",
+      "to": "mop:R-007"
+    },
+    {
+      "from": "mop:D-001",
+      "type": "satisfies",
+      "to": "mop:R-009"
+    },
+    {
+      "from": "mop:D-002",
+      "type": "satisfies",
+      "to": "mop:R-001"
+    },
+    {
+      "from": "mop:D-003",
+      "type": "satisfies",
+      "to": "mop:R-002"
+    },
+    {
+      "from": "mop:D-004",
+      "type": "satisfies",
+      "to": "mop:R-003"
+    },
+    {
+      "from": "mop:D-004",
+      "type": "satisfies",
+      "to": "mop:R-007"
+    },
+    {
+      "from": "mop:D-005",
+      "type": "satisfies",
+      "to": "mop:R-004"
+    },
+    {
+      "from": "mop:D-005",
+      "type": "satisfies",
+      "to": "mop:R-009"
+    },
+    {
+      "from": "mop:D-006",
+      "type": "satisfies",
+      "to": "mop:R-005"
+    },
+    {
+      "from": "mop:D-007",
+      "type": "satisfies",
+      "to": "mop:R-008"
+    },
+    {
+      "from": "mop:D-008",
+      "type": "satisfies",
+      "to": "mop:R-006"
+    },
+    {
+      "from": "mop:D-009",
+      "type": "satisfies",
+      "to": "mop:R-007"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:D-001"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:D-002"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:D-003"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:D-004"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:D-005"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:D-006"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:D-007"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:D-008"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:D-009"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:O-001"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:O-002"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:O-003"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:O-004"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:O-005"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:O-006"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:O-007"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:O-008"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:O-009"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:O-010"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:O-011"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:O-012"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:O-013"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:R-001"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:R-002"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:R-003"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:R-004"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:R-005"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:R-006"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:R-007"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:R-008"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "contains",
+      "to": "mop:R-009"
+    },
+    {
+      "from": "namespace:mop",
+      "type": "parent_namespace",
+      "to": "namespace:root"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-001"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-002"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-003"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-004"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-005"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-006"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-007"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-008"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-009"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-010"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-011"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-012"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-013"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-014"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-015"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-016"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-017"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-018"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-019"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-020"
+    },
+    {
+      "from": "namespace:root",
+      "type": "contains",
+      "to": "root:CHANGE-021"
+    },
+    {
+      "from": "root:CHANGE-014",
+      "type": "depends_on",
+      "to": "root:CHANGE-013"
+    },
+    {
+      "from": "root:CHANGE-016",
+      "type": "depends_on",
+      "to": "root:CHANGE-014"
+    },
+    {
+      "from": "root:CHANGE-017",
+      "type": "depends_on",
+      "to": "root:CHANGE-014"
+    },
+    {
+      "from": "root:CHANGE-017",
+      "type": "depends_on",
+      "to": "root:CHANGE-016"
+    },
+    {
+      "from": "root:CHANGE-019",
+      "type": "depends_on",
+      "to": "root:CHANGE-017"
+    }
+  ]
+}

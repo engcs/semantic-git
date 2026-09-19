@@ -42,6 +42,9 @@ FINDING_STATUS_VALUES = {"active", "resolved", "superseded", "promoted"}
 FINDING_REQUIRED_FIELDS = {"id", "status", "category", "summary", "evidence", "risk", "semantic_status"}
 FINDING_START_RE = re.compile(r"^  - id:\s*(\S.*?)\s*$")
 FINDING_FIELD_RE = re.compile(r"^    ([a-z][a-z0-9_]*)\s*:\s*(.*?)\s*$")
+INDEX_FILENAME = "SEMANTIC_INDEX.json"
+INDEX_NODE_TYPES = {"namespace", "requirement", "decision", "operation", "change", "finding"}
+INDEX_EDGE_TYPES = {"contains", "parent_namespace", "references", "satisfies", "depends_on", "semantic_ref"}
 
 
 class Validator:
@@ -52,6 +55,7 @@ class Validator:
         self.rdo_count = 0
         self.change_count = 0
         self.memory_count = 0
+        self.index_count = 0
         self.rdo_ids: dict[tuple[Path, str], dict[str, Path]] = {}
 
     def relative_path(self, path: Path) -> str:
@@ -85,6 +89,8 @@ class Validator:
                 self.validate_changes_directory(path)
             if path.name.casefold() in {"_memory", "memory"}:
                 self.validate_memory_directory(path)
+            if path.name.casefold() in {"_index", "index"}:
+                self.validate_index_directory(path)
 
         self.validate_local_configuration()
 
@@ -133,6 +139,12 @@ class Validator:
                     self.add("MEMORY_FILENAME", path, "analytical memory must use the exact name FINDINGS.yaml")
                 if path.parent.name != "_memory":
                     self.add("MEMORY_PATH", path, "FINDINGS.yaml is valid only inside a namespace _memory directory")
+
+            if path.name.casefold() == INDEX_FILENAME.casefold():
+                if path.name != INDEX_FILENAME:
+                    self.add("INDEX_FILENAME", path, f"semantic index must use the exact name {INDEX_FILENAME}")
+                if path.parent.name != "_index":
+                    self.add("INDEX_PATH", path, f"{INDEX_FILENAME} is valid only inside a namespace _index directory")
 
     def read_lines(self, path: Path, rule: str) -> list[str] | None:
         try:
@@ -283,10 +295,21 @@ class Validator:
 
         if status in APPROVAL_STATUSES:
             approved_commit = metadata.get("approved_semantic_commit", "")
-            if not COMMIT_RE.fullmatch(approved_commit):
-                self.add("CHANGE_APPROVAL", path, "approved_semantic_commit is required after approval", self.metadata_line(lines, "approved_semantic_commit"))
-            if not lists.get("approval_scope"):
-                self.add("CHANGE_APPROVAL", path, "approval_scope must contain at least one path after approval", self.metadata_line(lines, "approval_scope"))
+            approval_scope_present = "approval_scope" in metadata or "approval_scope" in lists
+            if archived:
+                # Archived CHANGEs are immutable historical records. Metadata rules
+                # introduced later must not force retroactive edits. When modern
+                # approval anchors are present, validate them; when they are absent,
+                # preserve the historical artifact as-is.
+                if approved_commit not in {"", "null"} and not COMMIT_RE.fullmatch(approved_commit):
+                    self.add("CHANGE_APPROVAL", path, "approved_semantic_commit is invalid", self.metadata_line(lines, "approved_semantic_commit"))
+                if approval_scope_present and not lists.get("approval_scope"):
+                    self.add("CHANGE_APPROVAL", path, "approval_scope is present but empty", self.metadata_line(lines, "approval_scope"))
+            else:
+                if not COMMIT_RE.fullmatch(approved_commit):
+                    self.add("CHANGE_APPROVAL", path, "approved_semantic_commit is required after approval", self.metadata_line(lines, "approved_semantic_commit"))
+                if not lists.get("approval_scope"):
+                    self.add("CHANGE_APPROVAL", path, "approval_scope must contain at least one path after approval", self.metadata_line(lines, "approval_scope"))
 
     def parse_change_metadata(self, path: Path, lines: list[str]) -> tuple[dict[str, str], dict[str, list[str]]]:
         metadata: dict[str, str] = {}
@@ -414,6 +437,98 @@ class Validator:
                 if field is not None and not field[1]:
                     self.add("MEMORY_CONTRACT", path, f"finding {finding_id} field {required_scalar} must not be empty", field[0])
 
+    def validate_index_directory(self, index_dir: Path) -> None:
+        if index_dir.name != "_index":
+            self.add("INDEX_DIRECTORY", index_dir, "the semantic index directory must be named exactly _index")
+
+        entries = list(index_dir.iterdir())
+        if not entries:
+            self.add("INDEX_EMPTY", index_dir, "_index must not exist without SEMANTIC_INDEX.json")
+            return
+        for entry in entries:
+            if entry.is_dir():
+                self.add("INDEX_PATH", entry, "_index may contain only SEMANTIC_INDEX.json")
+            elif entry.name != INDEX_FILENAME:
+                self.add("INDEX_PATH", entry, "_index may contain only the canonical SEMANTIC_INDEX.json file")
+
+        index_file = index_dir / INDEX_FILENAME
+        if not index_file.is_file():
+            self.add("INDEX_FILE", index_dir, "_index must contain SEMANTIC_INDEX.json")
+            return
+
+        self.index_count += 1
+        try:
+            payload = json.loads(index_file.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+            self.add("INDEX_JSON", index_file, f"semantic index is not valid UTF-8 JSON: {error}")
+            return
+
+        if payload.get("schema_version") != 1:
+            self.add("INDEX_SCHEMA", index_file, "semantic index schema_version must be 1")
+        scope = payload.get("scope")
+        if not isinstance(scope, dict) or not scope.get("identity") or not scope.get("path"):
+            self.add("INDEX_SCOPE", index_file, "semantic index scope must contain identity and path")
+        source_commit = payload.get("source_commit")
+        if not isinstance(source_commit, str) or not COMMIT_RE.fullmatch(source_commit):
+            self.add("INDEX_SOURCE", index_file, "semantic index source_commit must be a Git commit identifier")
+        fingerprint = payload.get("source_fingerprint")
+        if not isinstance(fingerprint, str) or re.fullmatch(r"[0-9a-f]{64}", fingerprint) is None:
+            self.add("INDEX_SOURCE", index_file, "semantic index source_fingerprint must be a SHA-256 hex string")
+
+        nodes = payload.get("nodes")
+        edges = payload.get("edges")
+        if not isinstance(nodes, list):
+            self.add("INDEX_NODES", index_file, "semantic index nodes must be an array")
+            nodes = []
+        if not isinstance(edges, list):
+            self.add("INDEX_EDGES", index_file, "semantic index edges must be an array")
+            edges = []
+
+        ids: set[str] = set()
+        node_map: dict[str, dict[str, Any]] = {}
+        for node in nodes:
+            if not isinstance(node, dict):
+                self.add("INDEX_NODES", index_file, "every semantic index node must be an object")
+                continue
+            node_id = node.get("id")
+            if not isinstance(node_id, str) or not node_id:
+                self.add("INDEX_NODES", index_file, "every semantic index node must have a non-empty id")
+                continue
+            if node_id in ids:
+                self.add("INDEX_NODE_DUPLICATE", index_file, f"semantic index node id is duplicated: {node_id}")
+            ids.add(node_id)
+            node_map[node_id] = node
+            if node.get("type") not in INDEX_NODE_TYPES:
+                self.add("INDEX_NODE_TYPE", index_file, f"semantic index node has unknown type: {node_id}")
+            source = node.get("source")
+            if not isinstance(source, dict) or not source.get("path") or not source.get("locator"):
+                self.add("INDEX_SOURCE", index_file, f"semantic index node lacks source.path/source.locator: {node_id}")
+            else:
+                source_path = self.root if source["path"] == "." else self.root / str(source["path"])
+                if not source_path.exists():
+                    self.add("INDEX_SOURCE", index_file, f"semantic index node source does not exist: {source['path']}")
+            if node.get("external") not in {None, True}:
+                self.add("INDEX_EXTERNAL", index_file, f"external marker must be true when present: {node_id}")
+
+        seen_edges: set[tuple[Any, Any, Any]] = set()
+        for relation in edges:
+            if not isinstance(relation, dict):
+                self.add("INDEX_EDGES", index_file, "every semantic index edge must be an object")
+                continue
+            key = (relation.get("from"), relation.get("type"), relation.get("to"))
+            if key in seen_edges:
+                self.add("INDEX_EDGE_DUPLICATE", index_file, f"semantic index edge is duplicated: {key}")
+            seen_edges.add(key)
+            if relation.get("type") not in INDEX_EDGE_TYPES:
+                self.add("INDEX_EDGE_TYPE", index_file, f"semantic index edge has unknown type: {relation.get('type')}")
+            if relation.get("from") not in ids:
+                self.add("INDEX_ENDPOINT", index_file, f"semantic index edge source does not exist: {relation.get('from')}")
+            if relation.get("to") not in ids:
+                self.add("INDEX_ENDPOINT", index_file, f"semantic index edge target does not exist: {relation.get('to')}")
+            origin = node_map.get(str(relation.get("from")))
+            if origin is not None and origin.get("external") is True:
+                self.add("INDEX_EXTERNAL", index_file, f"external stub must not originate edges: {relation.get('from')}")
+
     def validate_local_configuration(self) -> None:
         result = subprocess.run(
             ["git", "-C", str(self.root), "rev-parse", "--show-toplevel"],
@@ -457,6 +572,7 @@ class Validator:
             "rdo_documents": self.rdo_count,
             "change_files": self.change_count,
             "memory_files": self.memory_count,
+            "index_files": self.index_count,
             "findings": self.findings,
         }
 
@@ -468,7 +584,8 @@ class Validator:
 
         print(
             f"{payload['result']}: checked {self.rdo_count} R/D/O documents, "
-            f"{self.change_count} CHANGE files and {self.memory_count} memory files"
+            f"{self.change_count} CHANGE files, {self.memory_count} memory files and "
+            f"{self.index_count} semantic index files"
         )
         for finding in self.findings:
             location = finding["path"]

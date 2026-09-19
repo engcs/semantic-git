@@ -1,0 +1,78 @@
+name: Apply CHANGE-021
+
+on:
+  push:
+    branches:
+      - change/root/CHANGE-021-semantic-index
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Apply approved normative and validator changes
+        run: python _scripts/apply_change021_once.py patch
+
+      - name: Validate structure before index
+        run: python _scripts/validate_structure.py --root . --spec SEMANTIC_GIT.md --json
+
+      - name: Run semantic index tests
+        run: python _scripts/test_semantic_index.py
+
+      - name: Run existing mathematical deterministic fixtures
+        run: python _scripts/validate_mathematical_review_examples.py
+
+      - name: Commit normative implementation
+        run: |
+          git add SEMANTIC_GIT.md _scripts/validate_structure.py
+          git diff --cached --quiet || git commit -m "feat: integrate scoped semantic index normatively"
+
+      - name: Build and validate root index in IN_PROGRESS state
+        run: |
+          python _scripts/semantic_index.py build --scope .
+          python _scripts/semantic_index.py validate --scope .
+          python _scripts/semantic_index.py query --scope . --type decision > /tmp/change021-query.json
+          test -s /tmp/change021-query.json
+
+      - name: Reconcile CHANGE after successful implementation checks
+        run: |
+          python _scripts/apply_change021_once.py reconcile
+          git add _changes/CHANGE-021.md
+          git diff --cached --quiet || git commit -m "change: reconcile CHANGE-021 semantic index"
+
+      - name: Rebuild final root index against reconciled source snapshot
+        run: |
+          rm -rf _index
+          python _scripts/semantic_index.py build --scope .
+          python _scripts/semantic_index.py validate --scope .
+          python _scripts/validate_structure.py --root . --spec SEMANTIC_GIT.md --json
+          python _scripts/test_semantic_index.py
+
+      - name: Remove one-shot scaffolding and commit canonical root index
+        run: |
+          git rm _scripts/apply_change021_once.py .github/workflows/change021-apply.yml
+          git add _index/SEMANTIC_INDEX.json
+          git commit -m "test: materialize validated root semantic index"
+
+      - name: Final validation at committed candidate head
+        run: |
+          python _scripts/semantic_index.py validate --scope .
+          python _scripts/validate_structure.py --root . --spec SEMANTIC_GIT.md --json
+          python _scripts/test_semantic_index.py
+          git status --porcelain
+          test -z "$(git status --porcelain)"
+
+      - name: Push reconciled candidate
+        run: git push origin HEAD:${GITHUB_REF_NAME}

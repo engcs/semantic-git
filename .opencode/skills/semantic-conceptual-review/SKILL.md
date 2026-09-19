@@ -25,6 +25,8 @@ candidate R/D/O already exists and needs conceptual criticism
 -> semantic-conceptual-review
 ```
 
+`semantic-memory` is transversal, not a fourth semantic stage. Use it when review changes the analytical status of material findings that should survive beyond the review but should not be treated as authoritative R/D/O.
+
 The review stage is especially valuable after reconstruction, because a behaviorally correct first pass may still speak like an engineer reading code rather than a domain expert explaining the business.
 
 ## Fundamental objective
@@ -44,6 +46,14 @@ physical evidence
 -> R/D/O
 ```
 
+Material findings that should not become R/D/O may remain separately in analytical memory:
+
+```text
+physical evidence
+-> material non-semantic or unresolved finding
+-> _memory/FINDINGS.yaml
+```
+
 `semantic-reconstruction` is primarily responsible for the first two transitions. This skill concentrates on the transition from behavioral model to conceptual domain model and on critically reviewing the resulting R/D/O.
 
 ## Required inputs
@@ -57,9 +67,14 @@ Before reviewing, obtain when available:
 - original relevant sources;
 - identified semantic-version boundary, when applicable;
 - unresolved `REVIEW` items;
+- relevant findings from `_memory/FINDINGS.yaml`, when analytical history materially constrains the review;
 - any explicit evidence boundary imposed by the human.
 
+Do not load `_memory` indiscriminately. Read only relevant findings when they can affect known risks, edge cases, unresolved meaning, prior investigation or reimplementation safety.
+
 Do not review from the candidate prose alone when the original evidence is available. A reviewer that cannot reopen evidence can only judge wording and internal consistency, not semantic completeness.
+
+A finding in `_memory` is not authority. When a material conclusion depends on it, reopen original evidence when possible.
 
 If material original evidence is unavailable, state that limitation and do not pretend to have independently validated completeness.
 
@@ -84,9 +99,12 @@ Before changing the candidate:
 - read applicable ancestral R/D/O;
 - identify which candidate claims are inherited, local, physical evidence or unresolved;
 - preserve traceability from every material semantic claim back to evidence or explicit human intent;
-- preserve the target semantic-version boundary.
+- preserve the target semantic-version boundary;
+- distinguish relevant `_memory` findings from authoritative semantic claims.
 
 A conceptual improvement that weakens evidence is a regression.
+
+Do not promote a finding merely because it provides a convenient explanation. Semantic authority still requires evidence, CHANGE governance and human approval.
 
 ## 2. Reconstruct the domain narrative before editing R/D/O
 
@@ -109,6 +127,8 @@ The narrative should answer only questions supported by the domain, such as:
 
 Do not force every question to have an answer. The purpose is to form a coherent theory of the domain proved by the evidence, not to fill a template.
 
+A known physical exception from `_memory` may constrain this narrative, but if its business meaning remains unresolved, keep that uncertainty explicit instead of making the exception define the domain theory.
+
 ## 3. Look for conceptual compression
 
 Compare the candidate's individual rules against the domain narrative.
@@ -125,6 +145,8 @@ Examples of legitimate conceptual compression include:
 Compression is valid only when it preserves all material behavioral distinctions.
 
 Do not merge rules merely to make the contract shorter.
+
+If compression removes physical detail that is not semantically durable but is materially risky to forget, preserve that detail through `semantic-memory` rather than keeping it in R/D/O.
 
 ## 4. Elevate purpose above mechanism
 
@@ -146,6 +168,8 @@ If the evidence supports a higher-level formulation, prefer it.
 
 If the evidence does not support purpose beyond mechanism, do not invent one; retain the narrower statement or use `REVIEW`.
 
+An unexplained hardcoded behavior can remain a material finding without being elevated to purpose or Decision.
+
 ## 5. Remove residual implementation language
 
 Flag candidate language that would become obsolete after a physical rewrite, including unnecessary references to:
@@ -163,6 +187,8 @@ Flag candidate language that would become obsolete after a physical rewrite, inc
 Translate deterministic physical behavior into the corresponding domain concept when the evidence supports a unique interpretation.
 
 Do not replace a physical term with a vague business-sounding synonym. The replacement must improve semantic meaning.
+
+When a removed physical detail is materially important for future investigation or safe reimplementation, reconcile it into `_memory` if it passes the retention test. Do not preserve every discarded implementation detail.
 
 ## 6. Challenge premature REVIEW
 
@@ -184,11 +210,15 @@ Keep `REVIEW` only when material ambiguity remains or required evidence is genui
 
 Do not invent labels, intent or rationale to eliminate a legitimate `REVIEW`.
 
+Existing memory may help locate prior evidence or explain why an ambiguity survived, but it must not convert an unresolved issue into certainty by repetition alone.
+
+When a `REVIEW` is resolved, update any corresponding finding through `semantic-memory` rather than leaving stale analytical state.
+
 ## 7. Detect missing knowledge
 
 A reviewer is allowed to conclude that the candidate is incomplete.
 
-Compare the domain narrative, evidence and candidate contract and ask:
+Compare the domain narrative, evidence, relevant memory and candidate contract and ask:
 
 - Is a material population boundary missing?
 - Is a contribution rule implicit but absent?
@@ -196,8 +226,11 @@ Compare the domain narrative, evidence and candidate contract and ask:
 - Is an edge case behaviorally distinct but lost?
 - Is an aggregation or calculation order material to the result?
 - Did inheritance subtraction remove information necessary to understand local participation?
+- Did compression remove a non-semantic but materially risky finding without preserving it in memory?
 
-When knowledge is missing, recover it from evidence before adding it to R/D/O.
+When semantic knowledge is missing, recover it from evidence before adding it to R/D/O.
+
+When the missing item is material analytical context rather than durable semantic truth, use `semantic-memory` instead of expanding the contract.
 
 ## 8. Recheck inheritance
 
@@ -210,6 +243,8 @@ For every candidate item ask:
 - Does the local contract need only to state where an inherited mechanism participates?
 
 Remove duplicated identity, history, publication, aggregation or audit semantics when already governed by an ancestor, unless a local application point is required for reconstructibility.
+
+Do not move inherited semantic meaning into `_memory`. Memory is not a substitute location for authoritative knowledge.
 
 ## 9. Review R/D/O separation
 
@@ -231,6 +266,10 @@ They should express the minimum conceptual flow required to materialize the Deci
 
 They may describe ordering when order is semantically material, but should not mirror lineage merely because lineage exists.
 
+### Analytical memory
+
+It should contain only material non-authoritative findings that would be expensive or dangerous to forget. It must not become a fourth R/D/O dimension or a hiding place for semantic rules that have not been governed.
+
 Apply the canonical R/D/O gate in `SEMANTIC_GIT.md` after the conceptual revision.
 
 ## 10. Human domain test
@@ -250,6 +289,8 @@ If no, identify whether the failure comes from:
 
 Fix the semantic cause rather than merely simplifying prose.
 
+The domain reader should not need `_memory` to understand the authoritative contract. Memory exists for analytical depth and risk, not basic semantic comprehensibility.
+
 ## 11. Reconstruction and reimplementation tests
 
 The reviewed contract must pass both directions.
@@ -263,6 +304,8 @@ If the implementation disappeared, could another engineer reproduce materially e
 If technology, database, SQL, models, field names and pipeline architecture changed completely, would the reviewed contract remain true?
 
 A conceptual review fails if it becomes more elegant but less reconstructible.
+
+Known non-semantic findings in `_memory` may warn a reimplementation team about unresolved hazards, but they do not compensate for semantic rules missing from R/D/O.
 
 ## 12. Candidate delta
 
@@ -281,7 +324,27 @@ Classify material changes as:
 
 The delta is analysis evidence; do not persist these labels in final R/D/O unless the governing CHANGE format requires them.
 
-## 13. Guardrails
+For material items removed because they are physical or unresolved rather than semantic, separately decide whether the corresponding analytical finding should be **KEEP**, **UPSERT**, **RESOLVE**, **SUPERSEDE**, or **PROMOTION CANDIDATE** under `semantic-memory`.
+
+## 13. Reconcile analytical memory
+
+When relevant `_memory` exists or the review discovers a new retention-worthy finding, apply `semantic-memory` after the conceptual decision.
+
+The reviewer may:
+
+- preserve a finding unchanged;
+- enrich its evidence;
+- merge duplicate findings while preserving stable identity where possible;
+- mark a finding `resolved` when evidence closes the analytical issue;
+- mark a finding `superseded` when a more accurate finding replaces it;
+- mark semantic status as `candidate` when durable domain meaning is now plausible;
+- mark `promoted` only after normal Semantic Git governance actually places the meaning in R/D/O.
+
+Do not delete a material finding merely because it disappeared from revised R/D/O.
+
+Do not create a new finding for every conceptual rewrite. The finding must independently pass the retention test.
+
+## 14. Guardrails
 
 Do not:
 
@@ -292,11 +355,14 @@ Do not:
 - collapse materially different behaviors into one concept;
 - discard edge cases merely because they are awkward;
 - treat confidence from the first agent as evidence;
+- treat `_memory` as semantic authority;
+- use a finding to bypass CHANGE and human approval;
+- erase a finding because the reviewed contract became cleaner;
 - assume that a stronger model is automatically correct.
 
 The reviewer must be able to disagree with the candidate and must also be able to preserve it unchanged when it is already conceptually adequate.
 
-## 14. Canonical review gates
+## 15. Canonical review gates
 
 Before presenting the reviewed result, verify:
 
@@ -310,13 +376,14 @@ Before presenting the reviewed result, verify:
 8. **Inheritance** — ancestral meaning is not duplicated.
 9. **REVIEW exhaustion** — unresolved items represent genuine residual ambiguity.
 10. **R/D/O separation** — Requirements, Decisions and Operations have distinct roles.
-11. **Human domain reading** — a specialist can understand the subject without reading code.
+11. **Human domain reading** — a specialist can understand the subject without reading code or `_memory`.
 12. **Reconstruction** — equivalent behavior can be rebuilt without inventing business rules.
 13. **Reimplementation** — the contract survives a physical rewrite.
 14. **Economy** — no item can be removed without material semantic loss.
-15. **No regression** — conceptual elegance did not reduce fidelity or reconstructibility.
+15. **Memory integrity** — material non-semantic findings affected by the review were reconciled without being mistaken for authority or silently lost.
+16. **No regression** — conceptual elegance did not reduce fidelity or reconstructibility.
 
-## 15. Output discipline
+## 16. Output discipline
 
 When performing a conceptual review, present in this order:
 
@@ -326,9 +393,10 @@ When performing a conceptual review, present in this order:
 4. candidate delta;
 5. genuine remaining `REVIEW` items;
 6. revised local R/D/O or Semantic Diff;
-7. gate results.
+7. analytical-memory changes, when any were warranted;
+8. gate results.
 
-Keep implementation evidence outside persistent R/D/O.
+Keep implementation evidence outside persistent R/D/O. Keep retained non-authoritative findings in `_memory/FINDINGS.yaml` under `semantic-memory` rules.
 
 Do not persist or merge the reviewed contract merely because this skill produced it. Follow the repository's normal governance and human authorization requirements.
 
@@ -341,11 +409,15 @@ semantic-reconstruction
 -> evidence map
 -> behavioral semantic model
 -> candidate R/D/O
+-> selected analytical findings
 -> semantic-conceptual-review
 -> conceptual domain model
 -> reviewed R/D/O
+-> reconciled analytical memory
 -> governance / human approval
 ```
+
+`semantic-memory` participates transversally only when retention-worthy findings exist; it is not a mandatory sequential stage.
 
 The conceptual reviewer may return to original evidence, but should not restart the entire investigation without a concrete reason discovered during review.
 
@@ -353,7 +425,7 @@ The conceptual reviewer may return to original evidence, but should not restart 
 
 Do not merely make the candidate more readable.
 
-Make it more conceptually true to the domain while remaining equally or more faithful to the evidence.
+Make it more conceptually true to the domain while remaining equally or more faithful to the evidence, and preserve separately the few material non-semantic findings that would be costly or dangerous to forget.
 
 ```text
 understand the candidate
@@ -361,5 +433,6 @@ understand the candidate
 -> form the domain theory
 -> challenge the abstractions
 -> preserve behavior
+-> reconcile material analytical memory
 -> express the smallest human semantic contract
 ```

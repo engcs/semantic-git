@@ -23,6 +23,10 @@ Git / source implementation
 = original physical evidence
 ```
 
+Treat R/D/O and active analytical memory as separate current-state responsibilities. A finding that is already adequately represented as authoritative R/D/O should not remain duplicated as an active memory rule. Conversely, a finding that remains only in `_memory` must not be treated as normative input to R/D/O or implementation.
+
+Promotion is the lifecycle bridge, not permission for two sources of truth. After approved promotion, R/D/O owns the current semantic rule; memory may retain the finding as `promoted` only to preserve analytical provenance, prior uncertainty, evidence/risk history and `semantic_refs` to the authoritative semantic item.
+
 A finding can be true and materially important without being a durable domain rule.
 
 Typical example:
@@ -113,6 +117,8 @@ Do not use `_memory` as:
 - duplicate of CHANGE history;
 - substitute for original source evidence;
 - hidden place to persist a semantic rule without governance.
+
+A finding with `status: active` must not simply restate knowledge already adequately represented in authoritative R/D/O. If a finding becomes authoritative through promotion, move semantic ownership to R/D/O and keep the memory record only as non-authoritative provenance with `status: promoted` and semantic references when useful.
 
 A useful test is:
 
@@ -284,6 +290,30 @@ Prefer concrete consequences such as:
 
 Risk is analytical context, not proof of semantic meaning.
 
+### Answering questions about domain risk
+
+When the human asks questions such as:
+
+```text
+quais riscos conhecidos existem neste domínio?
+quais fragilidades conhecidas existem neste namespace?
+o que pode dar errado numa reimplementação?
+quais exceções ou lacunas merecem atenção?
+```
+
+use relevant findings as the evidence-backed map of **known analytical risks** for the namespace. Prefer active or otherwise still-relevant findings, and summarize for each material item:
+
+- finding identity;
+- category/status;
+- risk level when recorded;
+- concrete consequence;
+- evidence/certainty when relevant;
+- whether semantic meaning is unresolved, non-semantic, candidate or promoted.
+
+Do not silently broaden this into a generic enterprise, operational, security or business-risk register unless evidence in scope supports those categories. `_memory` answers what is **known and recorded analytically**, not every risk that could hypothetically exist.
+
+Absence of matching findings means only that no analytical risk was recorded or recovered in the consulted scope. It does not prove that the domain has no risk.
+
 ## 10. Provenance and evidence
 
 A finding must remain traceable to evidence sufficient to reopen the investigation.
@@ -359,6 +389,8 @@ It may:
 
 It must not silently delete a material finding merely because that finding was excluded from revised R/D/O.
 
+It should also challenge duplication: if revised R/D/O now adequately owns a semantic proposition, the corresponding active finding must either be resolved/reclassified or, after approved promotion, retained only as `promoted` provenance rather than a parallel semantic statement.
+
 ## 15. Promotion to R/D/O
 
 Promotion follows the normal Semantic Git flow:
@@ -384,6 +416,8 @@ semantic_refs:
   - domain/example:D-007
 ```
 
+The authoritative current semantic statement now lives in R/D/O. Do not maintain a second normative copy of that rule in `_memory`; retain only the analytical history needed to understand where it came from and point to the semantic authority through `semantic_refs`.
+
 Do not rewrite history to pretend the semantic meaning was always known.
 
 ## 16. Publication boundary
@@ -408,6 +442,8 @@ Before writing or updating `FINDINGS.yaml`, verify:
 10. **No silent loss** — existing unexamined findings remain intact.
 11. **Progressive disclosure** — memory is not added to default context or publication without reason.
 12. **Draft boundary** — when the related CHANGE is `DRAFT`, the write is analytical memory only, derives from the authorized investigation, and does not edit or materialize R/D/O or implementation.
+13. **R/D/O exclusivity** — an active finding does not duplicate a proposition already adequately owned by authoritative R/D/O; promoted findings point to semantic authority instead of becoming a second source of truth.
+14. **Risk-query discipline** — risk summaries report evidence-backed analytical risks actually present in relevant findings and do not infer absence of risk from absence of findings.
 
 If a required fact is unknown, represent it as unknown or unresolved instead of inventing it.
 

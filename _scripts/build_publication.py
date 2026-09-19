@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build and check a deterministic namespace publication."""
+"""Build and check a freshness-verifiable namespace publication."""
 
 from __future__ import annotations
 
@@ -23,6 +23,7 @@ RDO_SOURCES = (
     ("OPERATIONS.md", "OPERATIONS"),
 )
 FORMAT_VERSION = 1
+TRANSPARENT_NAMESPACE_DIRS = {"_applications"}
 SCRIPT_PATH = Path(__file__).resolve()
 HEADING_RE = re.compile(r"^(#{1,6})(\s+.*)$")
 H1_RE = re.compile(r"^#(?!#)\s+")
@@ -124,7 +125,10 @@ def namespace_path(root: Path) -> str:
         relative = root.resolve().relative_to(semantic_root)
     except ValueError as error:
         raise PublicationError("namespace root is outside the Semantic Repository") from error
-    return "root" if relative == Path(".") else relative.as_posix()
+    if relative == Path("."):
+        return "root"
+    parts = [part for part in relative.parts if part not in TRANSPARENT_NAMESPACE_DIRS]
+    return "/".join(parts) or "root"
 
 
 def source_texts(root: Path) -> tuple[dict[str, str], list[dict[str, str]]]:
@@ -136,13 +140,17 @@ def source_texts(root: Path) -> tuple[dict[str, str], list[dict[str, str]]]:
         texts["README.md"] = read_text(readme)
         sources.append({"path": "README.md", "sha256": digest_text(texts["README.md"])})
 
+    rdo_found = False
     for filename, _ in RDO_SOURCES:
         path = root / filename
         if not path.is_file():
-            raise PublicationError(f"required source is missing: {filename}")
+            continue
+        rdo_found = True
         texts[filename] = read_text(path)
         sources.append({"path": filename, "sha256": digest_text(texts[filename])})
 
+    if not rdo_found:
+        raise PublicationError("namespace has no R/D/O source to publish")
     return texts, sources
 
 
@@ -176,6 +184,8 @@ def render_publication(root: Path, texts: dict[str, str]) -> str:
         lines.extend([demote_headings(texts["README.md"], remove_first_h1=True, extra_levels=0), ""])
 
     for filename, label in RDO_SOURCES:
+        if filename not in texts:
+            continue
         rendered = demote_headings(texts[filename], extra_levels=0)
         rendered = re.sub(
             r"^#\s+(Requirements|Decisions|Operations)\s+-\s+.+$",
@@ -394,7 +404,7 @@ def base_manifest(root: Path, spec: Path, sources: list[dict[str, str]], markdow
     paths = publication_paths(root)
     return {
         "format": FORMAT_VERSION,
-        "namespace": root.name,
+        "namespace": namespace_path(root),
         "sources": sources,
         "spec": {
             "path": relative_label(spec, root, "external"),

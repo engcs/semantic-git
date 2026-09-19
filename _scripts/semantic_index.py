@@ -108,6 +108,20 @@ def metadata(lines: list[str]) -> tuple[dict[str,str], dict[str,list[str]]]:
         else: vals[k] = v; active = None
     return vals, lists
 
+def _yaml_scalar(value: str) -> str:
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+        return value[1:-1]
+    return value
+
+
+def _block_scalar(lines: list[str], folded: bool) -> str:
+    parts = [line.strip() for line in lines]
+    if folded:
+        return " ".join(part for part in parts if part)
+    return "\n".join(parts).strip()
+
+
 def parse_findings(root: Path, ns: dict[str,Any], nodes: dict[str,Any], edges: list[dict[str,str]]) -> None:
     path = ns["path"] / "_memory/FINDINGS.yaml"
     if not path.is_file(): return
@@ -117,11 +131,33 @@ def parse_findings(root: Path, ns: dict[str,Any], nodes: dict[str,Any], edges: l
         if m: starts.append((i,m.group(1)))
     for pos,(start,fid) in enumerate(starts):
         end = starts[pos+1][0] if pos+1 < len(starts) else len(lines)
-        fields: dict[str,str]={}; refs=[]; active=None
-        for line in lines[start+1:end]:
-            m=FINDING_FIELD.fullmatch(line)
-            if m: active=m.group(1); fields[active]=m.group(2).strip('"\''); continue
-            if active=="semantic_refs" and re.fullmatch(r"^      -\s+\S.*$", line): refs.append(line.split("-",1)[1].strip().strip('"\''))
+        fields: dict[str,str]={}; refs=[]
+        i = start + 1
+        while i < end:
+            line = lines[i]
+            m = FINDING_FIELD.fullmatch(line)
+            if not m:
+                i += 1
+                continue
+            key, raw = m.groups(); raw = raw.strip()
+            if key == "semantic_refs" and not raw:
+                i += 1
+                while i < end and not FINDING_FIELD.fullmatch(lines[i]):
+                    item = re.fullmatch(r"^      -\s+(.+?)\s*$", lines[i])
+                    if item: refs.append(_yaml_scalar(item.group(1)))
+                    i += 1
+                continue
+            if raw in {">", ">-", ">+", "|", "|-", "|+"}:
+                folded = raw.startswith(">")
+                block=[]; i += 1
+                while i < end and not FINDING_FIELD.fullmatch(lines[i]):
+                    if lines[i].strip():
+                        block.append(lines[i][6:] if lines[i].startswith("      ") else lines[i].lstrip())
+                    i += 1
+                fields[key] = _block_scalar(block, folded)
+                continue
+            fields[key] = _yaml_scalar(raw)
+            i += 1
         node_id=f"{ns['id']}:{fid}"
         nodes[node_id]={"id":node_id,"type":"finding","namespace":ns["id"],"status":fields.get("status"),"category":fields.get("category"),"text":fields.get("summary", ""),"source":{"path":rel(root,path),"locator":fid}}
         edge(edges,f"namespace:{ns['id']}","contains",node_id)
@@ -193,15 +229,52 @@ def external(node: dict[str,Any]) -> dict[str,Any]:
         if node.get(k) is not None: out[k]=node[k]
     return out
 
-def fingerprint(root: Path, paths: list[str]) -> str:
+def _indexed_file_paths(root: Path, nodes: dict[str,Any]) -> list[str]:
+    paths=[]
+    for node in nodes.values():
+        rp=node.get("source",{}).get("path")
+        if not rp: continue
+        p=root if rp=="." else root/rp
+        if p.is_file(): paths.append(rp)
+    return sorted(set(paths))
+
+
+def _blob_at_commit(root: Path, commit: str, rp: str) -> str | None:
+    result=git(root,"rev-parse",f"{commit}:{rp}",check=False)
+    return result.stdout.strip() if result.returncode==0 else None
+
+
+def _working_blob(root: Path, rp: str) -> str:
+    p=root/rp
+    if not p.is_file(): raise IndexValidationError(f"indexed source does not exist: {rp}")
+    return git(root,"hash-object","--",str(p)).stdout.strip()
+
+
+def _assert_sources_committed(root: Path, paths: list[str]) -> None:
+    for rp in paths:
+        head_blob=_blob_at_commit(root,"HEAD",rp)
+        if head_blob is None:
+            raise IndexValidationError(f"indexed source is not committed at HEAD: {rp}")
+        if _working_blob(root,rp)!=head_blob:
+            raise IndexValidationError(f"indexed source differs from HEAD: {rp}")
+
+
+def _source_snapshot_commit(root: Path, paths: list[str]) -> str:
+    if not paths: return git(root,"rev-parse","HEAD").stdout.strip()
+    result=git(root,"log","-1","--format=%H","--",*paths)
+    commit=result.stdout.strip()
+    if not commit: raise IndexValidationError("cannot resolve a committed semantic source snapshot")
+    return commit
+
+
+def fingerprint_at_commit(root: Path, commit: str, paths: list[str]) -> str:
     h=hashlib.sha256()
     for rp in sorted(set(paths)):
-        p=root if rp=="." else root/rp
-        if p.is_dir(): continue
-        if not p.is_file(): raise IndexValidationError(f"indexed source does not exist: {rp}")
-        blob=git(root,"hash-object","--",str(p)).stdout.strip()
+        blob=_blob_at_commit(root,commit,rp)
+        if blob is None: raise IndexValidationError(f"source_commit does not contain indexed source: {rp}")
         h.update(rp.encode()); h.update(b"\0"); h.update(blob.encode("ascii")); h.update(b"\n")
     return h.hexdigest()
+
 
 def build_index(root: Path, scope_value: str|None=None, *, check_structure: bool=True) -> dict[str,Any]:
     root=root.resolve()
@@ -218,8 +291,10 @@ def build_index(root: Path, scope_value: str|None=None, *, check_structure: bool
             if e["to"] not in selected: selected[e["to"]]=external(all_nodes[e["to"]]); changed=True
             if e not in selected_edges: selected_edges.append(e)
     selected_edges=[e for e in selected_edges if not selected[e["from"]].get("external")]
-    source_paths=[n["source"]["path"] for n in selected.values()]
-    return {"schema_version":SCHEMA_VERSION,"generator":GENERATOR,"scope":{"identity":scope["id"],"path":scope["rel"]},"source_commit":git(root,"rev-parse","HEAD").stdout.strip(),"source_fingerprint":fingerprint(root,source_paths),"nodes":sorted(selected.values(),key=lambda x:x["id"]),"edges":sorted(selected_edges,key=lambda x:(x["from"],x["type"],x["to"]))}
+    source_paths=_indexed_file_paths(root,selected)
+    _assert_sources_committed(root,source_paths)
+    source_commit=_source_snapshot_commit(root,source_paths)
+    return {"schema_version":SCHEMA_VERSION,"generator":GENERATOR,"scope":{"identity":scope["id"],"path":scope["rel"]},"source_commit":source_commit,"source_fingerprint":fingerprint_at_commit(root,source_commit,source_paths),"nodes":sorted(selected.values(),key=lambda x:x["id"]),"edges":sorted(selected_edges,key=lambda x:(x["from"],x["type"],x["to"]))}
 
 def index_path(scope: dict[str,Any]) -> Path: return scope["path"] / "_index/SEMANTIC_INDEX.json"
 
@@ -233,9 +308,10 @@ def validate_payload(root: Path, payload: dict[str,Any], expected: dict[str,Any]
     scope=payload.get("scope")
     if not isinstance(scope,dict) or not scope.get("identity") or not scope.get("path"): err.append("scope must contain identity and path")
     commit=payload.get("source_commit")
-    if not isinstance(commit,str) or not COMMIT.fullmatch(commit): err.append("source_commit is missing or invalid")
-    elif git(root,"cat-file","-e",f"{commit}^{{commit}}",check=False).returncode: err.append("source_commit does not exist")
-    elif git(root,"merge-base","--is-ancestor",commit,"HEAD",check=False).returncode: err.append("source_commit is not an ancestor of HEAD")
+    commit_valid=isinstance(commit,str) and bool(COMMIT.fullmatch(commit))
+    if not commit_valid: err.append("source_commit is missing or invalid")
+    elif git(root,"cat-file","-e",f"{commit}^{{commit}}",check=False).returncode: err.append("source_commit does not exist"); commit_valid=False
+    elif git(root,"merge-base","--is-ancestor",commit,"HEAD",check=False).returncode: err.append("source_commit is not an ancestor of HEAD"); commit_valid=False
     if not re.fullmatch(r"[0-9a-f]{64}",str(payload.get("source_fingerprint",""))): err.append("source_fingerprint is missing or invalid")
     nodes=payload.get("nodes") if isinstance(payload.get("nodes"),list) else []; edges=payload.get("edges") if isinstance(payload.get("edges"),list) else []
     if not isinstance(payload.get("nodes"),list): err.append("nodes must be an array")
@@ -264,12 +340,25 @@ def validate_payload(root: Path, payload: dict[str,Any], expected: dict[str,Any]
         if e.get("from") in node_map and node_map[e["from"]].get("external"): err.append(f"external stub must not originate edges: {e['from']}")
     if isinstance(scope,dict) and scope.get("identity"):
         if f"namespace:{scope['identity']}" not in ids: err.append("scope namespace node is missing")
-        p=root if scope.get("path")=="." else root/str(scope.get("path"))
-        if not p.exists(): err.append("scope path does not exist")
+        scope_path=root if scope.get("path")=="." else root/str(scope.get("path"))
+        if not scope_path.exists(): err.append("scope path does not exist")
+    source_paths=_indexed_file_paths(root,node_map)
+    if commit_valid:
+        for rp in source_paths:
+            commit_blob=_blob_at_commit(root,commit,rp)
+            if commit_blob is None:
+                err.append(f"source_commit does not contain indexed source: {rp}")
+            elif _working_blob(root,rp)!=commit_blob:
+                err.append(f"STALE: source_commit does not match current indexed source: {rp}")
+        try:
+            actual_fingerprint=fingerprint_at_commit(root,commit,source_paths)
+            if payload.get("source_fingerprint")!=actual_fingerprint:
+                err.append("STALE: source_fingerprint does not match source_commit snapshot")
+        except IndexValidationError as exc:
+            if str(exc) not in err: err.append(str(exc))
     if expected is not None:
         if payload.get("source_fingerprint")!=expected.get("source_fingerprint"): err.append("STALE: source_fingerprint does not match current indexed sources")
-        a=dict(payload); b=dict(expected); b["source_commit"]=a.get("source_commit")
-        if a!=b: err.append("DRIFT: index content does not match deterministic regeneration")
+        if payload!=expected: err.append("DRIFT: index content does not match deterministic regeneration")
     return err
 
 def write_index(root: Path, scope_value: str|None=None) -> Path:
@@ -281,6 +370,8 @@ def validate_index(root: Path, scope_value: str|None=None) -> tuple[Path,list[st
     if not path.is_file(): return path,["MISSING: index file does not exist"]
     try: payload=json.loads(path.read_text(encoding="utf-8"))
     except (OSError,json.JSONDecodeError) as e: return path,[f"INVALID: {e}"]
+    errors=validate_payload(root,payload)
+    if errors: return path,errors
     expected=build_index(root,scope["rel"],check_structure=False)
     return path,validate_payload(root,payload,expected)
 

@@ -1,5 +1,5 @@
 change: CHANGE-019
-status: IN_PROGRESS
+status: RECONCILED
 base_commit: 7735ce340df437329054dda4181559ea3e6cc3eb
 approved_semantic_commit: 4ca35f8dceb9ec379bfe7a7463f51a0bfd79d05b
 approval_scope:

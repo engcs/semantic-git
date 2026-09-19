@@ -62,8 +62,12 @@ reimplementação, lacunas de evidência e significados ainda não resolvidos.
 Regras operacionais:
 
 - `_memory` não é R/D/O, não cria verdade semântica e não substitui evidência original;
+- mantenha separação de estado entre R/D/O e `_memory`: um finding ativo não deve duplicar conhecimento já adequadamente representado no R/D/O vigente;
+- após promoção, a regra autoritativa deve viver somente em R/D/O; o finding pode permanecer como `promoted` apenas para preservar proveniência, evidência histórica, risco anterior e `semantic_refs`, sem funcionar como segunda cópia normativa da regra;
 - não carregue `_memory` no bootstrap normal apenas porque o arquivo existe;
 - consulte memória sob demanda em reconstrução, reimplementação, revisão conceitual, debug, análise de risco, investigação de `REVIEW` ou origem de uma regra;
+- quando o humano perguntar pelos riscos conhecidos de um domínio ou namespace, consulte os findings relevantes e apresente os riscos analíticos conhecidos, suas consequências, evidências e estados; não transforme isso em um inventário genérico de riscos de negócio sem evidência;
+- ausência de findings de risco não prova ausência de risco; diga apenas que não há riscos analíticos registrados ou recuperados no escopo consultado;
 - use a skill `semantic-memory` para criar, ler, reconciliar ou atualizar findings;
 - faça upsert por identidade estável `F-*`; não use append cego nem substituição cega;
 - não remova finding existente apenas porque a execução atual não o reencontrou;
@@ -125,6 +129,8 @@ por inferência.
 - governe alterações semânticas materiais por CHANGE;
 - valide a coerência entre significado, documentação e materialização;
 - retenha em `_memory` somente achados não normativos que sejam materialmente caros ou perigosos de esquecer;
+- evite duplicação de significado entre R/D/O e findings ativos; depois de promoção, mantenha na memória somente a proveniência analítica necessária;
+- use `_memory` como mapa dos riscos analíticos conhecidos quando a tarefa pedir fragilidades, exceções, lacunas ou riscos conhecidos do namespace;
 - nunca use `_memory` para contornar governança semântica;
 - prefira validações determinísticas quando a regra puder ser verificada por estrutura, Git ou referência;
 - sinalize ambiguidades materiais para revisão humana;
@@ -144,6 +150,7 @@ era permitido e declarado. Verifique, conforme aplicável:
 - drift da `main` ou do contrato aprovado;
 - dependências e CHANGEs concorrentes relevantes;
 - integridade de `_memory/FINDINGS.yaml` quando a tarefa o tiver criado ou alterado;
+- ausência de finding ativo que simplesmente replique conhecimento já autoritativo em R/D/O;
 - ausência de promoção implícita de finding para R/D/O;
 - presença de `FAIL` ou `REVIEW` impeditivo.
 

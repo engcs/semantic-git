@@ -73,10 +73,15 @@ findings:
   - id: F-001
     status: active
     category: evidence_gap
-    summary: \"Gap conhecido\"
-    evidence: proven
-    risk: medium
-    semantic_status: unresolved
+    summary: >
+      Gap conhecido que precisa
+      permanecer pesquisável.
+    evidence:
+      certainty: proven
+    risk:
+      level: medium
+    semantic_status:
+      state: unresolved
     semantic_refs:
       - root:R-001
 """)
@@ -146,14 +151,14 @@ Sibling.
         errors = si.validate_payload(self.root, payload)
         self.assertTrue(any("duplicate node id" in error for error in errors))
 
-    def test_stale_index_is_detected_when_source_changes(self) -> None:
+    def test_dirty_indexed_source_blocks_build_and_invalidates_existing_index(self) -> None:
         payload = si.build_index(self.root, ".", check_structure=False)
         path = self.root / "REQUIREMENTS.md"
         path.write_text(path.read_text().replace("Regra global.", "Regra global alterada."), encoding="utf-8")
-        expected = si.build_index(self.root, ".", check_structure=False)
-        errors = si.validate_payload(self.root, payload, expected)
+        with self.assertRaises(si.IndexValidationError):
+            si.build_index(self.root, ".", check_structure=False)
+        errors = si.validate_payload(self.root, payload)
         self.assertTrue(any(error.startswith("STALE:") for error in errors))
-        self.assertTrue(any(error.startswith("DRIFT:") for error in errors))
 
     def test_build_validate_and_query_commands_share_current_index(self) -> None:
         path = si.write_index(self.root, "domain/child")
@@ -170,6 +175,32 @@ Sibling.
         path.write_text(text + "- **R-001** - Duplicada.\n", encoding="utf-8")
         with self.assertRaises(si.IndexErrorBase):
             si.build_index(self.root, ".", check_structure=False)
+
+    def test_canonical_folded_finding_summary_is_indexed(self) -> None:
+        index = si.build_index(self.root, "domain/child", check_structure=False)
+        finding = next(node for node in index["nodes"] if node["id"] == "domain/child:F-001")
+        self.assertEqual("Gap conhecido que precisa permanecer pesquisável.", finding["text"])
+
+    def test_source_commit_must_contain_the_indexed_source_versions(self) -> None:
+        old_commit = subprocess.run(["git", "-C", str(self.root), "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
+        path = self.root / "REQUIREMENTS.md"
+        path.write_text(path.read_text().replace("Regra global.", "Regra global v2."), encoding="utf-8")
+        subprocess.run(["git", "-C", str(self.root), "add", "REQUIREMENTS.md"], check=True)
+        subprocess.run(["git", "-C", str(self.root), "commit", "-qm", "change semantic source"], check=True)
+        expected = si.build_index(self.root, ".", check_structure=False)
+        broken = json.loads(json.dumps(expected))
+        broken["source_commit"] = old_commit
+        errors = si.validate_payload(self.root, broken, expected)
+        self.assertTrue(any("source_commit does not match current indexed source" in error for error in errors))
+        self.assertTrue(any(error.startswith("DRIFT:") for error in errors))
+
+    def test_unindexed_commit_does_not_move_semantic_source_commit(self) -> None:
+        first = si.build_index(self.root, ".", check_structure=False)
+        write(self.root / "notes.txt", "physical-only change\n")
+        subprocess.run(["git", "-C", str(self.root), "add", "notes.txt"], check=True)
+        subprocess.run(["git", "-C", str(self.root), "commit", "-qm", "physical only"], check=True)
+        second = si.build_index(self.root, ".", check_structure=False)
+        self.assertEqual(first["source_commit"], second["source_commit"])
 
 
 if __name__ == "__main__":

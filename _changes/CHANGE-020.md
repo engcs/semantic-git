@@ -1,8 +1,9 @@
 change: CHANGE-020
-status: DRAFT
+status: IN_PROGRESS
 base_commit: 1099f6bc2c4b915af40610bff9074ff88ee707c7
-approved_semantic_commit: null
-approval_scope: null
+approved_semantic_commit: e433f90143c50cc5cc3e21ae3785c18e279c68c7
+approval_scope:
+  - _changes/CHANGE-020.md
 reason: null
 
 # CHANGE-020

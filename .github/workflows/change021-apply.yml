@@ -67,13 +67,7 @@ jobs:
         run: |
           python -m py_compile _scripts/semantic_index.py _scripts/validate_structure.py _scripts/test_semantic_index.py
           python _scripts/test_semantic_index.py
-
-      - name: Remove one-shot scaffolding
-        run: |
-          git rm _scripts/apply_change021_once.py .github/workflows/change021-apply.yml
-          git commit -m "chore: remove CHANGE-021 one-shot scaffolding"
-
-      - name: Ensure clean candidate and push
-        run: |
           test -z "$(git status --porcelain)"
-          git push origin HEAD:${GITHUB_REF_NAME}
+
+      - name: Push implementation candidate
+        run: git push origin HEAD:${GITHUB_REF_NAME}

@@ -1,5 +1,5 @@
 change: CHANGE-021
-status: IN_PROGRESS
+status: RECONCILED
 base_commit: 463bf8c7c6578417e0eba51cfab98c95af2a8222
 approved_semantic_commit: 38841a94a4f850bb32c2786794f43690de07f3aa
 approval_scope:
@@ -49,3 +49,18 @@ reason: null
 - **ADD O-J** - Adicionar validações determinísticas cobrindo ao menos: geração idempotente; IDs únicos; edge para endpoint inexistente; source inexistente; namespace pai/filho; escopo descendente sem importar irmãos; stub para referência externa; R/D/O; CHANGE arquivada; finding com `semantic_refs`; e detecção de índice desatualizado em relação às fontes.
 - **ADD O-K** - Materializar e validar o índice de `root` desta versão como demonstração canônica, sem exigir que índices de todos os namespaces sejam mantidos simultaneamente; índices descendentes devem poder ser gerados sob demanda pelo mesmo comando.
 - **ADD O-L** - Não introduzir SQLite, NetworkX, embeddings ou banco de grafos nesta CHANGE; qualquer cache ou análise avançada futura deve ser regenerável a partir de `SEMANTIC_INDEX.json` e das fontes governadas.
+
+## Validation Evidence
+
+- O validator estrutural passou sem exigir alteração retroativa de CHANGEs arquivadas.
+- CHANGEs arquivadas preservam integralmente seu conteúdo histórico; campos de aprovação modernos ausentes não são fabricados retroativamente.
+- Metadados modernos presentes em arquivos históricos continuam sendo validados quanto à forma.
+- A suíte `test_semantic_index.py` passou com fixture de CHANGE arquivada legada sem `approved_semantic_commit`/`approval_scope`.
+- As fixtures determinísticas de revisão matemática permanecem válidas.
+- O índice de `root` foi materializado, validado e consultado com sucesso.
+
+### Reconciliation Summary
+
+- O índice scoped está implementado em JSON, com `nodes`, `edges`, proveniência, `source_commit`, `source_fingerprint`, stubs externos e comandos `build`, `validate` e `query`.
+- A validação estrutural é pré-condição do índice, mas respeita a imutabilidade histórica: evolução do validator não autoriza reescrita de CHANGE arquivada.
+- O índice de `root` é apenas o maior escopo; índices descendentes permanecem reproduzíveis sob demanda.

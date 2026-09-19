@@ -82,6 +82,43 @@ As skills `semantic-extraction`, `semantic-reconstruction` e
 aplicá-la somente quando um achado satisfizer os critérios de retenção de
 `semantic-memory`.
 
+## Mathematical Review
+
+Use `semantic-mathematical-review` quando a tarefa pedir gaps matemáticos,
+indeterminações, inconsistências quantitativas, casos de fronteira, divisão por
+zero, sobreposição/lacuna de regras por casos, ordem de agregação, precisão ou
+incompatibilidade dimensional. Também use a skill quando uma reconstrução ou
+revisão conceitual encontrar fórmula, limite, função ou agregação material cujo
+comportamento total e único ainda não esteja demonstrado.
+
+A skill matemática é transversal e analítica. Ela deve separar sempre:
+
+```text
+comportamento matemático
+≠ comportamento físico da engine
+≠ regra semântica governada
+```
+
+Regras operacionais:
+
+- identifique o domínio admissível antes de concluir que uma expressão é total ou inválida;
+- prefira prova determinística, verificação simbólica, teste de fronteira ou contraexemplo concreto quando possível;
+- um único witness válido pode demonstrar que uma regra não é total, única ou equivalente;
+- não transforme `NULL`, erro, infinito, overflow, arredondamento ou fallback de uma engine em regra de negócio automaticamente;
+- quando R/D/O já definir de forma única um caso matematicamente especial, comportamento físico diferente é divergência da materialização, não nova indeterminação semântica;
+- quando mais de uma convenção semanticamente plausível puder fechar o gap, mantenha `REVIEW` ou finding analítico; não invente a resolução;
+- execute a skill sob demanda, não como etapa obrigatória de todo pipeline semântico;
+- não crie `_memory` porque a skill foi executada; somente findings matemáticos materiais e caros/perigosos de redescobrir podem ser preservados via `semantic-memory`;
+- findings matemáticos continuam sendo findings normais em `_memory/FINDINGS.yaml`; não crie `MATHEMATICS.yaml` separado para esse fim;
+- quando útil para leitura por máquina, um finding matemático pode incluir bloco opcional `mathematics:` com expressão, condição de domínio, witness/prova, resultado semântico esperado, comportamento observado e classificação;
+- use categorias de finding que deixem sua natureza clara, como `mathematical_contradiction`, `mathematical_indeterminacy`, `mathematical_boundary_gap`, `mathematical_overlap`, `mathematical_aggregation_order`, `mathematical_precision` ou `mathematical_dimension`;
+- se a regra autoritativa já estiver em R/D/O, o finding não deve duplicá-la como segunda fonte de verdade; registre apenas a inconsistência, evidência, risco e proveniência necessários.
+
+Quando o humano perguntar por "gaps matemáticos", "inconsistências matemáticas" ou
+"situações de indeterminação", a IA deve acionar essa skill explicitamente e
+apresentar, para cada caso material, a regra afetada, domínio/condição, prova ou
+contraexemplo, consequência, classificação e situação semântica.
+
 ## Context Loading
 
 Ao iniciar uma tarefa:
@@ -131,8 +168,9 @@ por inferência.
 - retenha em `_memory` somente achados não normativos que sejam materialmente caros ou perigosos de esquecer;
 - evite duplicação de significado entre R/D/O e findings ativos; depois de promoção, mantenha na memória somente a proveniência analítica necessária;
 - use `_memory` como mapa dos riscos analíticos conhecidos quando a tarefa pedir fragilidades, exceções, lacunas ou riscos conhecidos do namespace;
+- use `semantic-mathematical-review` quando fórmulas ou regras quantitativas materiais precisarem de prova de totalidade, unicidade, fronteira, agregação, precisão ou dimensão;
 - nunca use `_memory` para contornar governança semântica;
-- prefira validações determinísticas quando a regra puder ser verificada por estrutura, Git ou referência;
+- prefira validações determinísticas quando a regra puder ser verificada por estrutura, Git, matemática ou referência;
 - sinalize ambiguidades materiais para revisão humana;
 - execute somente ações compatíveis com o estado, a autorização e o escopo confirmados no preflight.
 
@@ -152,6 +190,7 @@ era permitido e declarado. Verifique, conforme aplicável:
 - integridade de `_memory/FINDINGS.yaml` quando a tarefa o tiver criado ou alterado;
 - ausência de finding ativo que simplesmente replique conhecimento já autoritativo em R/D/O;
 - ausência de promoção implícita de finding para R/D/O;
+- para revisão matemática, distinção explícita entre gap semântico, matemática pura e divergência de materialização;
 - presença de `FAIL` ou `REVIEW` impeditivo.
 
 Se uma verificação necessária não puder ser concluída, não declare sucesso.

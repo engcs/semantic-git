@@ -27,6 +27,8 @@ candidate R/D/O already exists and needs conceptual criticism
 
 `semantic-memory` is transversal, not a fourth semantic stage. Use it when review changes the analytical status of material findings that should survive beyond the review but should not be treated as authoritative R/D/O.
 
+`semantic-mathematical-review` is also transversal. Use it when a candidate contains material formulas, aggregations, limits or piecewise quantitative rules whose domain, totality, uniqueness, boundaries, aggregation order, precision or dimensional consistency have not been demonstrated. Mathematical review supplies specialized evidence; conceptual review remains responsible for deciding what that evidence means for the semantic contract.
+
 The review stage is especially valuable after reconstruction, because a behaviorally correct first pass may still speak like an engineer reading code rather than a domain expert explaining the business.
 
 ## Fundamental objective
@@ -68,6 +70,7 @@ Before reviewing, obtain when available:
 - identified semantic-version boundary, when applicable;
 - unresolved `REVIEW` items;
 - relevant findings from `_memory/FINDINGS.yaml`, when analytical history materially constrains the review;
+- mathematical review findings/proofs when quantitative closure is material;
 - any explicit evidence boundary imposed by the human.
 
 Do not load `_memory` indiscriminately. Read only relevant findings when they can affect known risks, edge cases, unresolved meaning, prior investigation or reimplementation safety.
@@ -75,6 +78,8 @@ Do not load `_memory` indiscriminately. Read only relevant findings when they ca
 Do not review from the candidate prose alone when the original evidence is available. A reviewer that cannot reopen evidence can only judge wording and internal consistency, not semantic completeness.
 
 A finding in `_memory` is not authority. When a material conclusion depends on it, reopen original evidence when possible.
+
+A mathematical classification is also not semantic authority. It proves or challenges mathematical properties; the domain meaning of any resolution still requires semantic evidence or normal governance.
 
 If material original evidence is unavailable, state that limitation and do not pretend to have independently validated completeness.
 
@@ -100,7 +105,8 @@ Before changing the candidate:
 - identify which candidate claims are inherited, local, physical evidence or unresolved;
 - preserve traceability from every material semantic claim back to evidence or explicit human intent;
 - preserve the target semantic-version boundary;
-- distinguish relevant `_memory` findings from authoritative semantic claims.
+- distinguish relevant `_memory` findings from authoritative semantic claims;
+- distinguish mathematical proof or counterexample from the semantic convention that may resolve it.
 
 A conceptual improvement that weakens evidence is a regression.
 
@@ -214,6 +220,8 @@ Existing memory may help locate prior evidence or explain why an ambiguity survi
 
 When a `REVIEW` is resolved, update any corresponding finding through `semantic-memory` rather than leaving stale analytical state.
 
+A mathematical `REVIEW` should likewise survive only after the relevant quantitative evidence was actually tested. If a deterministic proof, boundary witness or authoritative R/D/O resolves it, do not retain ambiguity merely because the original candidate omitted the case.
+
 ## 7. Detect missing knowledge
 
 A reviewer is allowed to conclude that the candidate is incomplete.
@@ -227,10 +235,15 @@ Compare the domain narrative, evidence, relevant memory and candidate contract a
 - Is an aggregation or calculation order material to the result?
 - Did inheritance subtraction remove information necessary to understand local participation?
 - Did compression remove a non-semantic but materially risky finding without preserving it in memory?
+- Does every material formula have an evidence-backed admissible domain?
+- Is every admissible boundary case assigned exactly one result?
+- Could average-of-ratios versus ratio-of-sums, rounding stage or units materially change the result?
 
 When semantic knowledge is missing, recover it from evidence before adding it to R/D/O.
 
 When the missing item is material analytical context rather than durable semantic truth, use `semantic-memory` instead of expanding the contract.
+
+When quantitative closure cannot be established directly, invoke `semantic-mathematical-review` rather than relying on intuition.
 
 ## 8. Recheck inheritance
 
@@ -259,6 +272,8 @@ A strong Requirement often survives radical changes in implementation and remain
 They should express durable choices, interpretations, formulas, eligibility criteria, conventions or semantic boundaries that satisfy Requirements.
 
 They must not become an implementation inventory.
+
+A mathematical convention that closes an otherwise undefined business case belongs here only when semantic evidence or approved governance actually establishes it. A database fallback is not enough.
 
 ### Operations
 
@@ -299,6 +314,8 @@ The reviewed contract must pass both directions.
 
 If the implementation disappeared, could another engineer reproduce materially equivalent business behavior from inherited R/D/O plus the reviewed local contract without inventing rules?
 
+For quantitative behavior, this includes special cases: a future implementer should not need to invent what happens at a zero denominator, uncovered boundary, order-sensitive aggregation or other admissible material edge case.
+
 ### Reimplementation
 
 If technology, database, SQL, models, field names and pipeline architecture changed completely, would the reviewed contract remain true?
@@ -306,6 +323,14 @@ If technology, database, SQL, models, field names and pipeline architecture chan
 A conceptual review fails if it becomes more elegant but less reconstructible.
 
 Known non-semantic findings in `_memory` may warn a reimplementation team about unresolved hazards, but they do not compensate for semantic rules missing from R/D/O.
+
+When a mathematical gap exists, separate three outcomes explicitly:
+
+```text
+semantic convention already governed -> implementation divergence if physical behavior disagrees
+semantic convention genuinely absent -> REVIEW / candidate semantic decision
+mathematical issue non-semantic but risky -> analytical memory candidate
+```
 
 ## 12. Candidate delta
 
@@ -344,6 +369,8 @@ Do not delete a material finding merely because it disappeared from revised R/D/
 
 Do not create a new finding for every conceptual rewrite. The finding must independently pass the retention test.
 
+Mathematical findings follow the same rule: preserve only material gaps/divergences that pass `semantic-memory`; do not store the checklist of successful mathematical checks.
+
 ## 14. Guardrails
 
 Do not:
@@ -356,6 +383,8 @@ Do not:
 - discard edge cases merely because they are awkward;
 - treat confidence from the first agent as evidence;
 - treat `_memory` as semantic authority;
+- treat a mathematical engine fallback as semantic authority;
+- choose an arbitrary convention merely to close an indetermination;
 - use a finding to bypass CHANGE and human approval;
 - erase a finding because the reviewed contract became cleaner;
 - assume that a stronger model is automatically correct.
@@ -377,11 +406,12 @@ Before presenting the reviewed result, verify:
 9. **REVIEW exhaustion** — unresolved items represent genuine residual ambiguity.
 10. **R/D/O separation** — Requirements, Decisions and Operations have distinct roles.
 11. **Human domain reading** — a specialist can understand the subject without reading code or `_memory`.
-12. **Reconstruction** — equivalent behavior can be rebuilt without inventing business rules.
-13. **Reimplementation** — the contract survives a physical rewrite.
-14. **Economy** — no item can be removed without material semantic loss.
-15. **Memory integrity** — material non-semantic findings affected by the review were reconciled without being mistaken for authority or silently lost.
-16. **No regression** — conceptual elegance did not reduce fidelity or reconstructibility.
+12. **Mathematical closure** — material quantitative rules are total and unique over the supported admissible domain, or the remaining mathematical gap/divergence is explicit and evidence-backed.
+13. **Reconstruction** — equivalent behavior can be rebuilt without inventing business rules.
+14. **Reimplementation** — the contract survives a physical rewrite.
+15. **Economy** — no item can be removed without material semantic loss.
+16. **Memory integrity** — material non-semantic findings affected by the review were reconciled without being mistaken for authority or silently lost.
+17. **No regression** — conceptual elegance did not reduce fidelity or reconstructibility.
 
 ## 16. Output discipline
 
@@ -390,11 +420,12 @@ When performing a conceptual review, present in this order:
 1. capability advisory, only when applicable;
 2. concise conceptual domain narrative;
 3. material review findings;
-4. candidate delta;
-5. genuine remaining `REVIEW` items;
-6. revised local R/D/O or Semantic Diff;
-7. analytical-memory changes, when any were warranted;
-8. gate results.
+4. mathematical findings when specialized quantitative review was required;
+5. candidate delta;
+6. genuine remaining `REVIEW` items;
+7. revised local R/D/O or Semantic Diff;
+8. analytical-memory changes, when any were warranted;
+9. gate results.
 
 Keep implementation evidence outside persistent R/D/O. Keep retained non-authoritative findings in `_memory/FINDINGS.yaml` under `semantic-memory` rules.
 
@@ -408,6 +439,7 @@ A normal reconstruction flow is:
 semantic-reconstruction
 -> evidence map
 -> behavioral semantic model
+-> optional semantic-mathematical-review when quantitative closure is material
 -> candidate R/D/O
 -> selected analytical findings
 -> semantic-conceptual-review
@@ -417,7 +449,7 @@ semantic-reconstruction
 -> governance / human approval
 ```
 
-`semantic-memory` participates transversally only when retention-worthy findings exist; it is not a mandatory sequential stage.
+`semantic-memory` and `semantic-mathematical-review` participate transversally only when their concerns are material; neither is a mandatory sequential stage.
 
 The conceptual reviewer may return to original evidence, but should not restart the entire investigation without a concrete reason discovered during review.
 
@@ -432,6 +464,7 @@ understand the candidate
 -> reopen evidence where necessary
 -> form the domain theory
 -> challenge the abstractions
+-> prove quantitative closure when needed
 -> preserve behavior
 -> reconcile material analytical memory
 -> express the smallest human semantic contract

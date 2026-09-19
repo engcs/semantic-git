@@ -64,6 +64,21 @@ Memory is local to the Semantic Namespace that owns the finding:
 
 Create `_memory/FINDINGS.yaml` only when at least one material finding qualifies for retention.
 
+### Analytical writes while a CHANGE is DRAFT
+
+Analytical memory is not semantic implementation. When a finding is discovered during an authorized investigation, creation or upsert of the applicable namespace's `_memory/FINDINGS.yaml` may occur while the related CHANGE is still `DRAFT`.
+
+This permission is deliberately narrow:
+
+- the write must be limited to non-authoritative analytical memory;
+- the finding must satisfy the retention and evidence gates in this skill;
+- it must arise from the investigation currently being performed;
+- it must not alter R/D/O, `SEMANTIC_GIT.md`, implementation code, configuration, tests or other physical materialization;
+- it must not be used to persist a semantic rule while avoiding approval;
+- updating memory alone does not require a separate semantic CHANGE.
+
+If the finding becomes a proposed durable semantic rule, stop treating promotion as a memory-only write and use the normal CHANGE and human-approval flow.
+
 ## 2. Retention test
 
 Retain a finding when all of the following are true or materially applicable:
@@ -392,6 +407,7 @@ Before writing or updating `FINDINGS.yaml`, verify:
 9. **Risk** — the retention consequence is explicit.
 10. **No silent loss** — existing unexamined findings remain intact.
 11. **Progressive disclosure** — memory is not added to default context or publication without reason.
+12. **Draft boundary** — when the related CHANGE is `DRAFT`, the write is analytical memory only, derives from the authorized investigation, and does not edit or materialize R/D/O or implementation.
 
 If a required fact is unknown, represent it as unknown or unresolved instead of inventing it.
 

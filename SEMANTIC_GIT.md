@@ -907,7 +907,10 @@ Neste estado:
 - PRD pode ou não existir;
 - SPEC pode ou não existir;
 - TODO pode ou não existir;
+- memória analítica não normativa pode ser criada ou reconciliada nos limites da seção 32 quando derivada da investigação em curso;
 - nada deve ser tratado como semanticamente aprovado.
+
+A escrita permitida em `_memory/FINDINGS.yaml` durante `DRAFT` é retenção analítica, não implementação semântica. Ela não autoriza edição de R/D/O nem de materializações físicas.
 
 ### 13.2. APPROVED
 
@@ -1014,10 +1017,14 @@ Enquanto o CHANGE estiver em `DRAFT`, a IA pode somente:
 - ler contexto e materializações;
 - sintetizar intenção e Semantic Diff;
 - analisar gaps, conflitos e impactos;
-- escrever ou atualizar a própria CHANGE em elaboração.
+- escrever ou atualizar a própria CHANGE em elaboração;
+- criar ou reconciliar `_memory/FINDINGS.yaml` do namespace aplicável quando o finding decorrer da investigação em curso e satisfizer integralmente as regras da seção 32.
 
 Em `DRAFT`, a IA não pode alocar agentes de implementação nem editar
-`SEMANTIC_GIT.md`, R/D/O, materializações físicas ou arquivos fora da CHANGE.
+`SEMANTIC_GIT.md`, R/D/O, materializações físicas ou outros arquivos fora da
+CHANGE. A única exceção é a escrita analítica em `_memory/FINDINGS.yaml`
+expressamente permitida pela seção 32. Essa exceção não é implementação, não
+altera o AS-IS semântico e, por si só, não exige CHANGE semântico separado.
 
 `APPROVED` confirma somente o contrato semântico exato. A execução exige:
 
@@ -1594,7 +1601,7 @@ Um CHANGE somente pode chegar a RECONCILED quando:
 - Requirements ancestrais aplicáveis foram respeitados;
 - Decisions necessárias foram persistidas;
 - Operations necessárias foram atualizadas;
-- conhecimento duradouro surgido em PRD, SPEC ou TODO foi consolidado quando aplicável;
+- conhecimento duradouro surgido em PRD/SPEC/TODO não consolidado quando necessário;
 - materializações físicas estão coerentes com o estado proposto;
 - testes necessários foram concluídos;
 - documentação vigente representa o novo estado proposto;
@@ -2422,6 +2429,7 @@ Exemplos:
 - alteração material pré-merge permanece na mesma CHANGE e branch quando o escopo não muda;
 - `CHANGE-INIT` percorre o fluxo normal de CHANGE;
 - DRAFT não aloca recursos de implementação;
+- escrita analítica em `_memory/FINDINGS.yaml` durante DRAFT permanece limitada à memória não normativa e não é tratada como implementação;
 - aprovação semântica não autoriza merge, tag ou push;
 - aprovação e autorização de implementação identificam a CHANGE por identidade
   canônica;
@@ -2617,7 +2625,8 @@ Antes de transicionar para `IN_PROGRESS`, a IA deve confirmar:
 - escopo de escrita limitado ao contrato aprovado.
 
 Se uma condição falhar, produzir `IMPLEMENTATION_BLOCKED` e não alocar agente
-de implementação nem editar arquivos fora da CHANGE permitida em `DRAFT`.
+de implementação nem editar arquivos fora da CHANGE permitida em `DRAFT`,
+exceto `_memory/FINDINGS.yaml` quando a escrita analítica satisfizer a seção 32.
 Identidade curta ou ambígua na autorização também produz
 `IMPLEMENTATION_BLOCKED`.
 
@@ -2802,7 +2811,7 @@ A IA deve:
 - utilizar CHANGE para alterações semânticas materiais posteriores à existência
   do namespace;
 - capturar `base_commit` ao criar CHANGE em fluxo Git;
-- limitar em `DRAFT` os recursos a leitura, síntese, análise de gaps e escrita na própria CHANGE;
+- limitar em `DRAFT` os recursos a leitura, síntese, análise de gaps, escrita na própria CHANGE e manutenção de `_memory/FINDINGS.yaml` nos limites não normativos da seção 32;
 - executar o preflight de implementação antes de alocar qualquer agente de escrita;
 - manter status coerente com a máquina de estados;
 - produzir Semantic Diff explícito;
@@ -2876,7 +2885,7 @@ A IA não deve:
 - copiar para um filho o texto ou a identidade canônica de uma entidade ancestral;
 - executar implementação definitiva antes da validação humana do CHANGE;
 - alocar agente de implementação em `DRAFT`;
-- editar arquivos fora da CHANGE em `DRAFT`;
+- editar arquivos fora da CHANGE em `DRAFT`, salvo `_memory/FINDINGS.yaml` quando a escrita analítica estiver estritamente dentro das regras da seção 32;
 - interpretar aprovação semântica como autorização de merge, tag ou push;
 - executar merge sem identificar explicitamente a identidade canônica da
   CHANGE, a branch globalmente única de origem e o destino;
@@ -3217,7 +3226,7 @@ Humano
 66. `MERGED` somente pode ser registrado após o arquivamento pós-merge ser validado.
 67. CHANGE `MERGED` em `_changes/` ativo ou duplicada entre ativo e arquivado produz `FAIL`.
 68. A relocação canônica da CHANGE não exige nova aprovação quando não altera seu significado.
-69. `DRAFT` não pode alocar recursos de implementação nem editar arquivos fora da própria CHANGE.
+69. `DRAFT` não pode alocar recursos de implementação nem editar arquivos fora da própria CHANGE, exceto `_memory/FINDINGS.yaml` quando a escrita for memória analítica não normativa válida segundo a seção 32.
 70. Aprovação semântica não autoriza implementação, merge, tag, release ou push por inferência.
 71. A `main` local do Semantic Repository governante é o AS-IS oficial.
 72. Push é publicação ou replicação e não altera o AS-IS local.
@@ -3264,6 +3273,7 @@ Humano
 113. Condição obrigatória não verificada não pode ser presumida como satisfeita; deve resultar em REVIEW, FAIL ou bloqueio aplicável.
 114. Resultados críticos de sucesso devem ser sustentados por evidências explícitas suficientes para reconstruir a conclusão.
 115. Mesmo sem automação dedicada, fatos verificáveis por Git, filesystem, identidade, caminho, metadados ou referência devem ser verificados antes de julgamento semântico por IA.
+116. A criação ou atualização de `_memory/FINDINGS.yaml` durante investigação em `DRAFT` é escrita analítica permitida quando limitada à memória não normativa da seção 32; ela não constitui implementação, não autoriza R/D/O ou materializações físicas e, por si só, não exige CHANGE semântico separado.
 
 ---
 
@@ -3334,6 +3344,8 @@ A memória:
 - não entra em publicação canônica por padrão.
 
 `_memory/` e `FINDINGS.yaml` só devem existir quando houver ao menos um finding material. Não criar memória vazia para completar estrutura.
+
+A criação ou reconciliação de `_memory/FINDINGS.yaml` pode ocorrer durante uma investigação autorizada mesmo quando o CHANGE relacionado estiver em `DRAFT`, porque essa escrita preserva memória analítica e não materializa significado semântico aprovado. A permissão limita-se ao arquivo de memória do namespace aplicável e não autoriza editar R/D/O, a especificação normativa ou materializações físicas. Atualizar memória, por si só, não exige CHANGE semântico separado.
 
 A autorização explícita de `_memory/FINDINGS.yaml` nesta seção é uma exceção auxiliar ao bloqueio de novos tipos documentais da seção 23.3. Ela não autoriza qualquer outro tipo de documento permanente nem transforma `FINDINGS.yaml` em AS-IS semântico.
 
@@ -3456,6 +3468,8 @@ nova observação
 
 Findings não examinados pela tarefa atual devem permanecer intactos. Mudança de certeza, risco, classificação ou status exige evidência correspondente.
 
+Quando a escrita ocorrer em `DRAFT`, o upsert deve permanecer estritamente analítico: registrar ou reconciliar o finding é permitido, mas qualquer promoção para R/D/O ou materialização de nova regra continua bloqueada até o fluxo normal de aprovação e implementação.
+
 ### 32.6. Proveniência e risco
 
 Todo finding deve permitir reabrir a investigação. Quando disponíveis, preferir localizadores estáveis como:
@@ -3563,6 +3577,7 @@ São invariantes adicionais:
 12. Finding não pode ser promovido para R/D/O sem CHANGE e aprovação aplicáveis.
 13. Evidência original permanece autoridade sobre o que foi fisicamente ou documentalmente observado.
 14. A perda de detalhe causada pela compressão semântica não deve apagar achado não semântico quando sua redescoberta for materialmente cara ou perigosa.
+15. `_memory/FINDINGS.yaml` pode ser criado ou atualizado em `DRAFT` como escrita analítica não normativa quando derivado da investigação em curso; essa exceção não autoriza implementação nem edição de R/D/O ou materializações físicas.
 
 ---
 

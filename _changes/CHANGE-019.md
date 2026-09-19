@@ -1,9 +1,8 @@
 change: CHANGE-019
-status: IN_PROGRESS
+status: DRAFT
 base_commit: 7735ce340df437329054dda4181559ea3e6cc3eb
-approved_semantic_commit: 30c1d39ca96c7903a5d9d46f8635b89693a84ec3
-approval_scope:
-  - _changes/CHANGE-019.md
+approved_semantic_commit: null
+approval_scope: null
 depends_on:
   - root:CHANGE-017
 reason: null
@@ -21,6 +20,7 @@ reason: null
 - **ADD R-E** - Reexecuções das skills não devem produzir append cego nem substituição cega da memória existente; achados semanticamente equivalentes devem ser reconciliados por upsert, e informação existente não deve desaparecer apenas porque uma execução posterior não a reencontrou.
 - **ADD R-F** - `_memory` deve seguir progressive disclosure: não é carregado no bootstrap normal do namespace nem incluído em publicação por padrão, mas deve ser consultável quando a tarefa envolver reconstrução, reimplementação, revisão conceitual, risco, debug, investigação de `REVIEW` ou origem de uma regra.
 - **ADD R-G** - As skills `semantic-extraction`, `semantic-reconstruction` e `semantic-conceptual-review` devem conhecer a memória analítica e usar uma capacidade transversal `semantic-memory` quando encontrarem ou revisarem achados que atendam aos critérios de retenção.
+- **ADD R-H** - A manutenção de `_memory` que preserve apenas achados analíticos não normativos deve poder ocorrer durante investigação autorizada, inclusive enquanto o CHANGE relacionado estiver em `DRAFT`, sem ser tratada como implementação semântica ou alteração do AS-IS; essa permissão não se estende a R/D/O nem às materializações físicas.
 
 ### DECISIONS
 
@@ -32,6 +32,7 @@ reason: null
 - **ADD D-F** - Tratar `semantic-memory` como skill transversal de leitura, classificação, upsert, resolução, supersessão e marcação de promoção de findings. Ela não constitui uma quarta etapa obrigatória do pipeline semântico e não decide sozinha que um finding virou R/D/O. Atende R-G.
 - **ADD D-G** - Fazer `semantic-reconstruction` atuar como principal produtora de findings físicos; permitir que `semantic-extraction` registre achados materiais vindos de fontes humanas; permitir que `semantic-conceptual-review` funda duplicatas, reclassifique, resolva ou proponha promoção, sempre preservando a ausência de autoridade normativa da memória. Atende R-G.
 - **ADD D-H** - Um finding que passe a representar conhecimento semântico durável deve entrar em CHANGE normal e ser aprovado antes de aparecer em R/D/O; após a promoção, o finding pode permanecer com `status: promoted` e referência ao item semântico resultante para preservar proveniência. Atende R-B e R-D.
+- **ADD D-I** - Tratar criação ou upsert de `_memory/FINDINGS.yaml` como escrita analítica permitida em `DRAFT` quando derivada da investigação em curso e limitada à memória não normativa do namespace aplicável. A atualização de memória, por si só, não exige CHANGE semântico; qualquer promoção de finding ou mudança de significado continua sujeita ao fluxo normal de CHANGE e aprovação. Atende R-B, R-G e R-H.
 
 ### OPERATIONS
 
@@ -43,3 +44,4 @@ reason: null
 - **ADD O-F** - Atualizar `AGENTS.md` para orientar o uso de `_memory` por progressive disclosure e deixar explícito que memória não é fonte de verdade, não deve ser carregada indiscriminadamente e não substitui o fluxo de CHANGE.
 - **ADD O-G** - Adicionar validações determinísticas para aceitar `_memory/FINDINGS.yaml` sem tratá-lo como novo R/D/O, rejeitar memória vazia quando criada apenas estruturalmente, validar unicidade de `F-*` dentro do namespace e impedir que `_memory` seja incluído como AS-IS semântico ou publicação canônica.
 - **ADD O-H** - Não criar `_memory/` vazio em namespaces sem findings. Quando um finding real for registrado, criar o diretório local e o `FINDINGS.yaml` correspondente naquele namespace.
+- **ADD O-I** - Ajustar `SEMANTIC_GIT.md`, `AGENTS.md` e `semantic-memory` para explicitar a exceção de escrita analítica em `DRAFT`, mantendo proibidas edições de R/D/O e materializações físicas antes da aprovação semântica aplicável.

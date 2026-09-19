@@ -1,6 +1,9 @@
 change: CHANGE-016
 status: MERGED
 base_commit: a9afd06f03318635e9cc36d87d8789947d32336b
+approved_semantic_commit: 2f423a975ac71af1f4a1adda6c0798ae99dcd035
+approval_scope:
+  - _changes/archived/CHANGE-016.md
 depends_on:
   - root:CHANGE-014
 reason: null

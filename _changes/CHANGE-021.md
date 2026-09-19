@@ -1,8 +1,9 @@
 change: CHANGE-021
-status: DRAFT
+status: IN_PROGRESS
 base_commit: 463bf8c7c6578417e0eba51cfab98c95af2a8222
-approved_semantic_commit: null
-approval_scope: null
+approved_semantic_commit: 38841a94a4f850bb32c2786794f43690de07f3aa
+approval_scope:
+  - _changes/CHANGE-021.md
 reason: null
 
 # CHANGE-021

@@ -1,0 +1,567 @@
+#!/usr/bin/env python3
+"""Build and check a freshness-verifiable namespace publication."""
+
+from __future__ import annotations
+
+import argparse
+import datetime
+import hashlib
+import html
+import json
+import re
+import shutil
+import subprocess
+import sys
+import unicodedata
+from pathlib import Path
+from typing import Any
+
+
+RDO_SOURCES = (
+    ("REQUIREMENTS.md", "REQUIREMENTS"),
+    ("DECISIONS.md", "DECISIONS"),
+    ("OPERATIONS.md", "OPERATIONS"),
+)
+FORMAT_VERSION = 1
+TRANSPARENT_NAMESPACE_DIRS = {"_applications"}
+SCRIPT_PATH = Path(__file__).resolve()
+HEADING_RE = re.compile(r"^(#{1,6})(\s+.*)$")
+H1_RE = re.compile(r"^#(?!#)\s+")
+
+PDF_THEMES = {
+    "blue": {
+        "body": "#263648",
+        "heading": "#102A56",
+        "namespace": "#1D2D45",
+        "subheading": "#1F78C8",
+        "source": "#6B7C8F",
+        "divider": "#9BB7D4",
+        "separator": "#88A8C8",
+        "code": "#315F93",
+    },
+    "mono": {
+        "body": "#000000",
+        "heading": "#000000",
+        "namespace": "#202020",
+        "subheading": "#202020",
+        "source": "#555555",
+        "divider": "#8A8A8A",
+        "separator": "#707070",
+        "code": "#333333",
+    },
+}
+
+
+class PublicationError(Exception):
+    pass
+
+
+def normalize_text(text: str) -> str:
+    return text.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def read_text(path: Path) -> str:
+    try:
+        return normalize_text(path.read_text(encoding="utf-8-sig"))
+    except (OSError, UnicodeError) as error:
+        raise PublicationError(f"cannot read {path}: {error}") from error
+
+
+def digest_text(text: str) -> str:
+    value = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    return f"sha256:{value}"
+
+
+def digest_file(path: Path, normalize: bool = True) -> str:
+    if normalize:
+        return digest_text(read_text(path))
+    try:
+        value = hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError as error:
+        raise PublicationError(f"cannot read {path}: {error}") from error
+    return f"sha256:{value}"
+
+
+def write_text(path: Path, text: str) -> None:
+    try:
+        with path.open("w", encoding="utf-8", newline="\n") as stream:
+            stream.write(normalize_text(text))
+    except OSError as error:
+        raise PublicationError(f"cannot write {path}: {error}") from error
+
+
+def relative_label(path: Path, root: Path, fallback_prefix: str) -> str:
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return f"{fallback_prefix}:{path.name}"
+
+
+def publication_paths(root: Path) -> dict[str, Path]:
+    directory = root / "_publications"
+    return {
+        "directory": directory,
+        "markdown": directory / "PUBLICATION.md",
+        "manifest": directory / "PUBLICATION.manifest.json",
+        "pdf": directory / "PUBLICATION.pdf",
+    }
+
+
+def repository_root(root: Path) -> Path:
+    result = subprocess.run(
+        ["git", "-C", str(root), "rev-parse", "--show-toplevel"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise PublicationError("cannot resolve the Semantic Repository root")
+    return Path(result.stdout.strip()).resolve()
+
+
+def namespace_path(root: Path) -> str:
+    semantic_root = repository_root(root)
+    try:
+        relative = root.resolve().relative_to(semantic_root)
+    except ValueError as error:
+        raise PublicationError("namespace root is outside the Semantic Repository") from error
+    if relative == Path("."):
+        return "root"
+    parts = [part for part in relative.parts if part not in TRANSPARENT_NAMESPACE_DIRS]
+    return "/".join(parts) or "root"
+
+
+def source_texts(root: Path) -> tuple[dict[str, str], list[dict[str, str]]]:
+    texts: dict[str, str] = {}
+    sources: list[dict[str, str]] = []
+
+    readme = root / "README.md"
+    if readme.is_file():
+        texts["README.md"] = read_text(readme)
+        sources.append({"path": "README.md", "sha256": digest_text(texts["README.md"])})
+
+    rdo_found = False
+    for filename, _ in RDO_SOURCES:
+        path = root / filename
+        if not path.is_file():
+            continue
+        rdo_found = True
+        texts[filename] = read_text(path)
+        sources.append({"path": filename, "sha256": digest_text(texts[filename])})
+
+    if not rdo_found:
+        raise PublicationError("namespace has no R/D/O source to publish")
+    return texts, sources
+
+
+def demote_headings(text: str, remove_first_h1: bool = False, extra_levels: int = 1) -> str:
+    lines = text.splitlines()
+    if remove_first_h1:
+        for index, line in enumerate(lines):
+            if H1_RE.match(line):
+                lines = lines[index + 1 :]
+                break
+
+    result: list[str] = []
+    for line in lines:
+        match = HEADING_RE.match(line)
+        if match:
+            level = min(6, len(match.group(1)) + extra_levels)
+            result.append(f"{'#' * level}{match.group(2)}")
+        else:
+            result.append(line)
+    return "\n".join(result).strip()
+
+
+def render_publication(root: Path, texts: dict[str, str]) -> str:
+    lines = [
+        "# GIT SEMÂNTICO:",
+        namespace_path(root),
+        "",
+    ]
+
+    if "README.md" in texts:
+        lines.extend([demote_headings(texts["README.md"], remove_first_h1=True, extra_levels=0), ""])
+
+    for filename, label in RDO_SOURCES:
+        if filename not in texts:
+            continue
+        rendered = demote_headings(texts[filename], extra_levels=0)
+        rendered = re.sub(
+            r"^#\s+(Requirements|Decisions|Operations)\s+-\s+.+$",
+            lambda match: f"# {match.group(1)}",
+            rendered,
+            count=1,
+            flags=re.MULTILINE,
+        )
+        lines.extend(["---", "", rendered, ""])
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def first_heading(text: str) -> str:
+    for line in text.splitlines():
+        match = re.fullmatch(r"#(?!#)\s+(.+?)\s*", line)
+        if match:
+            return match.group(1)
+    return ""
+
+
+def publication_slug(value: str) -> str:
+    value = unicodedata.normalize("NFKD", value)
+    value = "".join(char for char in value if not unicodedata.combining(char))
+    return re.sub(r"[^A-Za-z0-9]+", "_", value).strip("_").upper()
+
+
+def pdf_inline(value: str, code_font: str = "PublicationCode", code_color: str = "#315F93") -> str:
+    value = html.escape(value)
+    value = re.sub(r"`([^`]+)`", rf'<font name="{code_font}" color="{code_color}">\1</font>', value)
+    return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", value)
+
+
+def pdf_font_setup() -> tuple[str, str, str, str]:
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
+    font_directory = Path("C:/Windows/Fonts")
+    definitions = {
+        "PublicationSans": ("segoeui.ttf", "Segoe UI"),
+        "PublicationSans-Bold": ("segoeuib.ttf", "Segoe UI Bold"),
+        "PublicationCode": ("consola.ttf", "Consolas"),
+        "PublicationHeader": ("arial.ttf", "Arial"),
+    }
+    loaded: dict[str, bool] = {}
+    for alias, (filename, _) in definitions.items():
+        path = font_directory / filename
+        if path.is_file():
+            if alias not in pdfmetrics.getRegisteredFontNames():
+                pdfmetrics.registerFont(TTFont(alias, str(path)))
+            loaded[alias] = True
+
+    body = "PublicationSans" if loaded.get("PublicationSans") else "Helvetica"
+    bold = "PublicationSans-Bold" if loaded.get("PublicationSans-Bold") else "Helvetica-Bold"
+    code = "PublicationCode" if loaded.get("PublicationCode") else "Courier"
+    header = "PublicationHeader" if loaded.get("PublicationHeader") else "Helvetica"
+    if body == "PublicationSans" and bold == "PublicationSans-Bold":
+        pdfmetrics.registerFontFamily(body, normal=body, bold=bold)
+    return body, bold, code, header
+
+
+def pdf_source_flowables(
+    text: str,
+    body_style: Any,
+    heading_style: Any,
+    namespace_style: Any,
+    subheading_style: Any,
+    item_style: Any,
+    code_font: str,
+    theme: dict[str, str],
+) -> list[Any]:
+    from reportlab.lib import colors
+    from reportlab.platypus import HRFlowable, Paragraph, Spacer
+
+    result: list[Any] = []
+    heading_count = 0
+    previous_rule: str | None = None
+    for line in text.splitlines():
+        if not line.strip():
+            result.append(Spacer(1, 5.5 if previous_rule == "separator" else 8))
+            previous_rule = None
+            continue
+        if line.strip() == "---":
+            result.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor(theme["separator"]), spaceBefore=7, spaceAfter=0))
+            previous_rule = "separator"
+            continue
+        heading = re.fullmatch(r"#\s+(.+?)\s*", line)
+        if heading:
+            heading_count += 1
+            underline_gap = 14.6 if heading_count == 1 else 9.4
+            result.extend([
+                Paragraph(pdf_inline(heading.group(1), code_font, theme["code"]), heading_style),
+                HRFlowable(width="100%", thickness=0.6, color=colors.HexColor(theme["divider"]), spaceBefore=3, spaceAfter=underline_gap),
+            ])
+            previous_rule = "heading"
+            continue
+        if heading_count == 1 and previous_rule == "heading":
+            result.append(Paragraph(pdf_inline(line, code_font, theme["code"]), namespace_style))
+            previous_rule = "namespace"
+            continue
+        subheading = re.fullmatch(r"##\s+(.+?)\s*", line)
+        if subheading:
+            result.append(Paragraph(pdf_inline(subheading.group(1), code_font, theme["code"]), subheading_style))
+            continue
+        item = re.fullmatch(r"-\s+\*\*([^*]+)\*\*\s+-\s+(.+)", line)
+        if item:
+            result.append(Paragraph(
+                f"<b>{pdf_inline(item.group(1), code_font, theme['code'])}</b> - {pdf_inline(item.group(2), code_font, theme['code'])}",
+                item_style,
+                bulletText="•",
+            ))
+            continue
+        result.append(Paragraph(pdf_inline(line, code_font, theme["code"]), body_style))
+    return result
+
+
+def write_pdf_reportlab(root: Path, texts: dict[str, str], pdf_path: Path, theme_name: str) -> str | None:
+    try:
+        from reportlab.lib import colors
+        from reportlab.lib.enums import TA_LEFT
+        from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+        from reportlab.lib.units import mm
+        from reportlab.pdfgen import canvas
+        from reportlab.platypus import Paragraph, SimpleDocTemplate
+    except ImportError:
+        return None
+
+    theme = PDF_THEMES[theme_name]
+    body_font, bold_font, code_font, header_font = pdf_font_setup()
+    styles = getSampleStyleSheet()
+    body = ParagraphStyle("PublicationBody", parent=styles["BodyText"], fontName=body_font, fontSize=9.5, leading=14.5, textColor=colors.HexColor(theme["body"]), alignment=TA_LEFT, spaceBefore=0, spaceAfter=0)
+    heading = ParagraphStyle("PublicationHeading", parent=styles["Heading1"], fontName=body_font, fontSize=17, leading=20.5, textColor=colors.HexColor(theme["heading"]), alignment=TA_LEFT, spaceBefore=0, spaceAfter=0)
+    namespace = ParagraphStyle("PublicationNamespace", parent=body, fontName=body_font, fontSize=10.5, leading=14, textColor=colors.HexColor(theme["namespace"]), alignment=TA_LEFT, spaceBefore=0, spaceAfter=0)
+    subheading = ParagraphStyle("PublicationSubheading", parent=styles["Heading2"], fontName=body_font, fontSize=13, leading=14.5, textColor=colors.HexColor(theme["subheading"]), alignment=TA_LEFT, spaceBefore=1.4, spaceAfter=7.5)
+    item = ParagraphStyle("PublicationItem", parent=body, fontName=body_font, leftIndent=28, firstLineIndent=0, bulletIndent=16, spaceBefore=0, spaceAfter=8)
+    source_style = ParagraphStyle(
+        "PublicationSource",
+        parent=styles["BodyText"],
+        fontName=header_font,
+        fontSize=6.25,
+        leading=7.5,
+        textColor=colors.HexColor(theme["source"]),
+        alignment=TA_LEFT,
+        splitLongWords=1,
+        wordWrap="CJK",
+        spaceBefore=0,
+        spaceAfter=0,
+    )
+
+    source_path = str(publication_paths(root)["markdown"].resolve())
+    source_path_wrapped = html.escape(source_path).replace("\\", "\\&#8203;").replace("/", "/&#8203;")
+    source_markup = f"Fonte da publicação: {source_path_wrapped}"
+    page_size = (595.92, 841.92)
+    source_width = page_size[0] - 20 * mm
+    source_probe = Paragraph(source_markup, source_style)
+    _, source_height = source_probe.wrap(source_width, 40 * mm)
+    top_margin = max(15 * mm, source_height + 30)
+
+    class NumberedCanvas(canvas.Canvas):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            super().__init__(*args, **kwargs)
+            self.saved_pages: list[dict[str, Any]] = []
+
+        def showPage(self) -> None:
+            self.saved_pages.append(dict(self.__dict__))
+            self._startPage()
+
+        def save(self) -> None:
+            total = len(self.saved_pages)
+            for state in self.saved_pages:
+                self.__dict__.update(state)
+                self.saveState()
+                self.setFillColor(colors.HexColor(theme["source"]))
+                self.setFont(header_font, 6.75)
+                self.drawRightString(page_size[0] - 10 * mm, page_size[1] - 14, datetime.date.today().isoformat())
+                source = Paragraph(source_markup, source_style)
+                _, current_source_height = source.wrap(source_width, 40 * mm)
+                source.drawOn(self, 10 * mm, page_size[1] - 22 - current_source_height)
+                self.drawCentredString(page_size[0] / 2, 17, f"{self._pageNumber} / {total}")
+                self.restoreState()
+                super().showPage()
+            super().save()
+
+    publication = render_publication(root, texts)
+    story = pdf_source_flowables(publication, body, heading, namespace, subheading, item, code_font, theme)
+
+    pdf_path.parent.mkdir(parents=True, exist_ok=True)
+    document = SimpleDocTemplate(str(pdf_path), pagesize=page_size, rightMargin=13 * mm, leftMargin=13 * mm, topMargin=top_margin, bottomMargin=8 * mm)
+    document.build(story, canvasmaker=NumberedCanvas)
+    return "reportlab"
+
+
+def run_validator(root: Path, spec: Path) -> dict[str, Any]:
+    validator = SCRIPT_PATH.with_name("validate_structure.py")
+    if not validator.is_file():
+        raise PublicationError(f"structure validator is missing: {validator}")
+
+    result = subprocess.run(
+        [sys.executable, str(validator), "--root", str(root), "--spec", str(spec), "--json"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError as error:
+        detail = result.stderr.strip() or result.stdout.strip() or "no validator output"
+        raise PublicationError(f"structure validator failed: {detail}") from error
+
+    if result.returncode != 0 or payload.get("result") == "FAIL":
+        raise PublicationError("structure validation returned FAIL")
+    return payload
+
+
+def base_manifest(root: Path, spec: Path, sources: list[dict[str, str]], markdown_hash: str) -> dict[str, Any]:
+    paths = publication_paths(root)
+    return {
+        "format": FORMAT_VERSION,
+        "namespace": namespace_path(root),
+        "sources": sources,
+        "spec": {
+            "path": relative_label(spec, root, "external"),
+            "sha256": digest_file(spec),
+        },
+        "generator": {
+            "path": "_scripts/build_publication.py",
+            "sha256": digest_file(SCRIPT_PATH),
+        },
+        "publication": {
+            "path": paths["markdown"].relative_to(root).as_posix(),
+            "sha256": markdown_hash,
+        },
+    }
+
+
+def manifest_matches_current(manifest: dict[str, Any], expected: dict[str, Any]) -> bool:
+    for key in ("format", "namespace", "sources", "spec", "generator", "publication"):
+        if manifest.get(key) != expected.get(key):
+            return False
+    return True
+
+
+def build(root: Path, spec: Path, create_pdf: bool, theme_name: str) -> dict[str, Any]:
+    run_validator(root, spec)
+    if not spec.is_file():
+        raise PublicationError(f"normative spec is missing: {spec}")
+
+    texts, sources = source_texts(root)
+    markdown = render_publication(root, texts)
+    paths = publication_paths(root)
+    paths["directory"].mkdir(parents=True, exist_ok=True)
+    write_text(paths["markdown"], markdown)
+
+    pdf_engine: str | None = None
+    if create_pdf:
+        pdf_engine = write_pdf_reportlab(root, texts, paths["pdf"], theme_name)
+        if pdf_engine is None:
+            if theme_name != "mono":
+                raise PublicationError("--theme blue requires reportlab; pandoc fallback cannot preserve the selected palette")
+            pandoc = shutil.which("pandoc")
+            if pandoc is None:
+                raise PublicationError("--pdf requested but reportlab and pandoc are unavailable")
+            result = subprocess.run(
+                [pandoc, str(paths["markdown"]), "-o", str(paths["pdf"])],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if result.returncode != 0:
+                detail = result.stderr.strip() or result.stdout.strip() or "pandoc failed"
+                raise PublicationError(detail)
+            pdf_engine = "pandoc"
+
+    manifest = base_manifest(root, spec, sources, digest_text(markdown))
+    if create_pdf and paths["pdf"].is_file():
+        manifest["pdf"] = {
+            "path": paths["pdf"].relative_to(root).as_posix(),
+            "sha256": digest_file(paths["pdf"], normalize=False),
+            "publication_sha256": digest_text(markdown),
+            "engine": pdf_engine,
+            "theme": theme_name,
+        }
+    write_text(paths["manifest"], json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
+    status = "STALE" if paths["pdf"].is_file() and not create_pdf else "CURRENT"
+    payload: dict[str, Any] = {"status": status, "root": str(root), "manifest": str(paths["manifest"]), "publication": str(paths["markdown"])}
+    if status == "STALE":
+        payload["reason"] = "PUBLICATION.pdf was not regenerated; run build with --pdf"
+    return payload
+
+
+def check_status(root: Path, spec: Path) -> dict[str, Any]:
+    validation_error: str | None = None
+    try:
+        run_validator(root, spec)
+    except PublicationError as error:
+        validation_error = str(error)
+
+    paths = publication_paths(root)
+    if validation_error:
+        return {"status": "INVALID", "root": str(root), "reason": validation_error}
+    if not paths["markdown"].is_file() or not paths["manifest"].is_file():
+        return {"status": "MISSING", "root": str(root), "publication": str(paths["markdown"]), "manifest": str(paths["manifest"])}
+
+    try:
+        manifest = json.loads(read_text(paths["manifest"]))
+        texts, sources = source_texts(root)
+        expected_markdown = render_publication(root, texts)
+        expected = base_manifest(root, spec, sources, digest_text(expected_markdown))
+    except (OSError, json.JSONDecodeError, PublicationError) as error:
+        return {"status": "DRIFT", "root": str(root), "reason": str(error)}
+
+    if not manifest_matches_current(manifest, expected):
+        return {"status": "STALE", "root": str(root), "reason": "sources, spec or generator changed"}
+    if digest_text(read_text(paths["markdown"])) != manifest["publication"].get("sha256"):
+        return {"status": "DRIFT", "root": str(root), "reason": "PUBLICATION.md differs from its manifest"}
+    if expected_markdown != read_text(paths["markdown"]):
+        return {"status": "DRIFT", "root": str(root), "reason": "PUBLICATION.md differs from deterministic output"}
+
+    pdf_entry = manifest.get("pdf")
+    if pdf_entry:
+        if pdf_entry.get("publication_sha256") != manifest["publication"].get("sha256"):
+            return {"status": "STALE", "root": str(root), "reason": "PUBLICATION.pdf was generated from an older Markdown publication"}
+        if not paths["pdf"].is_file() or digest_file(paths["pdf"], normalize=False) != pdf_entry.get("sha256"):
+            return {"status": "DRIFT", "root": str(root), "reason": "PUBLICATION.pdf differs from its manifest"}
+    elif paths["pdf"].is_file():
+        return {"status": "STALE", "root": str(root), "reason": "PUBLICATION.pdf is not represented by the manifest"}
+
+    return {"status": "CURRENT", "root": str(root), "publication": str(paths["markdown"]), "manifest": str(paths["manifest"])}
+
+
+def add_root_and_spec(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--root", required=True, help="namespace directory to compile")
+    parser.add_argument("--spec", help="path to SEMANTIC_GIT.md")
+    parser.add_argument("--json", action="store_true", help="emit JSON")
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest="command", required=True)
+
+    build_parser = commands.add_parser("build", help="generate the publication")
+    add_root_and_spec(build_parser)
+    build_parser.add_argument("--pdf", action="store_true", help="also generate the PDF")
+    build_parser.add_argument("--theme", choices=tuple(PDF_THEMES), default="blue", help="PDF color theme; default: blue")
+
+    status_parser = commands.add_parser("status", help="check publication freshness")
+    add_root_and_spec(status_parser)
+    return parser.parse_args()
+
+
+def emit(payload: dict[str, Any], as_json: bool) -> None:
+    if as_json:
+        print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
+    else:
+        print(f"{payload['status']}: {payload.get('root', '')}")
+        if payload.get("reason"):
+            print(f"  {payload['reason']}")
+        if payload.get("publication"):
+            print(f"  publication: {payload['publication']}")
+        if payload.get("manifest"):
+            print(f"  manifest: {payload['manifest']}")
+
+
+def main() -> int:
+    args = parse_args()
+    root = Path(args.root).expanduser().resolve()
+    spec = Path(args.spec).expanduser().resolve() if args.spec else root / "SEMANTIC_GIT.md"
+
+    try:
+        payload = build(root, spec, args.pdf, args.theme) if args.command == "build" else check_status(root, spec)
+    except (OSError, PublicationError) as error:
+        payload = {"status": "INVALID", "root": str(root), "reason": str(error)}
+
+    emit(payload, args.json)
+    return 0 if payload["status"] == "CURRENT" else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

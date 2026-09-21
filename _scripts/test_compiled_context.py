@@ -56,6 +56,19 @@ Contrato global.
 - **R-001** - Regra global reutilizável.
 """,
         )
+        write(
+            self.root / "DECISIONS.md",
+            """# Decisions - root
+
+## Cabeçalho
+
+Decisão global.
+
+## Corpo
+
+- **D-001** - Escolha global reutilizável. Atende R-001.
+""",
+        )
         self.mop = self.root / "_applications" / "mop"
         write(self.mop / "README.md", "# MOP\n\nAplicação de teste.\n")
         write(
@@ -94,7 +107,7 @@ Operações locais.
 
 ## Corpo
 
-- **O-001** - Executar D-001 respeitando também root:R-001.
+- **O-001** - Executar D-001 respeitando também root:D-001.
 """,
         )
         subprocess.run(["git", "-C", str(self.root), "add", "."], check=True)
@@ -125,6 +138,8 @@ Operações locais.
         _, compiled = csc.build_text(self.root, "_applications/mop")
         self.assertIn('"id":"mop:R-001"', compiled)
         self.assertIn('"type":"satisfies"', compiled)
+        self.assertIn('### root:D-001', compiled)
+        self.assertIn('Escolha global reutilizável.', compiled)
         self.assertIn('### root:R-001', compiled)
         self.assertIn('Regra global reutilizável.', compiled)
         self.assertIn('"type":"depends_on"', compiled)
@@ -137,6 +152,14 @@ Operações locais.
         path.write_text(path.read_text(encoding="utf-8") + "drift\n", encoding="utf-8")
         _, errors = csc.validate(self.root, "_applications/mop")
         self.assertTrue(any(error.startswith("DRIFT:") for error in errors))
+
+    def test_committing_only_compiled_artifact_does_not_change_regeneration(self) -> None:
+        path = csc.build(self.root, "_applications/mop")
+        first = path.read_text(encoding="utf-8")
+        subprocess.run(["git", "-C", str(self.root), "add", str(path.relative_to(self.root))], check=True)
+        subprocess.run(["git", "-C", str(self.root), "commit", "-qm", "store derived compiled"], check=True)
+        _, second = csc.build_text(self.root, "_applications/mop")
+        self.assertEqual(first, second)
 
     def test_dirty_semantic_source_is_rejected(self) -> None:
         path = self.mop / "REQUIREMENTS.md"

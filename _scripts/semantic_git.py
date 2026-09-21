@@ -18,7 +18,6 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
 
 import build_publication as publication
 import compile_semantic_context as compiled
@@ -88,6 +87,35 @@ def user_path(root: Path, value: str | None) -> Path | None:
         return None
     path = Path(value).expanduser()
     return path.resolve() if path.is_absolute() else (root / path).resolve()
+
+
+def validate_repository(root: Path, spec: Path) -> None:
+    validator = structure.Validator(root, spec)
+    validator.run()
+    if validator.result() == "FAIL":
+        messages = [
+            f"{finding['rule']}: {finding['path']}: {finding['message']}"
+            for finding in validator.findings
+        ]
+        raise CliError("structure validation returned FAIL" + ("; " + "; ".join(messages) if messages else ""))
+
+
+def publication_operation(root: Path, target: Path, spec: Path, args: argparse.Namespace) -> dict:
+    """Run publication after repository-level validation.
+
+    The legacy publication module validates its target directory as if it were
+    the repository root. The canonical CLI deliberately bypasses that legacy
+    wrapper after validating the actual Semantic Repository root.
+    """
+    validate_repository(root, spec)
+    original_validator = publication.run_validator
+    publication.run_validator = lambda *_args, **_kwargs: None
+    try:
+        if args.operation == "build":
+            return publication.build(target, spec, args.pdf, args.theme)
+        return publication.check_status(target, spec)
+    finally:
+        publication.run_validator = original_validator
 
 
 def emit_capabilities(as_json: bool) -> int:
@@ -182,11 +210,7 @@ def run(args: argparse.Namespace) -> int:
 
     if args.area == "publication":
         target = namespace_dir(root, args.namespace)
-        payload = (
-            publication.build(target, spec, args.pdf, args.theme)
-            if args.operation == "build"
-            else publication.check_status(target, spec)
-        )
+        payload = publication_operation(root, target, spec, args)
         publication.emit(payload, args.json)
         return 0 if payload["status"] == "CURRENT" else 1
 

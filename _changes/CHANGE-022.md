@@ -1,9 +1,6 @@
 change: CHANGE-022
-status: IN_PROGRESS
+status: DRAFT
 base_commit: ae1ea2c39f379d605037118bd249da05072bc146
-approved_semantic_commit: fdd63bfe44793470bee3aeaa6873eeb0541b100d
-approval_scope:
-  - _changes/CHANGE-022.md
 reason: null
 
 # CHANGE-022
@@ -20,7 +17,7 @@ reason: null
 - **ADD R-F** - A compilação deve ser determinística: para as mesmas fontes comprometidas, mesma versão do compilador e mesmo indexador, a saída deve ser idêntica byte a byte; timestamps de execução, UUIDs aleatórios, ordem de filesystem ou qualquer outra fonte de não determinismo são proibidos.
 - **ADD R-G** - O compilado deve ser validável por regeneração exata e deve recusar fontes sem commit ou divergentes do snapshot comprometido, preservando um `source_commit`, fingerprint das fontes e hashes dos geradores envolvidos.
 - **ADD R-H** - A projeção de publicação extraída do `compiled.ai.md` deve ser exatamente igual ao Markdown que o `build_publication.py` atual produz a partir das mesmas fontes; a introdução do compilado não pode alterar conteúdo, ordem ou formatação da publicação existente.
-- **ADD R-I** - A publicação deve manter um caminho de contingência explícito que concatene diretamente `README.md` e R/D/O pelo renderer atual quando o `compiled.ai.md` não puder ser usado; esse caminho não pode ser acionado silenciosamente nem possuir lógica editorial diferente da projeção normal.
+- **ADD R-I** - A publicação deve manter um caminho de contingência explícito que concatene diretamente `README.md` e R/D/O pelo publicador atual quando o `compiled.ai.md` não puder ser usado, garantindo que a geração de `PUBLICATION.md` e PDF permaneça possível sem depender do compilador.
 
 ### DECISIONS
 
@@ -32,7 +29,7 @@ reason: null
 - **ADD D-F** - Basear a compilação no mesmo parser/grafo determinístico já implementado por `_scripts/semantic_index.py`, sem transformar o `SEMANTIC_INDEX.json` materializado em nova fonte de verdade. Atende R-D, R-E e R-F.
 - **ADD D-G** - Registrar no cabeçalho `source_commit`, `source_fingerprint`, versão e hash do compilador e hash do indexador; `source_commit` corresponde ao último commit que contém o snapshot atual das fontes efetivamente usadas, de modo que commitar o próprio artefato derivado não o torne stale por si só. Atende R-F e R-G.
 - **ADD D-H** - Disponibilizar uma projeção determinística de publicação que extrai os `Source Blocks` do compilado e reutiliza o renderer atual de `build_publication.py`; sua igualdade byte a byte com a publicação atual é uma invariável testada. Atende R-H.
-- **ADD D-I** - Fazer o pipeline de publicação usar `compiled` como origem padrão e oferecer `direct` apenas como contingência explicitamente solicitada; ambos alimentam o mesmo `render_publication`, e o manifest registra o `input_mode` efetivamente usado. Não realizar fallback automático de `compiled` para `direct`. Atende R-H e R-I.
+- **ADD D-I** - Manter `_scripts/build_publication.py` com seu caminho direto atual como contingência operacional independente do compilador. O fluxo normal pode projetar a publicação a partir de `compiled.ai.md`, enquanto o operador pode, em emergência, executar o publicador direto atual para gerar Markdown/PDF a partir de `README.md` e R/D/O. Os dois caminhos reutilizam a mesma lógica editorial e não existe fallback automático silencioso. Atende R-H e R-I.
 
 ### OPERATIONS
 
@@ -46,12 +43,12 @@ reason: null
 - **ADD O-H** - Fazer o comando `publication` extrair os blocos-fonte e chamar o renderer Markdown atual de `build_publication.py`, sem introduzir nova lógica editorial.
 - **ADD O-I** - Criar `_scripts/test_compiled_context.py` cobrindo pelo menos: determinismo byte a byte; extração lossless dos inputs da publicação; igualdade exata da projeção com a publicação atual; enriquecimento de relações; fechamento transitivo de dependência externa explícita; estabilidade após commit apenas do artefato derivado; detecção de drift; e rejeição de fonte sem commit/dirty.
 - **ADD O-J** - Não alterar nesta CHANGE o conteúdo editorial atual de `PUBLICATION.md`; qualquer geração via compiled ou via fontes diretas deve produzir exatamente a mesma concatenação e formatação já existente.
-- **ADD O-K** - Alterar `_scripts/build_publication.py` para aceitar `--source compiled|direct`, usando `compiled` por padrão; `compiled` exige `compiled.ai.md` válido e atual, enquanto `direct` lê `README.md` e R/D/O diretamente e permanece disponível mesmo quando a compilação estiver indisponível.
-- **ADD O-L** - Fazer o manifest da publicação registrar `input_mode` e fazer `status` revalidar pela mesma origem registrada, salvo quando uma origem for explicitamente solicitada pelo operador.
-- **ADD O-M** - Adicionar testes permanentes provando que `publication(compiled) == publication(direct)` byte a byte e que uma falha no compiled não aciona `direct` automaticamente.
+- **ADD O-K** - Preservar sem dependência do compilador o comando direto atual de `_scripts/build_publication.py`, incluindo sua capacidade existente de gerar `PUBLICATION.pdf`, como caminho de contingência operacional.
+- **ADD O-L** - Manter como teste permanente a invariável `publication(compiled) == publication(direct)` byte a byte, de forma que a existência do caminho de contingência não crie uma segunda semântica editorial.
 
 ## Validation Evidence
 
 - Implementação inicial do compilador e suíte foram preparadas para execução determinística sem dependências externas além da biblioteca padrão e dos scripts já existentes do repositório.
 - Uma fixture local equivalente às interfaces atuais do indexador/publicador executou 7 testes com sucesso, cobrindo determinismo, extração lossless, compatibilidade da publicação, fechamento transitivo de relações externas, estabilidade do artefato derivado, drift e fonte dirty.
-- A contingência explícita de publicação foi aprovada para implementação nesta CHANGE; sua evidência de validação será adicionada após execução da suíte correspondente.
+- `_scripts/build_publication.py` permanece inalterado nesta CHANGE e, portanto, conserva o caminho direto existente de concatenação de `README.md` + R/D/O e geração de PDF sem depender de `compiled.ai.md`.
+- `_scripts/test_compiled_context.py` contém a invariável que compara a projeção do compiled com `build_publication.render_publication(...)` e exige igualdade exata.

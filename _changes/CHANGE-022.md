@@ -1,5 +1,5 @@
 change: CHANGE-022
-status: IN_PROGRESS
+status: RECONCILED
 base_commit: ae1ea2c39f379d605037118bd249da05072bc146
 approved_semantic_commit: 87349c0c1b856505bb55b147315363f99d7cb8cc
 approval_scope:
@@ -51,7 +51,18 @@ reason: null
 
 ## Validation Evidence
 
-- Implementação inicial do compilador e suíte foram preparadas para execução determinística sem dependências externas além da biblioteca padrão e dos scripts já existentes do repositório.
-- Uma fixture local equivalente às interfaces atuais do indexador/publicador executou 7 testes com sucesso, cobrindo determinismo, extração lossless, compatibilidade da publicação, fechamento transitivo de relações externas, estabilidade do artefato derivado, drift e fonte dirty.
-- `_scripts/build_publication.py` permanece inalterado nesta CHANGE e, portanto, conserva o caminho direto existente de concatenação de `README.md` + R/D/O e geração de PDF sem depender de `compiled.ai.md`.
-- `_scripts/test_compiled_context.py` contém a invariável que compara a projeção do compiled com `build_publication.render_publication(...)` e exige igualdade exata.
+- `_scripts/compile_semantic_context.py` foi implementado com os comandos `build`, `validate` e `publication`, usando somente processamento determinístico e o grafo produzido pelo indexador existente.
+- `_scripts/test_compiled_context.py` cobre determinismo byte a byte, extração lossless, equivalência da publicação, fechamento transitivo de relações externas, estabilidade do artefato derivado, drift e rejeição de fonte dirty.
+- A validação foi executada no GitHub Actions contra os arquivos reais da branch, em Python 3.12. Os testes direcionados do compiled, a regressão do índice, a regressão da publicação e a descoberta completa de testes em `_scripts` passaram.
+- Uma segunda execução compilou o domínio real `_applications/mop`, validou o `compiled.ai.md` gerado e projetou sua publicação sem falhas.
+- Na mesma execução, `_scripts/build_publication.py` gerou a publicação diretamente a partir de `README.md` + R/D/O e `cmp` confirmou igualdade byte a byte com a publicação projetada pelo compiled.
+- `_scripts/build_publication.py` permanece inalterado nesta CHANGE e conserva o caminho direto existente de concatenação e geração de PDF sem depender de `compiled.ai.md`.
+- O workflow temporário usado apenas para executar a validação remota foi removido da branch após a conclusão dos testes.
+
+### Reconciliation Summary
+
+- O `compiled.ai.md` está implementado como artefato derivado determinístico por domínio, preservando os blocos-fonte literalmente e adicionando metadados, relações e dependências externas explicitamente alcançáveis.
+- O compilador não usa IA, embeddings, similaridade vetorial nem inferência probabilística; relações ausentes não são inventadas.
+- A publicação via compiled reutiliza o renderer existente e foi comprovada byte a byte equivalente ao caminho direto atual no domínio MOP real.
+- O caminho direto de `_scripts/build_publication.py` permanece disponível e independente como contingência para geração de Markdown/PDF.
+- A implementação está reconciliada com a semântica aprovada em `87349c0c1b856505bb55b147315363f99d7cb8cc` e pronta para revisão/merge.

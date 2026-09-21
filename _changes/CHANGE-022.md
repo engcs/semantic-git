@@ -1,6 +1,9 @@
 change: CHANGE-022
-status: DRAFT
+status: IN_PROGRESS
 base_commit: ae1ea2c39f379d605037118bd249da05072bc146
+approved_semantic_commit: fdd63bfe44793470bee3aeaa6873eeb0541b100d
+approval_scope:
+  - _changes/CHANGE-022.md
 reason: null
 
 # CHANGE-022

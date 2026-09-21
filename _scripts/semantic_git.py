@@ -89,9 +89,14 @@ def user_path(root: Path, value: str | None) -> Path | None:
     return path.resolve() if path.is_absolute() else (root / path).resolve()
 
 
-def validate_repository(root: Path, spec: Path) -> None:
+def validator_for(root: Path, spec: Path) -> structure.Validator:
     validator = structure.Validator(root, spec)
     validator.run()
+    return validator
+
+
+def validate_repository(root: Path, spec: Path) -> None:
+    validator = validator_for(root, spec)
     if validator.result() == "FAIL":
         messages = [
             f"{finding['rule']}: {finding['path']}: {finding['message']}"
@@ -100,22 +105,45 @@ def validate_repository(root: Path, spec: Path) -> None:
         raise CliError("structure validation returned FAIL" + ("; " + "; ".join(messages) if messages else ""))
 
 
-def publication_operation(root: Path, target: Path, spec: Path, args: argparse.Namespace) -> dict:
-    """Run publication after repository-level validation.
+def install_internal_validation(root: Path) -> None:
+    """Make internal modules use canonical repository-level validation.
 
-    The legacy publication module validates its target directory as if it were
-    the repository root. The canonical CLI deliberately bypasses that legacy
-    wrapper after validating the actual Semantic Repository root.
+    Legacy implementations historically invoked validate_structure.py as a
+    standalone CLI. Direct legacy CLIs are intentionally retired, so the
+    canonical CLI injects the same deterministic validation in-process.
     """
+
+    def canonical_validate(repo_root: Path) -> None:
+        resolved = repo_root.resolve()
+        validate_repository(resolved, resolved / "SEMANTIC_GIT.md")
+
+    # Functions exported by the semantic_index stub retain the globals of the
+    # internal implementation module. Replace that module-global validator.
+    index.build_index.__globals__["validate_structure"] = canonical_validate
+    index.validate_index.__globals__["validate_structure"] = canonical_validate
+
+    # The compiled implementation imports the semantic_index wrapper as `si`.
+    # Setting the wrapper attribute ensures compiled build/validate uses the
+    # same canonical in-process validator rather than an obsolete subprocess.
+    index.validate_structure = canonical_validate
+
+
+def publication_operation(root: Path, target: Path, spec: Path, args: argparse.Namespace) -> dict:
+    """Run namespace publication after repository-level validation."""
     validate_repository(root, spec)
-    original_validator = publication.run_validator
-    publication.run_validator = lambda *_args, **_kwargs: None
+
+    # Exported functions retain the globals of _internal.build_publication.
+    # Patch its legacy target-directory validator only for this operation;
+    # repository validation has already succeeded above.
+    globals_ = publication.build.__globals__
+    original_validator = globals_["run_validator"]
+    globals_["run_validator"] = lambda *_args, **_kwargs: None
     try:
         if args.operation == "build":
             return publication.build(target, spec, args.pdf, args.theme)
         return publication.check_status(target, spec)
     finally:
-        publication.run_validator = original_validator
+        globals_["run_validator"] = original_validator
 
 
 def emit_capabilities(as_json: bool) -> int:
@@ -201,10 +229,10 @@ def run(args: argparse.Namespace) -> int:
 
     root = repository_root(args.root)
     spec = root / "SEMANTIC_GIT.md"
+    install_internal_validation(root)
 
     if args.area == "validate":
-        validator = structure.Validator(root, spec)
-        validator.run()
+        validator = validator_for(root, spec)
         validator.print_report(args.json)
         return 1 if validator.result() == "FAIL" else 0
 

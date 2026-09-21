@@ -1,0 +1,26 @@
+name: CHANGE-022 validation
+
+on:
+  push:
+    branches:
+      - change/root/CHANGE-022-compiled-semantic-context
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Targeted compiled context tests
+        run: python _scripts/test_compiled_context.py
+      - name: Semantic index regression
+        run: python _scripts/test_semantic_index.py
+      - name: Publication regression
+        run: python _scripts/test_publication.py
+      - name: Full script test discovery
+        run: python -m unittest discover -s _scripts -p 'test_*.py'

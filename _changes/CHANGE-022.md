@@ -39,11 +39,11 @@ reason: null
 - **ADD O-F** - Calcular fingerprint determinístico sobre fontes, nodes externos e edges selecionados; rejeitar fontes locais ou externas que não estejam comprometidas em `HEAD` ou que divirjam do blob comprometido.
 - **ADD O-G** - Fazer `validate` regenerar o arquivo integralmente em memória e comparar o resultado byte a byte com o `compiled.ai.md` materializado, reportando `MISSING`, `INVALID` ou `DRIFT` quando aplicável.
 - **ADD O-H** - Fazer o comando `publication` extrair os blocos-fonte e chamar o renderer Markdown atual de `build_publication.py`, sem introduzir nova lógica editorial.
-- **ADD O-I** - Criar `_scripts/test_compiled_context.py` cobrindo pelo menos: determinismo byte a byte; extração lossless dos inputs da publicação; igualdade exata da projeção com a publicação atual; enriquecimento de relações; materialização de dependência externa explícita; detecção de drift; e rejeição de fonte sem commit/dirty.
+- **ADD O-I** - Criar `_scripts/test_compiled_context.py` cobrindo pelo menos: determinismo byte a byte; extração lossless dos inputs da publicação; igualdade exata da projeção com a publicação atual; enriquecimento de relações; fechamento transitivo de dependência externa explícita; estabilidade após commit apenas do artefato derivado; detecção de drift; e rejeição de fonte sem commit/dirty.
 - **ADD O-J** - Não alterar nesta CHANGE o conteúdo editorial atual de `PUBLICATION.md`; a migração do pipeline de publicação para consumir obrigatoriamente o compilado pode ocorrer após validação do novo artefato, mantendo como contrato a igualdade exata já testada.
 
 ## Validation Evidence
 
 - Implementação e suíte foram preparadas para execução determinística sem dependências externas além da biblioteca padrão e dos scripts já existentes do repositório.
-- Uma fixture local equivalente às interfaces atuais do indexador/publicador executou 6 testes com sucesso, cobrindo determinismo, extração lossless, compatibilidade da publicação, relações externas, drift e fonte dirty.
+- Uma fixture local equivalente às interfaces atuais do indexador/publicador executou 7 testes com sucesso, cobrindo determinismo, extração lossless, compatibilidade da publicação, fechamento transitivo de relações externas, estabilidade do artefato derivado, drift e fonte dirty.
 - A suíte de integração `_scripts/test_compiled_context.py` é adicionada à branch para execução contra os módulos reais do repositório antes de qualquer aprovação/merge.

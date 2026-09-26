@@ -1607,6 +1607,7 @@ Um CHANGE somente pode chegar a RECONCILED quando:
 - documentação vigente representa o novo estado proposto;
 - IDs locais sobreviventes foram promovidos no momento definido pela política, quando aplicável;
 - referências foram reconciliadas;
+- findings promovidos relacionados a R/D/O materialmente afetado foram reconciliados seletivamente, sem alterar findings não relacionados;
 - não existem referências órfãs ou ambíguas;
 - Semantic Diff e Git Diff(s) são compatíveis;
 - conflitos concorrentes relevantes foram tratados;
@@ -2849,6 +2850,7 @@ A IA deve:
 - nunca inventar `reason` nem identidade de aprovador;
 - consolidar conhecimento duradouro de PRD/SPEC/TODO em R/D/O quando aplicável;
 - reconciliar Semantic Diff, Git Diff(s), AS-IS e snapshot aprovado;
+- localizar e reconciliar findings promovidos quando R/D/O por eles referenciado for materialmente modificado, removido ou substituído, preservando findings não relacionados;
 - verificar integridade referencial mesmo quando não houver promoção de IDs;
 - detectar referências órfãs, ambíguas, relativas irresolvíveis e dependências semanticamente incompatíveis;
 - analisar concorrência semântica entre CHANGEs;
@@ -2945,6 +2947,9 @@ A IA não deve:
 - transformar PRD, SPEC ou TODO em documentação permanente por inércia;
 - perder snapshots obrigatórios por estratégia Git;
 - duplicar o mesmo significado em múltiplos lugares sem necessidade;
+- usar `_memory` como espelho textual de R/D/O ou reescrever findings não relacionados apenas porque R/D/O mudou;
+- deixar sem reconciliação finding promovido deterministicamente ligado a R/D/O materialmente afetado por um CHANGE;
+- criar arquivos ou subdiretórios adicionais em `_memory` sem evolução normativa explícita do protocolo;
 - criar árvores profundas sem necessidade;
 - criar links físicos indiscriminadamente;
 - tratar `semantic-link.yaml` como fonte concorrente de verdade;
@@ -3332,7 +3337,7 @@ sem cadeia obrigatória de herança documental em runtime.
 
 ## 32. Memória analítica do namespace
 
-O Semantic Git permite que um Semantic Namespace mantenha uma **memória analítica versionada** para preservar achados materialmente relevantes cuja perda aumentaria o risco ou o custo de redescoberta, mas que não devam compor o R/D/O vigente.
+O Semantic Git permite que um Semantic Namespace mantenha uma **memória analítica versionada** para preservar o que foi descoberto durante investigação quando esse conhecimento analítico for material e sua perda aumentar o risco ou o custo de redescoberta. Essa memória não compete com o R/D/O vigente e não constitui verdade semântica oficial.
 
 A memória analítica responde:
 
@@ -3342,10 +3347,13 @@ Ela é explicitamente não normativa.
 
 ```text
 R/D/O
-= conhecimento semântico autoritativo
+= memória do conhecimento semântico autoritativo
+
+_memory
+= memória da descoberta
 
 _memory/FINDINGS.yaml
-= memória analítica não normativa
+= representação canônica atual da memória da descoberta
 
 Git / fontes originais
 = evidência física ou documental
@@ -3359,7 +3367,9 @@ Quando existir, a memória de um namespace fica em:
 <namespace-dir>/_memory/FINDINGS.yaml
 ```
 
-`_memory/` é diretório auxiliar reservado local ao namespace, no mesmo nível organizacional de `_changes/` e `_publications/`. Ele não cria novo Semantic Namespace, não constitui quarta dimensão do AS-IS e não altera a identidade do namespace.
+`_memory/` é o contêiner auxiliar reservado da memória da descoberta local ao namespace, no mesmo nível organizacional de `_changes/` e `_publications/`. Ele não cria novo Semantic Namespace, não constitui quarta dimensão do AS-IS e não altera a identidade do namespace.
+
+Nesta versão do protocolo, `FINDINGS.yaml` é o único arquivo canônico permitido dentro de `_memory/`. A possibilidade de a memória evoluir para outros arquivos no futuro é uma reserva de extensibilidade, não uma autorização atual: qualquer novo tipo de arquivo ou subdiretório dentro de `_memory/` exige evolução normativa explícita do Semantic Git.
 
 A memória:
 
@@ -3376,7 +3386,7 @@ A memória:
 
 A criação ou reconciliação de `_memory/FINDINGS.yaml` pode ocorrer durante uma investigação autorizada mesmo quando o CHANGE relacionado estiver em `DRAFT`, porque essa escrita preserva memória analítica e não materializa significado semântico aprovado. A permissão limita-se ao arquivo de memória do namespace aplicável e não autoriza editar R/D/O, a especificação normativa ou materializações físicas. Atualizar memória, por si só, não exige CHANGE semântico separado.
 
-A autorização explícita de `_memory/FINDINGS.yaml` nesta seção é uma exceção auxiliar ao bloqueio de novos tipos documentais da seção 23.3. Ela não autoriza qualquer outro tipo de documento permanente nem transforma `FINDINGS.yaml` em AS-IS semântico.
+A autorização explícita de `_memory/FINDINGS.yaml` nesta seção é uma exceção auxiliar ao bloqueio de novos tipos documentais da seção 23.3. Nesta versão, ela não autoriza qualquer outro arquivo ou subdiretório dentro de `_memory/` nem transforma `FINDINGS.yaml` em AS-IS semântico. Extensões futuras exigem alteração normativa explícita desta especificação.
 
 ### 32.2. Finding analítico
 
@@ -3400,11 +3410,13 @@ Não usar `_memory` para chain-of-thought, transcrição de sessão, dump comple
 
 ### 32.3. Estrutura canônica
 
-O arquivo canônico é exatamente:
+O arquivo canônico padrão da memória nesta versão é exatamente:
 
 ```text
 FINDINGS.yaml
 ```
+
+Nenhum outro arquivo ou subdiretório é autorizado dentro de `_memory/` nesta versão. Uma evolução futura pode introduzir outras representações somente por mudança normativa explícita do protocolo.
 
 Forma mínima:
 
@@ -3446,6 +3458,8 @@ semantic_status
 ```
 
 A ausência de significado, fonte, certeza ou motivo conhecido não pode ser preenchida por invenção. Quando uma informação necessária for desconhecida, o estado deve permanecer explicitamente desconhecido ou não resolvido.
+
+Um finding com `status: promoted` pode registrar `semantic_refs` para as entidades R/D/O resultantes. Cada referência persistida deve usar identidade canônica completa, por exemplo `domain/example:D-007`. Essas referências ligam a descoberta à autoridade semântica sem copiar a formulação normativa do R/D/O para a memória.
 
 ### 32.4. Identidade e ciclo de vida
 
@@ -3550,7 +3564,21 @@ finding
 
 Nenhuma skill, status de finding ou confiança de IA pode pular esse fluxo.
 
-Após promoção, o finding pode permanecer com `status: promoted` e referências aos itens semânticos resultantes para preservar proveniência. Isso não torna o finding autoridade e não reescreve retroativamente o período em que seu significado era desconhecido.
+Após promoção, o finding pode permanecer com `status: promoted` e `semantic_refs` para os itens semânticos resultantes para preservar descoberta, evidência, risco e proveniência. Isso não torna o finding autoridade, não autoriza duplicar o texto normativo do R/D/O e não reescreve retroativamente o período em que seu significado era desconhecido.
+
+#### Reconciliação inversa R/D/O → findings
+
+A promoção não encerra o ciclo de consistência entre memória e AS-IS. Quando um CHANGE fizer alteração material que modifique, remova ou substitua uma entidade R/D/O referenciada por um finding `promoted`, os findings afetados devem ser localizados deterministicamente por `semantic_refs` ou por relações equivalentes já deriváveis do índice e reconciliados antes de o CHANGE alcançar `RECONCILED`.
+
+A reconciliação é seletiva. Findings sem relação determinística com as entidades R/D/O afetadas devem permanecer intactos. Para cada finding afetado, a análise deve concluir explicitamente um dos resultados compatíveis com a nova realidade:
+
+- permanecer `promoted` quando a referência e a descoberta continuarem coerentes;
+- atualizar `semantic_refs` quando a autoridade semântica correspondente tiver sido substituída;
+- tornar-se `resolved` quando a questão analítica deixar de exigir retenção ativa;
+- tornar-se `superseded` quando outra descoberta representar melhor a mesma questão;
+- retornar a `active`, com significado semântico novamente não resolvido, quando a mudança reabrir a questão analítica.
+
+A reconciliação não é sincronização textual. R/D/O continua sendo o único local da formulação normativa; `_memory` preserva a descoberta e sua relação com a autoridade vigente. Um finding promovido afetado que permaneça stale ou cuja relação com o novo R/D/O não tenha sido examinada bloqueia `RECONCILED`.
 
 ### 32.9. Relação com skills
 
@@ -3582,6 +3610,7 @@ Quando `_memory` existir, uma implementação determinística deve verificar, no
 - unicidade de `F-*` dentro da memória do namespace;
 - presença dos campos mínimos de cada finding;
 - uso de estado permitido;
+- forma canônica e ausência de duplicidade de `semantic_refs`, quando presentes;
 - inexistência de `FINDINGS.yaml` fora de `_memory/`;
 - não tratamento de `F-*` como identidade R/D/O;
 - exclusão de `_memory` da publicação canônica.
@@ -3607,6 +3636,10 @@ São invariantes adicionais:
 13. Evidência original permanece autoridade sobre o que foi fisicamente ou documentalmente observado.
 14. A perda de detalhe causada pela compressão semântica não deve apagar achado não semântico quando sua redescoberta for materialmente cara ou perigosa.
 15. `_memory/FINDINGS.yaml` pode ser criado ou atualizado em `DRAFT` como escrita analítica não normativa quando derivado da investigação em curso; essa exceção não autoriza implementação nem edição de R/D/O ou materializações físicas.
+16. `_memory` é o contêiner conceitual da memória da descoberta; `FINDINGS.yaml` é seu único arquivo canônico nesta versão, e novos arquivos exigem evolução normativa futura.
+17. A relação entre finding promovido e R/D/O é referencial, não textual; a formulação normativa não deve ser duplicada em `_memory`.
+18. Alteração material de R/D/O referenciado por finding promovido exige reconciliação seletiva dos findings afetados antes de `RECONCILED`.
+19. Findings não relacionados à alteração devem permanecer intactos.
 
 ---
 

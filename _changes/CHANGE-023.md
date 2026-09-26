@@ -1,6 +1,9 @@
 change: CHANGE-023
-status: DRAFT
+status: IN_PROGRESS
 base_commit: 7979573be557ed65c74b6afecd07724af4e250c0
+approved_semantic_commit: d9960df0ed1de58b26142ca04b6232d2fe0d5157
+approval_scope:
+  - _changes/CHANGE-023.md
 reason: null
 
 # CHANGE-023

@@ -1,0 +1,27 @@
+name: CHANGE-023 verification
+
+on:
+  push:
+    branches:
+      - change/root/CHANGE-023-memory-rdo-reconciliation
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Targeted tests
+        run: python -m unittest _scripts.test_memory_reconciliation -v
+      - name: Structural validation
+        run: python _scripts/semantic_git.py validate --json
+      - name: Full tests
+        run: python -m unittest discover -s _scripts -p 'test_*.py' -v

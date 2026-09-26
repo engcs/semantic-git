@@ -1,0 +1,237 @@
+name: CHANGE-023 EXEC_PROG probe
+
+on:
+  push:
+    branches:
+      - change/root/CHANGE-023-memory-rdo-reconciliation
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build disposable EXEC_PROG semantic fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _applications/exec_prog/_memory _applications/exec_prog/_changes
+
+          cat > _applications/exec_prog/REQUIREMENTS.md <<'EOF'
+          # Requirements - exec_prog
+
+          ## Cabeçalho
+          Contrato semântico mínimo do fixture EXEC_PROG para testar memória analítica.
+
+          ## Corpo
+          - **R-001** - Ocorrências expurgadas não devem contribuir para a apuração do indicador.
+          - **R-003** - Para uma mesma competência e objeto de apuração, deve existir no máximo uma versão de catálogo vigente.
+          EOF
+
+          cat > _applications/exec_prog/DECISIONS.md <<'EOF'
+          # Decisions - exec_prog
+
+          ## Cabeçalho
+          Decisões mínimas do fixture EXEC_PROG.
+
+          ## Corpo
+          - **D-001** - A decisão manual de expurgo prevalece sobre regras automáticas; decisão manual de proteção veta o expurgo automático. Atende R-001.
+          - **D-002** - A leitura operacional considera programada a linha com VAR2_VALOR = 1 e executada a linha com VAR1_VALOR = 1.
+          EOF
+
+          cat > _applications/exec_prog/OPERATIONS.md <<'EOF'
+          # Operations - exec_prog
+
+          ## Cabeçalho
+          Operação mínima para materializar o contrato do fixture.
+
+          ## Corpo
+          - **O-001** - Apurar EXEC_PROG preservando a seleção da versão vigente e as flags de execução e programação.
+          EOF
+
+          cat > _applications/exec_prog/_memory/FINDINGS.yaml <<'EOF'
+          namespace: exec_prog
+          findings:
+            - id: F-001
+              status: promoted
+              category: reconstructed_rule
+              summary: >
+                A investigação do SQL de EXEC_PROG encontrou precedência explícita da curadoria manual sobre a regra automática de expurgo.
+              evidence:
+                certainty: proven
+                sources:
+                  - repository: dbt_performance_operacional
+                    path: models/legado/indicadores/aderencia_execucao_framework
+                    locator: FLAG_EXPURGO_GLOBAL
+              risk:
+                level: high
+                consequence: >
+                  Uma reimplementação que ignore a precedência manual pode expurgar programações protegidas ou manter programações que deveriam ser expurgadas.
+              semantic_status:
+                state: promoted
+                reason: >
+                  O significado durável foi promovido para a decisão canônica correspondente.
+              semantic_refs:
+                - exec_prog:D-001
+
+            - id: F-002
+              status: active
+              category: physical_exception
+              summary: >
+                Existe um alias legado deprecated mantido temporariamente por compatibilidade e apontando para o nome canônico de regras de negócio.
+              evidence:
+                certainty: proven
+                sources:
+                  - repository: dbt_performance_operacional
+                    path: models/legado/indicadores/aderencia_execucao_framework/intermediate/siprog_prata__vw__fato_programacao__controle_de_janela.sql
+                    locator: DEPRECATED Mantido temporariamente por compatibilidade
+              risk:
+                level: medium
+                consequence: >
+                  Remover o alias sem verificar consumidores pode quebrar dependências físicas ainda existentes.
+              semantic_status:
+                state: non_semantic
+                reason: >
+                  A evidência demonstra compatibilidade física temporária, não uma regra durável do indicador.
+
+            - id: F-003
+              status: promoted
+              category: reconstructed_invariant
+              summary: >
+                A investigação encontrou teste explícito que rejeita mais de uma versão vigente para a mesma competência nos fatos e KPIs de EXEC_PROG.
+              evidence:
+                certainty: proven
+                sources:
+                  - repository: dbt_performance_operacional
+                    path: tests/exec_prog
+                    locator: QTD_VERSOES_VIGENTES > 1
+              risk:
+                level: high
+                consequence: >
+                  Múltiplas versões vigentes podem tornar a apuração ambígua e duplicar ou divergir resultados por competência.
+              semantic_status:
+                state: promoted
+                reason: >
+                  O invariável foi promovido para Requirement; o finding preserva descoberta e evidência.
+              semantic_refs:
+                - exec_prog:R-002
+
+            - id: F-004
+              status: promoted
+              category: methodology
+              summary: >
+                A metodologia operacional separa explicitamente linha programada por VAR2_VALOR = 1 e linha executada por VAR1_VALOR = 1.
+              evidence:
+                certainty: proven
+                sources:
+                  - repository: methodology-session
+                    locator: EXEC_PROG regra soberana VAR2_VALOR e VAR1_VALOR
+              risk:
+                level: high
+                consequence: >
+                  Usar colunas textuais como critério de contagem pode produzir números diferentes do KPI governado.
+              semantic_status:
+                state: promoted
+                reason: >
+                  A regra de leitura operacional foi promovida para decisão canônica.
+              semantic_refs:
+                - exec_prog:D-002
+          EOF
+
+          HEAD_SHA="$(git rev-parse HEAD)"
+          cat > _applications/exec_prog/_changes/CHANGE-001.md <<EOF
+          change: CHANGE-001
+          status: RECONCILED
+          base_commit: ${HEAD_SHA}
+          approved_semantic_commit: ${HEAD_SHA}
+          approval_scope:
+            - _applications/exec_prog/_changes/CHANGE-001.md
+          reason: null
+
+          # CHANGE-001
+
+          ## Semantic Diff
+
+          ### REQUIREMENTS
+
+          - **REMOVE R-002** - Substitui o requisito anterior de versão vigente.
+          - **ADD R-003** - Para uma mesma competência e objeto de apuração, deve existir no máximo uma versão de catálogo vigente.
+
+          ### DECISIONS
+
+          - **MODIFY D-001** - Mantém a identidade da regra de precedência de expurgo após revisão de formulação.
+
+          ### OPERATIONS
+
+          - **NONE** - Sem alteração operacional adicional neste fixture.
+          EOF
+
+          git config user.name 'exec-prog-probe'
+          git config user.email 'exec-prog-probe@example.invalid'
+          git add _applications/exec_prog
+          git commit -m 'test fixture: exec_prog stale promoted finding' >/dev/null
+
+      - name: Show EXEC_PROG findings
+        shell: bash
+        run: |
+          echo '===== FINDINGS.yaml ====='
+          cat _applications/exec_prog/_memory/FINDINGS.yaml
+
+      - name: Run CHANGE-023 impacted-finding locator
+        shell: bash
+        run: |
+          echo '===== IMPACT LOCATOR ====='
+          python -m _scripts._internal.memory_reconciliation \
+            --root . \
+            --change _applications/exec_prog/_changes/CHANGE-001.md \
+            --json | tee /tmp/impact.json
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/impact.json', encoding='utf-8'))
+          got={(x['finding'],x['semantic_ref']) for x in p['impacted_promoted_findings']}
+          expected={('exec_prog:F-001','exec_prog:D-001'),('exec_prog:F-003','exec_prog:R-002')}
+          assert got == expected, (got, expected)
+          print('LOCATOR_ASSERTION=PASS')
+          print('UNRELATED_F002_NOT_SELECTED=', all(x['finding']!='exec_prog:F-002' for x in p['impacted_promoted_findings']))
+          print('UNRELATED_F004_NOT_SELECTED=', all(x['finding']!='exec_prog:F-004' for x in p['impacted_promoted_findings']))
+          PY
+
+      - name: Test structural RECONCILED gate with stale promoted reference
+        shell: bash
+        run: |
+          set +e
+          python _scripts/validate_structure.py --root . --spec SEMANTIC_GIT.md --json | tee /tmp/structure.json
+          rc=${PIPESTATUS[0]}
+          set -e
+          echo "STRUCTURAL_EXIT_CODE=${rc}"
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/structure.json', encoding='utf-8'))
+          print('STRUCTURAL_RESULT='+p['result'])
+          print('STALE_MEMORY_GATE_PRESENT=', any(f.get('rule','').startswith('MEMORY') and 'R-002' in f.get('message','') for f in p.get('findings',[])))
+          PY
+
+      - name: Test semantic index resolution of stale semantic_ref
+        shell: bash
+        run: |
+          set +e
+          python _scripts/semantic_git.py index build --namespace _applications/exec_prog --json > /tmp/index.out 2>&1
+          rc=$?
+          set -e
+          echo "INDEX_EXIT_CODE=${rc}"
+          cat /tmp/index.out
+          if grep -q 'unresolved reference' /tmp/index.out; then
+            echo 'INDEX_STALE_REFERENCE_DETECTION=PASS'
+          else
+            echo 'INDEX_STALE_REFERENCE_DETECTION=FAIL'
+            exit 1
+          fi

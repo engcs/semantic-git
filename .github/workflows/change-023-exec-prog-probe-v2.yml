@@ -19,4 +19,6 @@ jobs:
         with:
           python-version: '3.12'
       - name: Run real CHANGE-023 logic against disposable EXEC_PROG fixture
+        env:
+          PYTHONPATH: .
         run: python .github/scripts/exec_prog_probe.py

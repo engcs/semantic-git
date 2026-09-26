@@ -1,5 +1,5 @@
 change: CHANGE-023
-status: IN_PROGRESS
+status: RECONCILED
 base_commit: 7979573be557ed65c74b6afecd07724af4e250c0
 approved_semantic_commit: d9960df0ed1de58b26142ca04b6232d2fe0d5157
 approval_scope:
@@ -37,3 +37,23 @@ reason: null
 - **ADD O-E** - Atualizar o validador estrutural e a skill de memória para aceitar e validar as referências semânticas de findings promovidos e para preservar findings não relacionados.
 - **ADD O-F** - Adicionar testes cobrindo: finding promovido que permanece válido após MODIFY; referência que precisa ser atualizada após REMOVE + ADD; finding que volta a `active`; finding resolvido ou superseded; bloqueio de reconciliação quando finding afetado permanece stale; e não alteração de finding não relacionado.
 - **ADD O-G** - Não introduzir nesta CHANGE arquivos adicionais dentro de `_memory`; a implementação deve apenas tornar explícita a extensibilidade futura e manter `FINDINGS.yaml` como padrão único atual.
+
+## Validation Evidence
+
+- `SEMANTIC_GIT.md` foi atualizado para definir `_memory` como memória da descoberta, manter `FINDINGS.yaml` como único arquivo canônico atual e reservar extensões futuras a evolução normativa explícita.
+- A seção de promoção passou a exigir reconciliação inversa seletiva `R/D/O → findings` quando entidades referenciadas por findings promovidos forem materialmente modificadas, removidas ou substituídas.
+- O gate de fechamento de CHANGE passou a exigir reconciliação dos findings promovidos relacionados a R/D/O afetado antes de `RECONCILED`.
+- `.opencode/skills/semantic-memory/SKILL.md` foi alinhada ao contrato normativo e explicita o fluxo de reconciliação inversa e a preservação de findings não relacionados.
+- `_scripts/_internal/validate_structure.py` passou a validar forma canônica e duplicidade de `semantic_refs` quando presentes.
+- `_scripts/_internal/memory_reconciliation.py` localiza deterministicamente R/D/O afetado pelo Semantic Diff e findings `promoted` ligados por `semantic_ref`, reutilizando a relação já produzida pelo índice semântico.
+- `_scripts/test_memory_reconciliation.py` cobre MODIFY com finding promovido, atualização de referência após REMOVE+ADD, retorno a `active`, estados `resolved`/`superseded`, preservação de finding não relacionado, referências canônicas e a superfície atual de `_memory`.
+- A validação final foi executada no GitHub Actions, run `36255673864`, em Python 3.12: testes direcionados, validação estrutural e descoberta completa de testes em `_scripts` concluíram com sucesso.
+- Os workflows e o aplicador temporários usados somente para executar a validação remota foram removidos da branch após a execução.
+
+## Reconciliation Summary
+
+- O contrato implementado corresponde ao snapshot aprovado em `d9960df0ed1de58b26142ca04b6232d2fe0d5157`; não houve alteração material posterior do Semantic Diff aprovado.
+- `root:CHANGE-023` adiciona somente novas regras ao protocolo e não modifica, remove ou substitui entidade R/D/O existente; portanto, o conjunto de findings promovidos impactados pela própria CHANGE é vazio.
+- A implementação mantém uma única autoridade textual: R/D/O contém o conhecimento normativo e `_memory/FINDINGS.yaml` preserva descoberta, evidência, risco e referências à autoridade.
+- Nenhum novo arquivo permanente foi introduzido dentro de `_memory`; `FINDINGS.yaml` permanece o único arquivo canônico permitido nesta versão.
+- O diff final foi revisado após a remoção dos artefatos temporários e contém apenas protocolo, skill, CHANGE, validador, mecanismo determinístico de descoberta de impacto e seus testes.

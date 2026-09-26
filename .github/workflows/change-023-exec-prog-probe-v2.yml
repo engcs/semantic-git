@@ -1,0 +1,22 @@
+name: CHANGE-023 EXEC_PROG probe v2
+
+on:
+  push:
+    branches:
+      - change/root/CHANGE-023-memory-rdo-reconciliation
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run real CHANGE-023 logic against disposable EXEC_PROG fixture
+        run: python .github/scripts/exec_prog_probe.py

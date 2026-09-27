@@ -1,5 +1,5 @@
 change: CHANGE-023
-status: IN_PROGRESS
+status: RECONCILED
 base_commit: 7979573be557ed65c74b6afecd07724af4e250c0
 approved_semantic_commit: cf222109e114960196c33a1b08e6b12f3cd30e78
 approval_scope:
@@ -52,3 +52,23 @@ reason: null
 - **ADD O-K** - Quando houver intenção explícita de tornar a correção regra autoritativa, encaminhar a alteração pelo CHANGE aplicável; em `DRAFT`, limitar a escrita definitiva a `_memory/FINDINGS.yaml` e à própria CHANGE conforme permitido, sem editar R/D/O antes da aprovação e autorização correspondentes.
 - **ADD O-L** - Quando uma correção humana atingir finding `promoted`, verificar `semantic_refs`; se a correção puder tornar o R/D/O vigente incompatível com a descoberta atual, reabrir a questão analítica e exigir reconciliação antes de qualquer nova promoção ou conclusão que dependa dessa relação.
 - **ADD O-M** - Adicionar testes cobrindo: correção humana atualiza finding equivalente; preservação do `F-*`; registro de proveniência; complemento não autoritativo não modifica R/D/O; declaração normativa não contorna CHANGE; dúvida permanece não resolvida/`REVIEW`; correção contraditória não sobrescreve silenciosamente certeza anterior; conversa não é armazenada como dump; correção de finding promovido detecta necessidade de reconciliação; e findings não relacionados permanecem intactos.
+
+## Validation Evidence
+
+- O contrato semântico aprovado é o snapshot `cf222109e114960196c33a1b08e6b12f3cd30e78`, com `approval_scope` em `_changes/CHANGE-023.md`; a autorização humana identificou explicitamente `root:CHANGE-023` e esse commit.
+- O preflight confirmou a branch `change/root/CHANGE-023-memory-rdo-reconciliation` no snapshot aprovado antes da transição para `IN_PROGRESS`, com `main` ainda em `7979573be557ed65c74b6afecd07724af4e250c0`, igual ao `base_commit`.
+- `SEMANTIC_GIT.md` passou a normatizar correções e complementos humanos: upsert do mesmo `F-*` quando a identidade analítica permanece, proveniência humana concisa, preservação de incerteza/`REVIEW`, proibição de promoção automática e reconciliação de finding promovido potencialmente incompatível.
+- `.opencode/skills/semantic-memory/SKILL.md` passou a operacionalizar o fluxo humano → finding equivalente → upsert seletivo → proveniência → REVIEW/promoção governada.
+- `_scripts/_internal/memory_reconciliation.py` passou a oferecer `upsert_human_clarification` como núcleo determinístico posterior à resolução semântica da identidade do finding; ele preserva `F-*`, findings não relacionados e certeza não explicitamente alterada, registra proveniência humana concisa, reabre finding promovido quando indicado e sinaliza `REVIEW`, reconciliação de R/D/O e necessidade de CHANGE para intenção normativa.
+- `_scripts/test_memory_reconciliation.py` cobre preservação do ID, finding não relacionado, proveniência humana, incerteza em finding promovido, intenção normativa sem promoção automática, bloqueio de conteúdo com tamanho de transcrição e presença das regras no protocolo e na skill, além dos testes anteriores de reconciliação inversa.
+- GitHub Actions run `36349437941`, em Python 3.12, concluiu com sucesso a aplicação do patch, testes direcionados, validação estrutural, descoberta completa de testes em `_scripts` e push do commit testado `2a85526ee8ae29435e640a46251581de10db9bad`.
+- O workflow e o aplicador usados apenas para execução remota foram removidos após o sucesso. O diff líquido entre o snapshot aprovado e o estado final contém somente `SEMANTIC_GIT.md`, `.opencode/skills/semantic-memory/SKILL.md`, `_scripts/_internal/memory_reconciliation.py`, `_scripts/test_memory_reconciliation.py` e esta CHANGE.
+
+## Reconciliation Summary
+
+- A implementação final corresponde ao Semantic Diff aprovado em `cf222109e114960196c33a1b08e6b12f3cd30e78`; não foi introduzida alteração material posterior no contrato semântico.
+- O novo comportamento separa explicitamente julgamento semântico de equivalência — responsabilidade interpretativa da IA, com `REVIEW` em caso de ambiguidade — das garantias determinísticas de preservação de identidade, seletividade, proveniência e gates de promoção/reconciliação.
+- A CHANGE modifica a especificação normativa e seus mecanismos de suporte, mas não modifica, remove nem substitui entidade R/D/O existente; portanto, não há finding `promoted` deterministically ligado a R/D/O afetado pela própria CHANGE que exija reconciliação inversa.
+- Nenhum arquivo adicional permanece em `_memory`; `FINDINGS.yaml` continua sendo a única superfície canônica atual da memória analítica.
+- `main` permanece em `7979573be557ed65c74b6afecd07724af4e250c0`, igual ao `base_commit`; não há drift concorrente observado.
+- Os artefatos temporários de execução foram removidos, os testes obrigatórios não apresentaram `FAIL` nem `REVIEW` impeditivo e o estado final está apto a `RECONCILED`.

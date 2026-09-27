@@ -281,6 +281,39 @@ When reprocessing memory:
 - preserve unresolved meaning explicitly;
 - merge duplicates only when their analytical identity is genuinely the same.
 
+## 6.1. Human corrections and complements
+
+Treat a material human correction, complement or caveat as analytical evidence, not as automatic semantic authority.
+
+Operational flow:
+
+```text
+human clarification
+-> inspect relevant FINDINGS.yaml
+-> search for a semantically equivalent finding
+-> same analytical identity: upsert the same F-*
+-> distinct analytical issue: allocate a new F-* only if it passes retention
+-> record a concise human-provenance locator
+-> preserve uncertainty and unrelated findings
+```
+
+When upserting the same finding:
+
+- preserve its `F-*` identity;
+- update only meaning actually clarified by the human;
+- do not upgrade certainty, risk or semantic status beyond what the clarification supports;
+- preserve findings outside the clarified issue;
+- store the material synthesis, not the chat transcript;
+- never store chain-of-thought or internal reasoning.
+
+If the human expresses doubt, a hypothesis, a condition or competing interpretations, keep the material issue unresolved. Use `REVIEW` when a later decision or promotion depends on choosing among those interpretations.
+
+If the human explicitly says the clarification should become an authoritative domain rule, retain the analytical clarification when useful but route semantic promotion through the applicable CHANGE and normal approval gates. Do not edit R/D/O merely because the statement was authoritative in tone.
+
+If the correction concerns a `promoted` finding and may conflict with its `semantic_refs`, reopen the analytical question, normally returning the finding to `active`/unresolved until the relationship is reconciled. Preserve enough provenance and reference information to identify the affected authority. Do not silently rewrite R/D/O.
+
+Deterministic tooling may enforce preservation of IDs, unrelated findings, concise provenance, unresolved status and promotion/reconciliation flags after the agent has semantically identified which existing finding the human clarification concerns. Semantic equivalence itself remains an interpretive judgment and must produce `REVIEW` when materially ambiguous.
+
 ## 7. Lifecycle states
 
 Use at least these states:

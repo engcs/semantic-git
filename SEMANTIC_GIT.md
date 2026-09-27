@@ -3591,13 +3591,49 @@ Skills podem utilizar a memória como capacidade transversal:
 
 Essas regras não tornam skill obrigatória nem fonte normativa. O comportamento correto deve continuar derivável desta especificação.
 
-### 32.10. Publicação
+### 32.10. Correções e complementos humanos
+
+Uma correção, complemento, ressalva ou esclarecimento material fornecido pelo humano durante uma investigação pode constituir nova evidência analítica e deve ser preservado quando satisfizer os critérios de retenção desta seção. A interação, por si só, não transforma a afirmação em verdade semântica autoritativa nem autoriza alteração direta de R/D/O.
+
+Antes de criar novo finding para uma correção humana, a IA deve procurar finding semanticamente equivalente na memória aplicável. Quando a questão analítica continuar sendo a mesma, deve preservar o mesmo `F-*` e reconciliar o finding existente por upsert. Mudança de redação, aumento de precisão, complemento ou correção do entendimento não cria nova identidade por si só. Novo `F-*` somente é apropriado quando o achado ou a questão analítica for materialmente distinta.
+
+A retenção deve registrar somente a síntese material do que foi esclarecido e proveniência humana suficiente para compreender a origem da correção. Não armazenar transcrição integral da conversa, chain-of-thought, raciocínio interno ou dump da interação. A evidência anterior e findings não relacionados permanecem intactos salvo quando a própria correção fornecer base material para alterá-los.
+
+A correção humana pode justificar mudança de certeza, risco, classificação ou `semantic_status` somente na medida sustentada pelo esclarecimento efetivamente fornecido. Ela não deve converter silenciosamente hipótese, ressalva, conflito ou dúvida em certeza. Quando permanecer mais de uma interpretação material plausível, o finding deve continuar não resolvido e a decisão dependente deve produzir `REVIEW`.
+
+O fluxo conceitual é:
+
+```text
+correção / complemento humano
+→ localizar memória e finding equivalente
+→ preservar F-* quando a identidade analítica permanece
+→ sintetizar a correção + registrar proveniência humana
+→ preservar incerteza material quando existir
+→ atualizar apenas o finding afetado
+```
+
+Se o humano declarar que o entendimento deve tornar-se regra autoritativa, essa declaração pode motivar promoção, mas não substitui governança:
+
+```text
+clarificação humana
+→ memória analítica, quando aplicável
+→ CHANGE aplicável
+→ revisão semântica
+→ aprovação humana
+→ R/D/O
+```
+
+Nenhuma declaração conversacional, por mais explícita que seja sobre o conteúdo do domínio, autoriza pular CHANGE, gates ou incorporação quando a alteração de R/D/O for material.
+
+Quando a correção atingir finding com `status: promoted` e puder tornar sua relação com o R/D/O vigente incompatível, a questão analítica deve ser reaberta e reconciliada. Conforme o significado observado, o finding pode retornar a `active` com `semantic_status` não resolvido, preservando a proveniência e as referências necessárias para localizar a autoridade afetada. Enquanto a incompatibilidade material não estiver resolvida, conclusões ou promoções que dependam dessa relação permanecem em `REVIEW` e o R/D/O não deve ser alterado silenciosamente.
+
+### 32.11. Publicação
 
 A publicação canônica de um namespace continua baseada em README e R/D/O aplicáveis. `_memory` não deve ser incluído por padrão.
 
 Uma publicação analítica específica pode expor findings somente quando solicitada explicitamente pelo humano ou por modo de publicação separado. Publicar um finding não lhe confere autoridade semântica.
 
-### 32.11. Validação estrutural
+### 32.12. Validação estrutural
 
 Quando `_memory` existir, uma implementação determinística deve verificar, no mínimo:
 
@@ -3617,7 +3653,7 @@ Quando `_memory` existir, uma implementação determinística deve verificar, no
 
 Falha estrutural nesses invariantes produz `FAIL`.
 
-### 32.12. Invariantes da memória analítica
+### 32.13. Invariantes da memória analítica
 
 São invariantes adicionais:
 
@@ -3640,6 +3676,11 @@ São invariantes adicionais:
 17. A relação entre finding promovido e R/D/O é referencial, não textual; a formulação normativa não deve ser duplicada em `_memory`.
 18. Alteração material de R/D/O referenciado por finding promovido exige reconciliação seletiva dos findings afetados antes de `RECONCILED`.
 19. Findings não relacionados à alteração devem permanecer intactos.
+20. Correção ou complemento humano material pode ser preservado como evidência analítica sem se tornar autoridade semântica apenas por ter sido declarado na interação.
+21. Correção humana da mesma questão analítica preserva o mesmo `F-*`; novo ID exige achado materialmente distinto.
+22. Incerteza, ressalva ou interpretação concorrente expressa pelo humano permanece explicitamente não resolvida quando material e produz `REVIEW` quando uma decisão depender dela.
+23. Intenção humana de tornar um entendimento autoritativo não contorna CHANGE, revisão, aprovação ou incorporação em R/D/O.
+24. Memória de correção humana preserva síntese material e proveniência suficiente, nunca transcrição integral da conversa ou raciocínio interno.
 
 ---
 

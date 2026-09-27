@@ -153,5 +153,127 @@ class MemoryReconciliationTests(unittest.TestCase):
         self.assertIn("exige evolução normativa explícita", spec)
 
 
+    def test_human_clarification_preserves_finding_identity_and_unrelated(self) -> None:
+        findings = [
+            {
+                "id": "F-001",
+                "status": "active",
+                "summary": "interpretação anterior",
+                "evidence": {"certainty": "proven", "sources": []},
+                "semantic_status": {"state": "unresolved", "reason": "aguarda esclarecimento"},
+            },
+            {
+                "id": "F-002",
+                "status": "active",
+                "summary": "finding não relacionado",
+                "evidence": {"certainty": "proven"},
+                "semantic_status": {"state": "non_semantic"},
+            },
+        ]
+        unrelated_before = findings[1].copy()
+        result = mod.upsert_human_clarification(
+            findings,
+            "F-001",
+            summary="entendimento corrigido pelo humano",
+            human_provenance="clarificação humana durante investigação",
+        )
+        self.assertEqual([item["id"] for item in result["findings"]], ["F-001", "F-002"])
+        self.assertEqual(result["finding_id"], "F-001")
+        self.assertEqual(result["findings"][1], unrelated_before)
+        self.assertEqual(result["findings"][0]["evidence"]["certainty"], "proven")
+        self.assertIn(
+            {"type": "human_clarification", "locator": "clarificação humana durante investigação"},
+            result["findings"][0]["evidence"]["sources"],
+        )
+
+    def test_human_uncertainty_reopens_promoted_finding_and_requires_review(self) -> None:
+        findings = [
+            {
+                "id": "F-001",
+                "status": "promoted",
+                "summary": "regra promovida",
+                "evidence": {"certainty": "proven", "sources": []},
+                "semantic_status": {"state": "promoted", "reason": "promovido"},
+                "semantic_refs": ["root:D-001"],
+            }
+        ]
+        result = mod.upsert_human_clarification(
+            findings,
+            "F-001",
+            summary="o humano indicou uma interpretação concorrente",
+            human_provenance="clarificação humana com ressalva",
+            uncertain=True,
+            potential_rdo_conflict=True,
+        )
+        finding = result["findings"][0]
+        self.assertEqual(finding["id"], "F-001")
+        self.assertEqual(finding["status"], "active")
+        self.assertEqual(finding["semantic_status"]["state"], "unresolved")
+        self.assertEqual(finding["semantic_refs"], ["root:D-001"])
+        self.assertTrue(result["review_required"])
+        self.assertTrue(result["rdo_reconciliation_required"])
+
+    def test_human_normative_intent_requires_change_without_auto_promotion(self) -> None:
+        findings = [
+            {
+                "id": "F-001",
+                "status": "active",
+                "summary": "achado",
+                "evidence": {"certainty": "proven", "sources": []},
+                "semantic_status": {"state": "candidate", "reason": "candidato"},
+            }
+        ]
+        result = mod.upsert_human_clarification(
+            findings,
+            "F-001",
+            summary="o humano declarou que o entendimento deve ser autoritativo",
+            human_provenance="declaração humana de intenção normativa",
+            normative_intent=True,
+        )
+        self.assertTrue(result["promotion_requires_change"])
+        self.assertEqual(result["findings"][0]["status"], "active")
+        self.assertEqual(result["findings"][0]["semantic_status"]["state"], "candidate")
+
+    def test_human_provenance_rejects_transcript_sized_input(self) -> None:
+        findings = [
+            {
+                "id": "F-001",
+                "status": "active",
+                "summary": "achado",
+                "evidence": {"sources": []},
+                "semantic_status": {"state": "unresolved"},
+            }
+        ]
+        with self.assertRaisesRegex(ValueError, "material synthesis, not a transcript"):
+            mod.upsert_human_clarification(
+                findings,
+                "F-001",
+                summary="síntese válida",
+                human_provenance="x" * 401,
+            )
+
+    def test_protocol_declares_human_clarification_contract(self) -> None:
+        spec = (ROOT / "SEMANTIC_GIT.md").read_text(encoding="utf-8")
+        for token in (
+            "Correções e complementos humanos",
+            "preservar o mesmo `F-*`",
+            "não transforma a afirmação em verdade semântica autoritativa",
+            "Não armazenar transcrição integral da conversa",
+            "não substitui governança",
+        ):
+            self.assertIn(token, spec)
+
+    def test_skill_declares_human_clarification_flow(self) -> None:
+        skill = (ROOT / ".opencode/skills/semantic-memory/SKILL.md").read_text(encoding="utf-8")
+        for token in (
+            "Human corrections and complements",
+            "upsert the same F-*",
+            "store the material synthesis, not the chat transcript",
+            "route semantic promotion through the applicable CHANGE",
+            "Semantic equivalence itself remains an interpretive judgment",
+        ):
+            self.assertIn(token, skill)
+
+
 if __name__ == "__main__":
     unittest.main()

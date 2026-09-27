@@ -16,8 +16,11 @@ This skill derives all normative authority from `SEMANTIC_GIT.md`. It is a trans
 R/D/O
 = what is semantically authoritative now
 
+_memory
+= memory of what was discovered
+
 _memory/FINDINGS.yaml
-= what is important not to forget
+= canonical current representation of that discovery memory
 
 Git / source implementation
 = original physical evidence
@@ -57,6 +60,8 @@ Memory is local to the Semantic Namespace that owns the finding:
 └── _memory/
     └── FINDINGS.yaml
 ```
+
+`_memory/` is the reserved container for discovery memory. In Semantic Git 1.5, `FINDINGS.yaml` is the only canonical file permitted inside it. Other files or subdirectories require a future explicit normative evolution of the protocol; extensibility is not permission to invent them today.
 
 `_memory/`:
 
@@ -275,6 +280,39 @@ When reprocessing memory:
 - update certainty only when evidence supports the change;
 - preserve unresolved meaning explicitly;
 - merge duplicates only when their analytical identity is genuinely the same.
+
+## 6.1. Human corrections and complements
+
+Treat a material human correction, complement or caveat as analytical evidence, not as automatic semantic authority.
+
+Operational flow:
+
+```text
+human clarification
+-> inspect relevant FINDINGS.yaml
+-> search for a semantically equivalent finding
+-> same analytical identity: upsert the same F-*
+-> distinct analytical issue: allocate a new F-* only if it passes retention
+-> record a concise human-provenance locator
+-> preserve uncertainty and unrelated findings
+```
+
+When upserting the same finding:
+
+- preserve its `F-*` identity;
+- update only meaning actually clarified by the human;
+- do not upgrade certainty, risk or semantic status beyond what the clarification supports;
+- preserve findings outside the clarified issue;
+- store the material synthesis, not the chat transcript;
+- never store chain-of-thought or internal reasoning.
+
+If the human expresses doubt, a hypothesis, a condition or competing interpretations, keep the material issue unresolved. Use `REVIEW` when a later decision or promotion depends on choosing among those interpretations.
+
+If the human explicitly says the clarification should become an authoritative domain rule, retain the analytical clarification when useful but route semantic promotion through the applicable CHANGE and normal approval gates. Do not edit R/D/O merely because the statement was authoritative in tone.
+
+If the correction concerns a `promoted` finding and may conflict with its `semantic_refs`, reopen the analytical question, normally returning the finding to `active`/unresolved until the relationship is reconciled. Preserve enough provenance and reference information to identify the affected authority. Do not silently rewrite R/D/O.
+
+Deterministic tooling may enforce preservation of IDs, unrelated findings, concise provenance, unresolved status and promotion/reconciliation flags after the agent has semantically identified which existing finding the human clarification concerns. Semantic equivalence itself remains an interpretive judgment and must produce `REVIEW` when materially ambiguous.
 
 ## 7. Lifecycle states
 
@@ -499,13 +537,37 @@ The authoritative current semantic statement now lives in R/D/O. Do not maintain
 
 Do not rewrite history to pretend the semantic meaning was always known.
 
-## 17. Publication boundary
+## 17. Reconciliation after R/D/O evolution
+
+Promotion creates a referential bridge from discovery memory to semantic authority. That bridge must be revisited when its target changes materially.
+
+When a CHANGE modifies, removes or replaces R/D/O:
+
+1. determine the materially affected canonical R/D/O identities from the Semantic Diff;
+2. use explicit `semantic_refs` or equivalent deterministic index relations to locate `promoted` findings that point to those identities;
+3. examine only those affected findings;
+4. leave unrelated findings byte-for-byte untouched unless the task has independent evidence to change them;
+5. for each affected finding, choose an evidence-backed outcome: remain `promoted`, update `semantic_refs`, become `resolved`, become `superseded`, or return to `active` when the semantic question is reopened;
+6. block `RECONCILED` while an affected promoted finding remains stale or its relationship to the new R/D/O has not been examined.
+
+This is inverse reconciliation:
+
+```text
+R/D/O material change
+-> deterministic impacted-finding discovery
+-> analytical reconciliation of impacted findings
+-> RECONCILED only when relationships are coherent
+```
+
+Do not mirror the new R/D/O text into the finding. The finding keeps discovery, evidence, risk and provenance; the authoritative statement remains in R/D/O.
+
+## 18. Publication boundary
 
 `_memory` is excluded from canonical publication by default.
 
 A publication intended to explain analytical history may include selected findings only through an explicit, separate publication mode or human request. Such publication does not make findings authoritative.
 
-## 18. Memory gates
+## 19. Memory gates
 
 Before writing or updating `FINDINGS.yaml`, verify:
 
@@ -524,6 +586,9 @@ Before writing or updating `FINDINGS.yaml`, verify:
 13. **R/D/O exclusivity** — an active finding does not duplicate a proposition already adequately owned by authoritative R/D/O; promoted findings point to semantic authority instead of becoming a second source of truth.
 14. **Risk-query discipline** — risk summaries report evidence-backed analytical risks actually present in relevant findings and do not infer absence of risk from absence of findings.
 15. **Mathematical discipline** — mathematical findings preserve the issue, proof/witness and risk without turning engine behavior into semantic authority or creating a parallel mathematical specification.
+16. **Canonical memory surface** — `_memory` contains only `FINDINGS.yaml` in the current protocol version; do not invent another memory file.
+17. **Semantic references** — `semantic_refs`, when present, use canonical R/D/O identities and link provenance to authority rather than duplicating normative text.
+18. **Inverse reconciliation** — when referenced R/D/O changes materially, affected promoted findings are reconciled before `RECONCILED`, while unrelated findings remain untouched.
 
 If a required fact is unknown, represent it as unknown or unresolved instead of inventing it.
 

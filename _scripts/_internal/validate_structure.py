@@ -42,6 +42,8 @@ FINDING_STATUS_VALUES = {"active", "resolved", "superseded", "promoted"}
 FINDING_REQUIRED_FIELDS = {"id", "status", "category", "summary", "evidence", "risk", "semantic_status"}
 FINDING_START_RE = re.compile(r"^  - id:\s*(\S.*?)\s*$")
 FINDING_FIELD_RE = re.compile(r"^    ([a-z][a-z0-9_]*)\s*:\s*(.*?)\s*$")
+FINDING_REF_ITEM_RE = re.compile(r"^      -\s+(\S.*?)\s*$")
+CANONICAL_RDO_REF_RE = re.compile(r"^(?:root|[A-Za-z0-9][\w.-]*(?:/[A-Za-z0-9][\w.-]*)*):[RDO]-\d{3,}$")
 INDEX_FILENAME = "SEMANTIC_INDEX.json"
 INDEX_NODE_TYPES = {"namespace", "requirement", "decision", "operation", "change", "finding"}
 INDEX_EDGE_TYPES = {"contains", "parent_namespace", "references", "satisfies", "depends_on", "semantic_ref"}
@@ -431,6 +433,33 @@ class Validator:
             status = fields.get("status")
             if status is not None and status[1] not in FINDING_STATUS_VALUES:
                 self.add("MEMORY_STATUS", path, f"finding {finding_id} status must be one of {sorted(FINDING_STATUS_VALUES)}", status[0])
+
+            semantic_refs = fields.get("semantic_refs")
+            if semantic_refs is not None:
+                refs: list[tuple[int, str]] = []
+                if semantic_refs[1]:
+                    self.add("MEMORY_SEMANTIC_REF", path, f"finding {finding_id} semantic_refs must be a YAML sequence", semantic_refs[0])
+                else:
+                    for number in range(semantic_refs[0] + 1, end_line + 1):
+                        current = lines[number - 1]
+                        if FINDING_FIELD_RE.fullmatch(current):
+                            break
+                        if not current.strip():
+                            continue
+                        match = FINDING_REF_ITEM_RE.fullmatch(current)
+                        if match is None:
+                            self.add("MEMORY_SEMANTIC_REF", path, f"finding {finding_id} semantic_refs must contain only direct list items", number)
+                            continue
+                        refs.append((number, match.group(1).strip("\"'")))
+                if not refs:
+                    self.add("MEMORY_SEMANTIC_REF", path, f"finding {finding_id} semantic_refs must contain at least one canonical reference", semantic_refs[0])
+                seen_refs: set[str] = set()
+                for number, ref in refs:
+                    if CANONICAL_RDO_REF_RE.fullmatch(ref) is None:
+                        self.add("MEMORY_SEMANTIC_REF", path, f"finding {finding_id} semantic_ref must be a canonical R/D/O identity: {ref}", number)
+                    if ref in seen_refs:
+                        self.add("MEMORY_SEMANTIC_REF", path, f"finding {finding_id} duplicates semantic_ref {ref}", number)
+                    seen_refs.add(ref)
 
             for required_scalar in ("category", "summary"):
                 field = fields.get(required_scalar)

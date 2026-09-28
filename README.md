@@ -4,6 +4,12 @@ Especificação standalone de governança semântica.
 
 A fonte normativa é [`SEMANTIC_GIT.md`](SEMANTIC_GIT.md).
 
+## Guia de FINDINGS
+
+[`docs/FINDINGS.md`](docs/FINDINGS.md) explica de forma autocontida como a memória `_memory/FINDINGS.yaml` deve ser entendida por humanos e LLMs: estado atual versus história Git, atomicidade, UPSERT, evidência verificável, abstração, evolução entre versões e verificação RDO↔FINDINGS.
+
+O guia é explicativo. Ele não substitui nem modifica a fonte normativa `SEMANTIC_GIT.md`.
+
 ## CLI canônica
 
 O Semantic Git possui um único ponto de entrada público:

@@ -41,6 +41,7 @@ Não cria IES, ESSENCE.yaml, EVIDENCE_MAP.yaml ou qualquer quarta dimensão pers
 - **R-H** - A transformação FINDINGS → R/D/O não precisa ser textualmente reversível, mas deve preservar equivalência do subconjunto de conhecimento promovido: a essência semanticamente derivável dos findings aplicáveis deve ser compatível com a essência semanticamente expressa pelo R/D/O, ressalvadas incertezas, conhecimento ancestral e decisões humanas governadas explícitas.
 - **R-I** - Alterações materiais em R/D/O devem permitir localizar seletivamente findings relacionados e classificá-los como coerentes, contraditos, parcialmente cobertos, stale, reabertos ou não afetados; findings não relacionados devem permanecer intactos.
 - **R-J** - Um CHANGE não pode alcançar `RECONCILED` quando houver finding promovido com referência órfã, finding material afetado sem reconciliação de sua disposição, ou proposição R/D/O materialmente contradita pelos findings aplicáveis sem resolução humana governada.
+- **R-K** - Quando um Requirement define o significado de um indicador calculável, ele deve poder expressar a relação matemática principal usando os componentes semanticamente mais legíveis e estáveis sustentados pelo conhecimento disponível; a decomposição, definição, convenções e tratamento de casos-limite desses componentes pertencem às Decisions aplicáveis.
 
 ### DECISIONS
 
@@ -57,6 +58,7 @@ Não cria IES, ESSENCE.yaml, EVIDENCE_MAP.yaml ou qualquer quarta dimensão pers
 - **D-I** - Em reinvestigação, mesma identidade analítica + nova evidência compatível implica UPSERT; mesma identidade + evidência materialmente incompatível implica conflito/drift explícito; nova identidade material implica novo `F-*`.
 - **D-J** - A validação de reversibilidade é semântica, não textual: não se exige `FINDINGS → RDO → FINDINGS` idêntico, mas deve ser possível justificar todas as proposições materiais do R/D/O e identificar findings materiais cuja disposição não esteja explicada.
 - **D-K** - Para indicadores calculáveis, a reconstrução deve preservar nos findings os componentes semânticos e a relação matemática necessários para recuperar a melhor leitura humana da fórmula; detalhes físicos que implementam esses componentes permanecem evidência ou operação, não a fórmula semântica principal.
+- **D-L** - A fórmula definidora de um indicador pode compor o Requirement quando expressa diretamente o que o indicador significa, usando componentes semânticos de alto nível; Decisions devem definir esses componentes, regras de elegibilidade, agregação, denominador zero, temporalidade e demais convenções necessárias sem rebaixar a fórmula principal a vocabulário físico.
 
 ### OPERATIONS
 
@@ -73,6 +75,7 @@ Não cria IES, ESSENCE.yaml, EVIDENCE_MAP.yaml ou qualquer quarta dimensão pers
 - **O-I** - Adicionar teste de cobertura que prove que conhecimento positivo essencial — como propósito, definição de componentes, fórmula, agregação e invariantes — pode existir em FINDINGS sem `risk` artificial e é suficiente para reconstruir o R/D/O correspondente.
 - **O-J** - Corrigir o fechamento referencial demonstrado no teste de EXEC_PROG: `semantic-git validate` deve falhar quando um finding promovido referencia entidade R/D/O removida ou inexistente, sem depender exclusivamente de uma construção separada do índice.
 - **O-K** - Não criar novos arquivos permanentes de memória nem introduzir IES como requisito de entrada, saída ou persistência do protocolo nesta mudança.
+- **O-L** - Atualizar a separação canônica R/D/O para permitir e orientar que Requirements de indicadores calculáveis expressem a fórmula semântica principal, mantendo em Decisions a definição dos componentes e convenções e em Operations a materialização física.
 
 ## Critérios de aceitação semântica
 
@@ -84,7 +87,8 @@ A implementação futura desta CHANGE só pode ser considerada semanticamente re
 4. reinvestigação que faça UPSERT de evidência compatível e sinalize drift para evidência incompatível;
 5. preservação integral de findings não examinados/não relacionados;
 6. falha determinística para referência promovida órfã ou stale;
-7. ausência de novos artefatos persistentes como IES/ESSENCE fora de `FINDINGS.yaml` e R/D/O.
+7. ausência de novos artefatos persistentes como IES/ESSENCE fora de `FINDINGS.yaml` e R/D/O;
+8. reconstrução de um indicador cuja fórmula humana principal apareça em Requirement e cujos componentes sejam definidos nas Decisions sem nomes físicos.
 
 ## Fora de escopo
 

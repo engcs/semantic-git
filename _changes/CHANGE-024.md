@@ -21,7 +21,9 @@ A mudança também fecha a reversibilidade operacional necessária para:
 - confrontar R/D/O novo ou editado com o conhecimento descoberto preservado;
 - detectar drift quando uma nova investigação reobserva comportamento materialmente diferente;
 - distinguir mudança legítima de contrato, R/D/O stale, implementação divergente e lacuna de evidência;
-- impedir que `RECONCILED` seja alcançado com relações FINDINGS↔R/D/O materialmente stale ou não examinadas.
+- impedir que `RECONCILED` seja alcançado com relações FINDINGS↔R/D/O materialmente stale ou não examinadas;
+- permitir que o humano leia evidência mínima verificável dentro do finding antes de reabrir a fonte original;
+- controlar explicitamente o grau de abstração da materialização sem confundir compressão com verdade.
 
 Não cria IES, ESSENCE.yaml, EVIDENCE_MAP.yaml ou qualquer quarta dimensão persistente. A essência é uma projeção derivada e transitória do conhecimento preservado em FINDINGS.
 
@@ -42,6 +44,10 @@ Não cria IES, ESSENCE.yaml, EVIDENCE_MAP.yaml ou qualquer quarta dimensão pers
 - **R-I** - Alterações materiais em R/D/O devem permitir localizar seletivamente findings relacionados e classificá-los como coerentes, contraditos, parcialmente cobertos, stale, reabertos ou não afetados; findings não relacionados devem permanecer intactos.
 - **R-J** - Um CHANGE não pode alcançar `RECONCILED` quando houver finding promovido com referência órfã, finding material afetado sem reconciliação de sua disposição, ou proposição R/D/O materialmente contradita pelos findings aplicáveis sem resolução humana governada.
 - **R-K** - Quando um Requirement define o significado de um indicador calculável, ele deve poder expressar a relação matemática principal usando os componentes semanticamente mais legíveis e estáveis sustentados pelo conhecimento disponível; a decomposição, definição, convenções e tratamento de casos-limite desses componentes pertencem às Decisions aplicáveis.
+- **R-L** - A representação canônica de FINDINGS deve usar chaves e vocabulário estrutural em português do Brasil, preservando sem tradução apenas identificadores, nomes físicos, código, siglas, termos técnicos consolidados ou literais de evidência cuja tradução prejudique identidade ou verificabilidade.
+- **R-M** - Cada finding material deve preservar evidência mínima legível e verificável pelo humano, incluindo ao menos uma amostra curta do trecho, linha, expressão, testemunho, registro ou resultado que sustenta a descoberta, acompanhada de proveniência/localizador suficiente para reabrir a fonte original. A amostra não substitui a fonte original.
+- **R-N** - A materialização de FINDINGS deve admitir `nivel_abstracao` entre `0.0` e `1.0`, em incrementos de `0.1`, com padrão `0.7`. O nível controla compressão e granularidade da memória, não a verdade da evidência: `0.0` maximiza detalhe analítico observável sem armazenar chain-of-thought; `1.0` maximiza síntese semântica e pode reduzir detalhe e poder de reconstrução, devendo essa perda potencial permanecer explícita.
+- **R-O** - Quando R/D/O novo ou editado não for sustentado pelos findings atuais, o protocolo deve distinguir ausência de evidência de evidência contraditória e permitir investigação dirigida à proposição alterada. A investigação deve procurar tanto confirmação quanto refutação ou interpretações concorrentes; se não surgir sustentação suficiente, a proposição permanece não sustentada ou em REVIEW em vez de ser aceita por ausência de oposição.
 
 ### DECISIONS
 
@@ -59,6 +65,10 @@ Não cria IES, ESSENCE.yaml, EVIDENCE_MAP.yaml ou qualquer quarta dimensão pers
 - **D-J** - A validação de reversibilidade é semântica, não textual: não se exige `FINDINGS → RDO → FINDINGS` idêntico, mas deve ser possível justificar todas as proposições materiais do R/D/O e identificar findings materiais cuja disposição não esteja explicada.
 - **D-K** - Para indicadores calculáveis, a reconstrução deve preservar nos findings os componentes semânticos e a relação matemática necessários para recuperar a melhor leitura humana da fórmula; detalhes físicos que implementam esses componentes permanecem evidência ou operação, não a fórmula semântica principal.
 - **D-L** - A fórmula definidora de um indicador pode compor o Requirement quando expressa diretamente o que o indicador significa, usando componentes semânticos de alto nível; Decisions devem definir esses componentes, regras de elegibilidade, agregação, denominador zero, temporalidade e demais convenções necessárias sem rebaixar a fórmula principal a vocabulário físico.
+- **D-M** - Padronizar em PT-BR as chaves do schema e os estados/enumerações controlados de FINDINGS quando não forem nomes canônicos externos. Nomes de arquivo, caminhos, identificadores, SQL, nomes de campos/modelos e termos consolidados como `feedback` podem permanecer literais.
+- **D-N** - Estruturar a evidência de cada finding com proveniência e `amostras`: cada amostra deve conter tipo, artefato/fonte, localizador quando disponível e um trecho mínimo legível. Para evidência quantitativa, a amostra pode ser witness, expressão ou linha representativa em vez de texto corrido.
+- **D-O** - Definir a escala de abstração como: `0.0` = máxima materialização observável e separação de detalhes; `0.7` = padrão equilibrado para reconstrução, verificação e economia; `1.0` = máxima síntese semântica. Valores intermediários ajustam progressivamente granularidade, quantidade de findings, extensão das amostras e retenção de detalhes físicos, sem autorizar invenção ou apagar incerteza material silenciosamente.
+- **D-P** - Em `UNSUPPORTED`, oferecer investigação dirigida ou manutenção explícita como não sustentado/REVIEW. Em `CONTRADICTED`, oferecer reinvestigação para verificar mudança de realidade, revisão/rejeição da edição ou, quando a intenção for TO-BE deliberada, tratamento pelo CHANGE aplicável. Investigação dirigida deve testar a hipótese, não apenas buscar confirmação.
 
 ### OPERATIONS
 
@@ -76,6 +86,10 @@ Não cria IES, ESSENCE.yaml, EVIDENCE_MAP.yaml ou qualquer quarta dimensão pers
 - **O-J** - Corrigir o fechamento referencial demonstrado no teste de EXEC_PROG: `semantic-git validate` deve falhar quando um finding promovido referencia entidade R/D/O removida ou inexistente, sem depender exclusivamente de uma construção separada do índice.
 - **O-K** - Não criar novos arquivos permanentes de memória nem introduzir IES como requisito de entrada, saída ou persistência do protocolo nesta mudança.
 - **O-L** - Atualizar a separação canônica R/D/O para permitir e orientar que Requirements de indicadores calculáveis expressem a fórmula semântica principal, mantendo em Decisions a definição dos componentes e convenções e em Operations a materialização física.
+- **O-M** - Migrar o schema e as skills de FINDINGS para chaves PT-BR e validar deterministicamente o vocabulário canônico, preservando literais técnicos apenas nas exceções definidas por D-M.
+- **O-N** - Exigir no validador pelo menos uma evidência verificável por finding material: amostra curta mais proveniência/localizador, ou witness/expressão equivalente quando texto de linha não for a forma adequada. A ausência de amostra só pode ser aceita quando a própria evidência for declaradamente indisponível e isso constituir a lacuna registrada.
+- **O-O** - Expor `nivel_abstracao` como parâmetro de materialização com valores `0.0` a `1.0` em passos de `0.1` e padrão `0.7`; testar que a mesma base de evidência produz graus diferentes de compressão sem alterar fatos sustentados, inventar fatos ou esconder incertezas materiais.
+- **O-P** - Implementar fluxo de investigação dirigida a partir de R/D/O editado: classificar primeiro contra FINDINGS; quando solicitado ou necessário, pesquisar especificamente a hipótese nova e evidência capaz de refutá-la; reconciliar os novos achados por UPSERT e reexecutar a classificação antes de qualquer promoção.
 
 ## Critérios de aceitação semântica
 
@@ -88,14 +102,18 @@ A implementação futura desta CHANGE só pode ser considerada semanticamente re
 5. preservação integral de findings não examinados/não relacionados;
 6. falha determinística para referência promovida órfã ou stale;
 7. ausência de novos artefatos persistentes como IES/ESSENCE fora de `FINDINGS.yaml` e R/D/O;
-8. reconstrução de um indicador cuja fórmula humana principal apareça em Requirement e cujos componentes sejam definidos nas Decisions sem nomes físicos.
+8. reconstrução de um indicador cuja fórmula humana principal apareça em Requirement e cujos componentes sejam definidos nas Decisions sem nomes físicos;
+9. schema canônico de FINDINGS com chaves estruturais em PT-BR e exceções técnicas explicitamente delimitadas;
+10. todo finding material com ao menos uma amostra verificável de evidência e localizador/proveniência suficiente para inspeção humana;
+11. materialização do mesmo caso nos níveis `0.0`, `0.7` e `1.0`, demonstrando compressão progressiva, padrão `0.7` e preservação explícita das incertezas;
+12. edição de R/D/O sem suporte demonstrando as duas saídas válidas: investigação dirigida da hipótese ou manutenção explícita como não sustentada/REVIEW; contradições devem permanecer distintas de ausência de evidência.
 
 ## Fora de escopo
 
 - transformar FINDINGS em autoridade semântica;
 - armazenar chain-of-thought ou transcript de investigação;
 - copiar integralmente evidence map para `_memory`;
-- exigir que todo detalhe físico observado seja persistido;
+- exigir que todo detalhe físico observado seja persistido em níveis de abstração diferentes de `0.0`;
 - criar `IES.yaml`, `ESSENCE.yaml`, `BEHAVIOR_MODEL.yaml` ou equivalente;
 - decidir automaticamente que toda divergência entre implementação e R/D/O é nova versão semântica;
 - alterar retroativamente o significado histórico da CHANGE-023.

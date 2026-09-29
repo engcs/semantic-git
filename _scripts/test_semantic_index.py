@@ -68,22 +68,35 @@ Child.
 
 - **D-001** - Usa root:R-001 como contrato externo.
 """)
-        write(self.root / "domain" / "child" / "_memory" / "FINDINGS.yaml", """namespace: domain/child
-findings:
+        write(self.root / "domain" / "child" / "_memory" / "FINDINGS.yaml", """esquema: semantic-git-achados-v2
+espaco_semantico: domain/child
+autoridade: memoria_analitica_nao_autoritativa
+nivel_abstracao: 0.7
+achados:
   - id: F-001
-    status: active
-    category: evidence_gap
-    summary: >
+    chave: child.lacuna.evidencia
+    estado: promovido
+    tipo: lacuna_evidencia
+    aplica_se_a:
+      versao_semantica: atual
+    afirmacao: >
       Gap conhecido que precisa
       permanecer pesquisável.
-    evidence:
-      certainty: proven
-    risk:
-      level: medium
-    semantic_status:
-      state: unresolved
-    semantic_refs:
-      - root:R-001
+    evidencias:
+      certeza: comprovada
+      amostras:
+        - tipo: documento
+          artefato: exemplo.md
+          localizador: seção 1
+          amostra: >
+            Evidência curta da lacuna.
+    semantica:
+      papel: lacuna
+      estado: nao_resolvido
+    rdo:
+      disposicao: promovido
+      referencias:
+        - root:R-001
 """)
         write(self.root / "domain" / "sibling" / "REQUIREMENTS.md", """# Requirements - sibling
 
@@ -176,10 +189,13 @@ Sibling.
         with self.assertRaises(si.IndexErrorBase):
             si.build_index(self.root, ".", check_structure=False)
 
-    def test_canonical_folded_finding_summary_is_indexed(self) -> None:
+    def test_canonical_folded_finding_statement_is_indexed(self) -> None:
         index = si.build_index(self.root, "domain/child", check_structure=False)
         finding = next(node for node in index["nodes"] if node["id"] == "domain/child:F-001")
         self.assertEqual("Gap conhecido que precisa permanecer pesquisável.", finding["text"])
+        self.assertEqual("child.lacuna.evidencia", finding["finding_key"])
+        self.assertEqual("promovido", finding["status"])
+        self.assertEqual("lacuna_evidencia", finding["category"])
 
     def test_source_commit_must_contain_the_indexed_source_versions(self) -> None:
         old_commit = subprocess.run(["git", "-C", str(self.root), "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()

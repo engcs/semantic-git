@@ -1,54 +1,63 @@
 ---
 name: semantic-memory
-description: Use to read, create, reconcile or update a Semantic Namespace analytical memory in _memory/FINDINGS.yaml. Preserves material findings, exceptions, risks, unresolved meaning, mathematical gaps and evidence that are costly or dangerous to rediscover but are not authoritative R/D/O. This skill is transversal and does not replace Semantic Git governance.
+description: Use para ler, criar, reconciliar ou verificar a memória analítica nativa do Semantic Git em _memory/FINDINGS.yaml. Preserva o estado atual do conhecimento descoberto necessário para reconstruir, verificar e reavaliar R/D/O sem transformar FINDINGS em autoridade semântica ou histórico paralelo ao Git.
 compatibility: Semantic Git 1.5
 ---
 
 # Semantic Memory
 
-Manage the analytical memory of a Semantic Namespace without turning analysis into semantic authority.
+FINDINGS é uma capacidade nativa do Semantic Git. Esta skill operacionaliza essa capacidade; toda autoridade normativa continua em `SEMANTIC_GIT.md`.
 
-This skill derives all normative authority from `SEMANTIC_GIT.md`. It is a transversal capability used by `semantic-extraction`, `semantic-reconstruction`, `semantic-conceptual-review`, `semantic-mathematical-review`, reimplementation, risk analysis and debugging when analytical findings must survive beyond one session.
-
-## Fundamental distinction
+A distinção central é:
 
 ```text
 R/D/O
-= what is semantically authoritative now
-
-_memory
-= memory of what was discovered
+= verdade semântica aprovada agora
 
 _memory/FINDINGS.yaml
-= canonical current representation of that discovery memory
+= estado atual do conhecimento analítico descoberto e suas evidências
 
-Git / source implementation
-= original physical evidence
+Git
+= evolução histórica de ambos
+
+fontes originais
+= evidência do que fisicamente ou documentalmente existiu
 ```
 
-Treat R/D/O and active analytical memory as separate current-state responsibilities. A finding that is already adequately represented as authoritative R/D/O should not remain duplicated as an active memory rule. Conversely, a finding that remains only in `_memory` must not be treated as normative input to R/D/O or implementation.
+O conteúdo de um `FINDINGS.yaml` não possui autoridade sobre R/D/O. A estrutura, o ciclo de vida, as regras de evidência, UPSERT, abstração e reconciliação de FINDINGS são parte do protocolo Semantic Git.
 
-Promotion is the lifecycle bridge, not permission for two sources of truth. After approved promotion, R/D/O owns the current semantic rule; memory may retain the finding as `promoted` only to preserve analytical provenance, prior uncertainty, evidence/risk history and `semantic_refs` to the authoritative semantic item.
+## 1. Objetivo
 
-A finding can be true and materially important without being a durable domain rule.
+Preserve o **conjunto mínimo de descobertas materiais, evidenciadas e semanticamente atômicas necessário para reconstruir, verificar e reavaliar o entendimento atual do namespace sem repetir a investigação original**.
 
-Typical example:
+Não preserve apenas riscos, exceções e lacunas. Conhecimento positivo pode ser indispensável, por exemplo:
+
+- propósito;
+- fato elementar;
+- população;
+- componentes;
+- regras de contribuição;
+- temporalidade;
+- exclusões;
+- fórmulas;
+- ordem de agregação;
+- recortes;
+- invariantes;
+- convenções;
+- limites de versão;
+- exceções e lacunas materiais.
+
+Regra operacional:
 
 ```text
-an implementation contains one hardcoded competence-specific exception
+não guardar tudo que foi VISTO
 +
-its behavioral effect is proven
-+
-its durable business meaning is unknown
+guardar tudo que foi APRENDIDO e continua material para reconstrução/verificação
 ```
 
-Do not force that observation into R/D/O and do not discard it. Preserve it as analytical memory when the retention criteria are met.
+## 2. Localização
 
-The same principle applies to mathematical analysis. A proven indetermination, contradiction, boundary gap or quantitative divergence may be materially important even when it does not itself define the business rule.
-
-## 1. Location and scope
-
-Memory is local to the Semantic Namespace that owns the finding:
+A memória é local ao Semantic Namespace:
 
 ```text
 <namespace>/
@@ -56,550 +65,517 @@ Memory is local to the Semantic Namespace that owns the finding:
 ├── DECISIONS.md
 ├── OPERATIONS.md
 ├── _changes/
-├── _publications/
 └── _memory/
     └── FINDINGS.yaml
 ```
 
-`_memory/` is the reserved container for discovery memory. In Semantic Git 1.5, `FINDINGS.yaml` is the only canonical file permitted inside it. Other files or subdirectories require a future explicit normative evolution of the protocol; extensibility is not permission to invent them today.
+Nesta versão, `FINDINGS.yaml` é o único arquivo canônico permitido em `_memory/`.
 
-`_memory/`:
+`_memory`:
 
-- does not create a Semantic Namespace;
-- is not R/D/O;
-- is not inherited automatically by descendants;
-- is not a CHANGE;
-- is not publication input by default;
-- is versioned by Git;
-- must not exist merely to complete directory structure.
+- não cria Semantic Namespace;
+- não é quarta dimensão R/D/O;
+- não participa de herança automática;
+- não entra na publicação canônica por padrão;
+- é versionado por Git;
+- só deve existir quando houver ao menos um finding material.
 
-Create `_memory/FINDINGS.yaml` only when at least one material finding qualifies for retention.
+## 3. Estado atual, não histórico embutido
 
-### Analytical writes while a CHANGE is DRAFT
+`FINDINGS.yaml` representa o estado atual do conhecimento descoberto. Git preserva a evolução.
 
-Analytical memory is not semantic implementation. When a finding is discovered during an authorized investigation, creation or upsert of the applicable namespace's `_memory/FINDINGS.yaml` may occur while the related CHANGE is still `DRAFT`.
+Exemplo:
 
-This permission is deliberately narrow:
-
-- the write must be limited to non-authoritative analytical memory;
-- the finding must satisfy the retention and evidence gates in this skill;
-- it must arise from the investigation currently being performed;
-- it must not alter R/D/O, `SEMANTIC_GIT.md`, implementation code, configuration, tests or other physical materialization;
-- it must not be used to persist a semantic rule while avoiding approval;
-- updating memory alone does not require a separate semantic CHANGE.
-
-If the finding becomes a proposed durable semantic rule, stop treating promotion as a memory-only write and use the normal CHANGE and human-approval flow.
-
-## 2. Retention test
-
-Retain a finding when all of the following are true or materially applicable:
-
-1. **Materiality** — forgetting it could alter interpretation, reproduction, risk assessment or investigation.
-2. **Evidence** — it is observed directly or is an inference with explicit supporting evidence.
-3. **Rediscovery cost or risk** — recovering it later would require meaningful investigation or its omission could cause a material mistake.
-4. **Non-authoritative fit** — it does not currently belong in authoritative R/D/O, or its semantic meaning remains unresolved.
-
-Good candidates include:
-
-- hardcoded physical exceptions;
-- implementation behavior whose business meaning is unresolved;
-- known reimplementation hazards;
-- evidence gaps that materially limit reconstruction;
-- historical artifacts that explain otherwise surprising behavior;
-- cross-version observations that must not contaminate the target semantic version;
-- physical constraints that are important to preserve but not yet justified as domain rules;
-- mathematical indeterminations or contradictions with a concrete witness;
-- material boundary gaps or overlaps;
-- aggregation-order or precision ambiguity capable of changing the result;
-- dimensional inconsistencies;
-- materialization behavior that contradicts a mathematical convention already governed by R/D/O.
-
-Do not retain merely because something was observed.
-
-## 3. What must not become memory
-
-Do not use `_memory` as:
-
-- chain-of-thought storage;
-- transcript or session log;
-- complete evidence-map dump;
-- list of every file, JOIN, field or condition inspected;
-- TODO list;
-- duplicate of R/D/O;
-- duplicate of CHANGE history;
-- substitute for original source evidence;
-- hidden place to persist a semantic rule without governance;
-- dump of every mathematical check that passed;
-- separate mathematical specification.
-
-A finding with `status: active` must not simply restate knowledge already adequately represented in authoritative R/D/O. If a finding becomes authoritative through promotion, move semantic ownership to R/D/O and keep the memory record only as non-authoritative provenance with `status: promoted` and semantic references when useful.
-
-A useful test is:
-
-> Would a future investigator materially benefit from knowing this before reopening the original evidence?
-
-If no, do not retain it.
-
-## 4. Canonical file shape
-
-`FINDINGS.yaml` represents the current analytical memory of the namespace.
-
-Minimum shape:
-
-```yaml
-namespace: domain/example
-findings:
-  - id: F-001
-    status: active
-    category: physical_exception
-    summary: >
-      A concise statement of the material observation.
-    evidence:
-      certainty: proven
-      sources:
-        - repository: optional-repository-identity
-          commit: optional-commit
-          path: optional/path
-          locator: optional human-readable locator
-    risk:
-      level: high
-      consequence: >
-        What can go wrong if the finding is forgotten or ignored.
-    semantic_status:
-      state: unresolved
-      reason: >
-        Why this is not authoritative semantic knowledge now.
+```text
+V1: F-002 = B
+V2: F-002 = C
 ```
 
-Required finding fields are:
+Se B não for mais necessário para compreender, reproduzir, verificar ou auditar nenhuma realidade atual, o arquivo corrente contém apenas C. O estado B continua recuperável por Git.
+
+Não materialize genealogia como:
+
+```yaml
+historico:
+  V1: B
+  V2: C
+  V3: ...
+```
+
+apenas porque as versões existiram.
+
+Um estado histórico permanece no arquivo atual somente quando ainda governa realidade material, como dados históricos consultados, replay, auditoria, coexistência por competência ou outra aplicabilidade vigente.
+
+Consequência desejada:
+
+```text
+após V19
+FINDINGS cresce com a complexidade semântica atual
+não com o número de versões passadas
+```
+
+## 4. Teste de retenção
+
+Retenha um finding quando:
+
+1. **Materialidade** — sua perda pode prejudicar reconstrução, verificação, distinção, delimitação, reavaliação, reimplementação ou auditoria.
+2. **Evidência** — há evidência observada ou inferência sustentada; quando a própria indisponibilidade é material, registre-a como lacuna explícita.
+3. **Atomicidade** — a descoberta possui identidade analítica reconhecível e pode evoluir por UPSERT.
+4. **Aplicabilidade** — é possível dizer a qual realidade o finding se aplica ou declarar a aplicabilidade como não resolvida.
+
+Risco não é requisito de retenção. `risco` é metadata opcional.
+
+Não retenha apenas porque algo foi observado.
+
+## 5. O que não deve virar memória
+
+Não use `_memory` como:
+
+- chain-of-thought;
+- transcrição de sessão;
+- log de passos;
+- evidence map completo;
+- inventário de todos os arquivos, JOINs, CTEs e campos;
+- TODO;
+- cópia textual de R/D/O;
+- cópia de CHANGE;
+- histórico V1…Vn embutido por inércia;
+- substituto da fonte original;
+- local oculto para tornar regra semântica autoritativa sem CHANGE.
+
+FINDINGS registra o que foi aprendido, não o processo mental usado para chegar lá.
+
+## 6. Schema canônico PT-BR
+
+Use chaves estruturais em PT-BR. Preserve literais técnicos quando traduzi-los prejudicar identidade ou verificabilidade, como Git, SQL, dbt, RDO, nomes de arquivo, campos, modelos e código.
+
+Forma recomendada:
+
+```yaml
+esquema: semantic-git-achados-v2
+espaco_semantico: domain/example
+autoridade: memoria_analitica_nao_autoritativa
+nivel_abstracao: 0.7
+
+alvo:
+  assunto: EXEMPLO
+  versao_semantica: atual
+
+achados:
+  - id: F-001
+    chave: example.componente.programado
+    estado: ativo
+    tipo: fato_semantico
+
+    aplica_se_a:
+      versao_semantica: atual
+
+    afirmacao: >
+      PROGRAMADO representa ...
+
+    evidencias:
+      certeza: comprovada
+      amostras:
+        - tipo: implementacao
+          artefato: modelo.sql
+          localizador: linhas 120-135
+          amostra: |
+            CASE ... END
+
+    semantica:
+      papel: definicao_componente
+      estado: candidato
+      conceito: PROGRAMADO
+
+    rdo:
+      disposicao: candidato
+      dimensoes:
+        - decision
+        - operation
+
+    risco:
+      consequencia: >
+        Opcional: consequência material de esquecer o finding.
+```
+
+Campos canônicos mínimos de um finding material:
 
 ```text
 id
-status
-category
-summary
-evidence
-risk
-semantic_status
+chave
+estado
+tipo
+aplica_se_a
+afirmacao
+evidencias
+semantica
+rdo
 ```
 
-Additional fields may be used when they improve provenance or lifecycle tracking, for example:
+`risco` é opcional.
+
+Use, no mínimo, estes estados de ciclo de vida:
+
+```text
+ativo
+resolvido
+substituido
+promovido
+```
+
+`F-*` permanece identidade analítica local; não é ID R/D/O.
+
+## 7. Evidência verificável
+
+Todo finding material deve permitir inspeção humana sem exigir fé no resumo da IA.
+
+Em `evidencias.amostras`, preserve ao menos uma amostra curta e diretamente ligada à afirmação:
+
+- trecho de código;
+- linha documental;
+- expressão;
+- witness matemático;
+- registro representativo;
+- resultado de teste;
+- trecho curto de reconstrução que documenta prova ou lacuna.
+
+Cada amostra deve indicar, quando disponível:
+
+```text
+tipo
+artefato/fonte
+localizador
+amostra ou witness
+trilha de origem
+```
+
+A amostra não substitui a fonte. Não copie arquivos ou consultas inteiras quando um trecho mínimo + localizador for suficiente.
+
+Quando nenhuma amostra puder existir porque a própria evidência está indisponível, isso só é válido se o finding for precisamente a lacuna e a indisponibilidade estiver explícita.
+
+## 8. Nível de abstração
+
+A materialização usa:
 
 ```yaml
-discovered_by:
-  - semantic-reconstruction
-reviewed_by:
-  - semantic-conceptual-review
-semantic_refs:
-  - domain/example:D-007
-superseded_by: F-014
+nivel_abstracao: 0.7
 ```
 
-### Optional mathematical structure
+Valores válidos: `0.0` a `1.0`, em passos de `0.1`. Padrão operacional: `0.7`.
 
-A mathematical finding remains a normal `F-*` finding. Do not create a separate `MATHEMATICS.yaml` merely because its evidence is quantitative.
+### 0.0
 
-Use a category that makes the mathematical nature explicit, for example:
+Máxima granularidade observável. Preserve mais detalhes físicos, condições intermediárias, witnesses e separação de achados. Ainda assim, não grave chain-of-thought nem dump indiscriminado.
 
-```text
-mathematical_indeterminacy
-mathematical_contradiction
-mathematical_boundary_gap
-mathematical_overlap
-mathematical_aggregation_order
-mathematical_precision
-mathematical_dimension
-```
+### 0.7
 
-When machine-readable detail is useful, add an optional `mathematics:` block. It may contain only the fields supported by the investigation, for example:
+Padrão equilibrado. Preserve tudo que é necessário para reconstrução e verificação sem carregar detalhe físico redundante.
+
+### 1.0
+
+Máxima síntese semântica. Findings correlatos podem ser fundidos quando a essência continuar correta. Pode haver perda intencional de detalhe fino de reimplementação, mas nunca ocultação de incerteza material ou invenção.
+
+A abstração altera granularidade, não a verdade sustentada pela evidência.
+
+## 9. Identidade e atomicidade
+
+Use:
 
 ```yaml
-mathematics:
-  expression: "100 * executado / programado"
-  domain_condition: "programado = 0"
-  witness:
-    executado: 0
-    programado: 0
-  semantic_expected:
-    kpi: 0
-  observed:
-    kpi: null
-  classification: contradiction
+id: F-005
+chave: exec_prog.componente.programado
 ```
 
-The block may also record proof, interval, boundary, units, aggregation order or precision convention when those are the material evidence. Do not force empty subfields.
+`id` é a identidade técnica estável do finding.
 
-`mathematics:` is analytical structure only. It does not create a mathematical source of truth parallel to R/D/O. If the authoritative rule already lives in R/D/O, the finding should preserve the inconsistency, witness, risk and provenance rather than duplicate the rule as an active semantic proposition.
+`chave` representa sua identidade analítica para UPSERT.
 
-Do not fabricate source paths, commits, certainty, rationale, mathematical domain or human intent.
+Não crie novo ID porque:
 
-## 5. Finding identity
+- a redação melhorou;
+- uma nova fonte confirmou a mesma verdade;
+- a certeza aumentou;
+- a implementação foi refatorada sem mudar significado.
 
-Use local stable IDs:
+Novo `F-*` só cabe quando existe nova proposição materialmente distinta.
+
+## 10. UPSERT e evolução
+
+Sempre reconcilie a nova investigação com a memória existente.
 
 ```text
-F-001
-F-002
-F-003
+nova observação
+→ localizar finding semanticamente equivalente
+→ comparar significado e aplicabilidade
+→ UPSERT ou novo finding
 ```
 
-Rules:
+Casos:
 
-- IDs are local to one namespace memory;
-- one ID identifies one continuing analytical finding;
-- do not renumber existing findings for convenience;
-- do not create a new ID merely because wording changed;
-- do not treat `F-*` as Semantic Git R/D/O identity;
-- do not use a finding as a normative cross-namespace dependency.
+### Mesma verdade, mesma identidade
 
-Before creating a new ID, search existing findings for semantic equivalence.
+Mantenha o mesmo finding. Acrescente ou atualize evidência quando útil.
 
-For mathematical findings, a new witness for the same underlying gap normally enriches the existing finding rather than allocating another ID.
+### Evidência melhor
 
-## 6. Upsert, never blind append or blind replace
+Mantenha o mesmo finding. Atualize `evidencias`, certeza e amostras somente no grau sustentado.
 
-The file represents **current analytical state**. Git preserves its historical states.
+### Mudança apenas física
 
-Therefore:
+Mantenha a semântica. Atualize evidência se o localizador físico mudou.
+
+### Mudança semântica da mesma identidade atual
+
+Atualize o finding corrente para representar a realidade atual. Git preserva o estado anterior.
+
+Se a regra anterior ainda governar realidade atual, preserve-a como variante materialmente aplicável em finding separado ou estrutura de aplicabilidade adequada; não a retenha apenas por nostalgia histórica.
+
+### Evidência materialmente incompatível
+
+Não sobrescreva silenciosamente. Produza drift/review explícito, preserve a evidência conflitante e reavalie a realidade aplicável.
+
+### Nova proposição
+
+Crie novo `F-*`.
+
+### Finding não reencontrado
+
+Não o apague automaticamente. Ausência de redescoberta não prova falsidade ou irrelevância.
+
+## 11. Relação com R/D/O
+
+FINDINGS e R/D/O têm responsabilidades diferentes:
 
 ```text
-new observation
--> search for equivalent finding
--> update existing finding when identity is preserved
--> create new F-* only when the finding is genuinely distinct
+FINDINGS
+= o que foi descoberto + por que acreditamos
+
+R/D/O
+= o que foi aprovado como verdade semântica
 ```
 
-Never append a fresh copy of every result after each skill execution.
+A relação é referencial, não espelho textual.
 
-Never replace the whole memory from only the current execution's observations. Failure to rediscover an existing finding is not evidence that it became false or irrelevant.
+Exemplo após promoção:
 
-When reprocessing memory:
+```yaml
+rdo:
+  disposicao: promovido
+  referencias:
+    - domain/example:R-001
+    - domain/example:D-004
+```
 
-- preserve findings not examined by the current task;
-- enrich evidence when independently reobserved;
-- update certainty only when evidence supports the change;
-- preserve unresolved meaning explicitly;
-- merge duplicates only when their analytical identity is genuinely the same.
+Referências persistidas devem usar identidade R/D/O canônica completa.
 
-## 6.1. Human corrections and complements
+## 12. FINDINGS → RDO: reconstrução
 
-Treat a material human correction, complement or caveat as analytical evidence, not as automatic semantic authority.
+O conjunto de findings aplicáveis deve permitir sintetizar a essência necessária ao contrato sem reler toda a implementação.
 
-Operational flow:
+Ao reconstruir, derive quando sustentado:
+
+- propósito;
+- fato elementar;
+- população;
+- componentes;
+- regras de contribuição;
+- temporalidade;
+- exclusões;
+- agregação;
+- fórmula;
+- invariantes;
+- casos-limite;
+- aplicabilidade atual.
+
+A transformação é semântica, não textual. Não mapeie mecanicamente um finding para um item R/D/O.
+
+Todo finding material deve possuir disposição compreensível perante o contrato: promovido, candidato, parcialmente representado, revisão, não promovido, não semântico, herdado ou equivalente governado.
+
+## 13. RDO → FINDINGS: verificação
+
+Quando R/D/O for criado ou editado:
+
+1. decomponha a alteração em proposições materiais;
+2. localize findings aplicáveis e conhecimento ancestral relevante;
+3. compare significado;
+4. classifique cada proposição.
+
+Use no mínimo:
 
 ```text
-human clarification
--> inspect relevant FINDINGS.yaml
--> search for a semantically equivalent finding
--> same analytical identity: upsert the same F-*
--> distinct analytical issue: allocate a new F-* only if it passes retention
--> record a concise human-provenance locator
--> preserve uncertainty and unrelated findings
+SUSTENTADO
+PARCIAL
+CONTRADITO
+NAO_SUSTENTADO
+AMBIGUO
+EVIDENCIA_DESATUALIZADA
 ```
 
-When upserting the same finding:
+`NAO_SUSTENTADO` significa ausência de prova suficiente no conhecimento preservado; não significa automaticamente falso.
 
-- preserve its `F-*` identity;
-- update only meaning actually clarified by the human;
-- do not upgrade certainty, risk or semantic status beyond what the clarification supports;
-- preserve findings outside the clarified issue;
-- store the material synthesis, not the chat transcript;
-- never store chain-of-thought or internal reasoning.
+`CONTRADITO` significa que existe evidência preservada materialmente incompatível.
 
-If the human expresses doubt, a hypothesis, a condition or competing interpretations, keep the material issue unresolved. Use `REVIEW` when a later decision or promotion depends on choosing among those interpretations.
+Não transforme FINDINGS em autoridade automática. Uma divergência pode significar:
 
-If the human explicitly says the clarification should become an authoritative domain rule, retain the analytical clarification when useful but route semantic promotion through the applicable CHANGE and normal approval gates. Do not edit R/D/O merely because the statement was authoritative in tone.
+- edição incorreta do R/D/O;
+- findings antigos;
+- implementação alterada;
+- nova versão semântica;
+- TO-BE deliberado.
 
-If the correction concerns a `promoted` finding and may conflict with its `semantic_refs`, reopen the analytical question, normally returning the finding to `active`/unresolved until the relationship is reconciled. Preserve enough provenance and reference information to identify the affected authority. Do not silently rewrite R/D/O.
+## 14. Investigação dirigida
 
-Deterministic tooling may enforce preservation of IDs, unrelated findings, concise provenance, unresolved status and promotion/reconciliation flags after the agent has semantically identified which existing finding the human clarification concerns. Semantic equivalence itself remains an interpretive judgment and must produce `REVIEW` when materially ambiguous.
+Quando uma edição ficar `NAO_SUSTENTADO` ou `CONTRADITO`, ofereça investigação dirigida à hipótese.
 
-## 7. Lifecycle states
-
-Use at least these states:
-
-### `active`
-
-The finding remains relevant and not fully resolved.
-
-### `resolved`
-
-The finding has an evidence-backed resolution that no longer requires active attention. Preserve the resolution rather than deleting the finding.
-
-### `superseded`
-
-A later finding represents the same analytical concern more accurately. Record `superseded_by` when possible.
-
-### `promoted`
-
-The finding contributed to authoritative semantic knowledge through the normal Semantic Git governance flow. Record resulting semantic references when available.
-
-Promotion does not mean the finding itself became authoritative.
-
-## 8. Semantic status
-
-`semantic_status` must distinguish analytical knowledge from semantic authority.
-
-Useful states include:
+A investigação deve buscar:
 
 ```text
-unresolved
-non_semantic
-candidate
-promoted
+evidência favorável
++
+evidência capaz de refutar
++
+interpretações concorrentes
 ```
 
-Interpretation:
-
-- `unresolved` — behavior/evidence is material but durable semantic meaning is not established;
-- `non_semantic` — evidence supports that the finding is physical, historical or otherwise not a domain rule;
-- `candidate` — evidence suggests durable semantic meaning, but normal CHANGE/governance is still required;
-- `promoted` — the semantic meaning has entered R/D/O through approved governance.
-
-A mathematical contradiction between a governed rule and one consumer is commonly `non_semantic`: the semantic rule may already be settled while the implementation diverges. A genuine missing mathematical convention can remain `unresolved` or become `candidate` if evidence suggests a durable domain rule.
-
-Do not mark a finding `promoted` merely because an AI believes it sounds semantic.
-
-## 9. Risk
-
-Risk explains why the finding deserves retention.
-
-It should answer:
-
-> What material error, divergence or investigation cost could result if this finding were forgotten?
-
-Prefer concrete consequences such as:
-
-- a reimplementation may produce different results for a known boundary case;
-- one semantic version may accidentally inherit behavior from another;
-- a missing external calendar prevents exact reconstruction;
-- an apparently anomalous condition may be removed as a bug without understanding its historical role;
-- a consumer may return `NULL` where the governed metric requires zero;
-- two aggregation orders may produce different published results;
-- an uncovered interval may make a rule partial for admissible inputs.
-
-Risk is analytical context, not proof of semantic meaning.
-
-### Answering questions about domain risk
-
-When the human asks questions such as:
+Depois:
 
 ```text
-quais riscos conhecidos existem neste domínio?
-quais fragilidades conhecidas existem neste namespace?
-o que pode dar errado numa reimplementação?
-quais exceções ou lacunas merecem atenção?
-quais inconsistências matemáticas conhecidas existem?
+nova evidência
+→ UPSERT FINDINGS
+→ reexecutar verificação RDO↔FINDINGS
 ```
 
-use relevant findings as the evidence-backed map of **known analytical risks** for the namespace. Prefer active or otherwise still-relevant findings, and summarize for each material item:
+Se não surgir sustentação suficiente, mantenha a proposição explicitamente em REVIEW/não sustentada. Não aceite por ausência de oposição.
 
-- finding identity;
-- category/status;
-- risk level when recorded;
-- concrete consequence;
-- evidence/certainty when relevant;
-- mathematical witness/classification when present;
-- whether semantic meaning is unresolved, non-semantic, candidate or promoted.
+Se a intenção for TO-BE deliberada, a divergência pode ser legítima, mas deve ser governada pelo CHANGE aplicável.
 
-Do not silently broaden this into a generic enterprise, operational, security or business-risk register unless evidence in scope supports those categories. `_memory` answers what is **known and recorded analytically**, not every risk that could hypothetically exist.
+## 15. Promoção e reconciliação inversa
 
-Absence of matching findings means only that no analytical risk was recorded or recovered in the consulted scope. It does not prove that the domain has no risk or no mathematical gap.
-
-## 10. Provenance and evidence
-
-A finding must remain traceable to evidence sufficient to reopen the investigation.
-
-Prefer stable locators when available:
-
-- repository identity;
-- commit or tag;
-- path;
-- symbol, rule or human-readable locator;
-- source document;
-- evidence boundary or version applicability.
-
-For mathematical findings, also preserve the smallest useful proof artifact: witness input, boundary, interval, algebraic relation, unit mismatch or deterministic check result.
-
-Do not copy large source fragments into memory when a durable locator is sufficient.
-
-The original evidence remains authoritative for what physically existed. `_memory` is an index of material understanding, not a replacement for evidence.
-
-## 11. Reading memory by progressive disclosure
-
-Do not load `_memory` in ordinary namespace bootstrap by default.
-
-Consult it when the task materially benefits from analytical history, including:
-
-- semantic reconstruction;
-- reimplementation;
-- conceptual review of a reconstruction;
-- mathematical review of known quantitative fragilities;
-- risk assessment;
-- debugging surprising behavior;
-- resolving or reopening `REVIEW`;
-- asking why a rule or exception exists;
-- investigating known edge cases or version boundaries.
-
-Prefer selective retrieval of relevant findings when tooling permits instead of injecting a large memory file into every context.
-
-## 12. Interaction with semantic-extraction
-
-When human-authored sources contain a material observation that should not enter the persistent semantic contract:
-
-1. keep it out of R/D/O;
-2. test whether it satisfies the retention test;
-3. if yes, use this skill to upsert it into `_memory`;
-4. record its human source and uncertainty accurately.
-
-Do not copy whole documents into memory.
-
-## 13. Interaction with semantic-reconstruction
-
-Reconstruction is the primary producer of physical findings.
-
-Before deep investigation, inspect relevant existing memory when it may constrain the target, version or known risks.
-
-During reconstruction, retain findings such as:
-
-- hardcoded exceptions whose behavioral effect is proven but business meaning is unclear;
-- physical behavior deliberately excluded from R/D/O by the reimplementation test;
-- unresolved evidence gaps that materially affect reconstruction;
-- implementation hazards that a future rewrite could accidentally erase.
-
-When reconstruction delegates quantitative analysis to `semantic-mathematical-review`, retain only the resulting mathematical issues that independently pass this skill's retention test.
-
-A finding is not a substitute for continuing the authorized investigation. Do not use memory to justify premature `REVIEW`.
-
-## 14. Interaction with semantic-conceptual-review
-
-Conceptual review may use findings as non-authoritative context, but must reopen original evidence for material conclusions when possible.
-
-It may:
-
-- confirm and enrich a finding;
-- merge analytical duplicates;
-- reclassify semantic status;
-- resolve a finding;
-- mark one as superseded;
-- identify a finding as a candidate for semantic promotion.
-
-It must not silently delete a material finding merely because that finding was excluded from revised R/D/O.
-
-It should also challenge duplication: if revised R/D/O now adequately owns a semantic proposition, the corresponding active finding must either be resolved/reclassified or, after approved promotion, retained only as `promoted` provenance rather than a parallel semantic statement.
-
-## 15. Interaction with semantic-mathematical-review
-
-`semantic-mathematical-review` discovers whether a quantitative rule is undefined, underdetermined, contradictory, incomplete at boundaries, order-sensitive, precision-sensitive or dimensionally inconsistent. This skill decides only whether that analytical result deserves persistence and how to reconcile it with existing findings.
-
-Typical flow:
-
-```text
-semantic-mathematical-review
--> proof / counterexample / witness
--> classify mathematical issue
--> semantic-memory retention test
--> upsert F-* only if material
-```
-
-Do not store all mathematical checks. Preserve the issue, not the whole reasoning process.
-
-When authoritative R/D/O already determines the special case, store a material implementation mismatch as a divergence/risk finding rather than pretending the semantic rule is unresolved.
-
-When the mathematical review proves a gap that requires a new business convention, memory may preserve the unresolved gap, but only CHANGE + human approval can define the new semantic rule.
-
-## 16. Promotion to R/D/O
-
-Promotion follows the normal Semantic Git flow:
+Um finding pode tornar-se conhecimento semântico durável somente pelo fluxo normal:
 
 ```text
 finding
--> additional evidence / semantic understanding
--> CHANGE or existing authorized CHANGE
--> semantic review
--> human approval
--> R/D/O
+→ compreensão/evidência
+→ CHANGE
+→ revisão semântica
+→ aprovação humana
+→ R/D/O
 ```
 
-`semantic-memory` cannot bypass this flow.
+Depois da promoção, FINDINGS continua não autoritativo perante R/D/O, mas pode preservar a descoberta, evidência e referências necessárias para futura verificação.
 
-After promotion, retain the finding when its provenance remains useful:
+Quando um CHANGE modificar, remover ou substituir R/D/O referenciado por finding promovido:
 
-```yaml
-status: promoted
-semantic_status:
-  state: promoted
-semantic_refs:
-  - domain/example:D-007
-```
+- localize somente findings relacionados;
+- preserve findings não relacionados;
+- reconcilie referência e disposição;
+- reabra a questão quando a mudança tornar a evidência incompatível;
+- não permita `RECONCILED` com referência órfã ou finding afetado não examinado.
 
-The authoritative current semantic statement now lives in R/D/O. Do not maintain a second normative copy of that rule in `_memory`; retain only the analytical history needed to understand where it came from and point to the semantic authority through `semantic_refs`.
+## 16. Correções humanas
 
-Do not rewrite history to pretend the semantic meaning was always known.
+Correção humana material é evidência analítica, não autoridade semântica automática.
 
-## 17. Reconciliation after R/D/O evolution
-
-Promotion creates a referential bridge from discovery memory to semantic authority. That bridge must be revisited when its target changes materially.
-
-When a CHANGE modifies, removes or replaces R/D/O:
-
-1. determine the materially affected canonical R/D/O identities from the Semantic Diff;
-2. use explicit `semantic_refs` or equivalent deterministic index relations to locate `promoted` findings that point to those identities;
-3. examine only those affected findings;
-4. leave unrelated findings byte-for-byte untouched unless the task has independent evidence to change them;
-5. for each affected finding, choose an evidence-backed outcome: remain `promoted`, update `semantic_refs`, become `resolved`, become `superseded`, or return to `active` when the semantic question is reopened;
-6. block `RECONCILED` while an affected promoted finding remains stale or its relationship to the new R/D/O has not been examined.
-
-This is inverse reconciliation:
+Fluxo:
 
 ```text
-R/D/O material change
--> deterministic impacted-finding discovery
--> analytical reconciliation of impacted findings
--> RECONCILED only when relationships are coherent
+clarificação humana
+→ localizar finding equivalente
+→ preservar F-* quando identidade continua
+→ atualizar afirmação/evidência na medida sustentada
+→ preservar incerteza
+→ CHANGE se houver promoção material a R/D/O
 ```
 
-Do not mirror the new R/D/O text into the finding. The finding keeps discovery, evidence, risk and provenance; the authoritative statement remains in R/D/O.
+Armazene síntese material, não transcript da conversa ou raciocínio interno.
 
-## 18. Publication boundary
+## 17. Relação com semantic-reconstruction
 
-`_memory` is excluded from canonical publication by default.
+Reconstrução é a principal produtora de FINDINGS.
 
-A publication intended to explain analytical history may include selected findings only through an explicit, separate publication mode or human request. Such publication does not make findings authoritative.
+Ela deve:
 
-## 19. Memory gates
+1. construir fechamento comportamental suficiente;
+2. formar evidence map e modelo semântico de trabalho;
+3. UPSERT no FINDINGS o conjunto mínimo de descobertas necessário à reconstrução/verificação futura;
+4. produzir candidato R/D/O por síntese e subtração de herança;
+5. preservar incerteza sem inventar significado.
 
-Before writing or updating `FINDINGS.yaml`, verify:
+Não copie evidence map inteiro para FINDINGS. Converta evidência em descobertas atômicas e amostras mínimas verificáveis.
 
-1. **Namespace** — the finding belongs to this namespace.
-2. **Materiality** — it is worth retaining.
-3. **Evidence** — observation/inference is traceable.
-4. **Non-authority** — it is not being used to bypass R/D/O governance.
-5. **Deduplication** — an equivalent `F-*` does not already exist under another ID.
-6. **Identity** — updates preserve stable finding identity.
-7. **Required fields** — all minimum fields exist.
-8. **Lifecycle** — status reflects current analytical state.
-9. **Risk** — the retention consequence is explicit.
-10. **No silent loss** — existing unexamined findings remain intact.
-11. **Progressive disclosure** — memory is not added to default context or publication without reason.
-12. **Draft boundary** — when the related CHANGE is `DRAFT`, the write is analytical memory only, derives from the authorized investigation, and does not edit or materialize R/D/O or implementation.
-13. **R/D/O exclusivity** — an active finding does not duplicate a proposition already adequately owned by authoritative R/D/O; promoted findings point to semantic authority instead of becoming a second source of truth.
-14. **Risk-query discipline** — risk summaries report evidence-backed analytical risks actually present in relevant findings and do not infer absence of risk from absence of findings.
-15. **Mathematical discipline** — mathematical findings preserve the issue, proof/witness and risk without turning engine behavior into semantic authority or creating a parallel mathematical specification.
-16. **Canonical memory surface** — `_memory` contains only `FINDINGS.yaml` in the current protocol version; do not invent another memory file.
-17. **Semantic references** — `semantic_refs`, when present, use canonical R/D/O identities and link provenance to authority rather than duplicating normative text.
-18. **Inverse reconciliation** — when referenced R/D/O changes materially, affected promoted findings are reconciled before `RECONCILED`, while unrelated findings remain untouched.
+## 18. Fórmulas
 
-If a required fact is unknown, represent it as unknown or unresolved instead of inventing it.
+Quando um indicador calculável tiver uma relação matemática que expressa diretamente seu significado, preserve nos findings:
 
-## Final rule
+- componentes semânticos;
+- relação matemática principal;
+- ordem de agregação quando material;
+- convenções e casos-limite relevantes;
+- evidência verificável.
 
-Preserve what would be expensive or dangerous to forget, but do not confuse remembering with governing.
+A fórmula humana principal pode sustentar Requirement. Decisions definem componentes e convenções. Operations descrevem materialização física.
+
+Prefira:
 
 ```text
-observe
--> decide whether forgetting is materially risky
--> preserve the finding with evidence and risk
--> reconcile it over time
--> promote only through normal semantic governance
+EXEC_PROG = EXECUTADO / PROGRAMADO
 ```
+
+a uma fórmula expressa somente por aliases, colunas ou variáveis físicas.
+
+## 19. Cadeia de decisão operacional
+
+Para cada descoberta:
+
+```text
+1. O que foi aprendido?
+2. É material para reconstrução/verificação?
+   não → descartar
+   sim → continuar
+3. Há evidência verificável?
+   não → investigar ou registrar lacuna explícita
+4. Já existe finding equivalente?
+   sim → comparar significado
+   não → novo F-*
+5. Mesma verdade?
+   sim → UPSERT evidência
+6. Só mudou implementação?
+   sim → manter semântica
+7. Mudou significado?
+   sim → atualizar estado atual + verificar impacto no R/D/O
+8. Estado anterior ainda é material hoje?
+   sim → preservar aplicabilidade histórica vigente
+   não → Git é suficiente
+9. Há conflito material?
+   sim → REVIEW/drift, nunca overwrite silencioso
+10. Qual é a disposição perante R/D/O?
+```
+
+## 20. Invariantes
+
+Antes de concluir uma operação de memória, verifique:
+
+1. nenhum conhecimento material desapareceu silenciosamente;
+2. nenhum finding foi criado apenas como log;
+3. cada finding material possui evidência verificável ou lacuna explícita;
+4. risco não foi inventado para justificar retenção;
+5. findings não examinados permanecem intactos;
+6. R/D/O material novo não foi aceito silenciosamente sem sustentação, ancestral aplicável ou decisão humana governada;
+7. todo finding material possui disposição perante R/D/O;
+8. referências promovidas existem e são canônicas;
+9. Git, e não o arquivo atual, carrega a genealogia descartada;
+10. `nivel_abstracao` controla compressão, não verdade;
+11. nenhuma chain-of-thought foi materializada;
+12. FINDINGS continua parte nativa do Semantic Git sem tornar seu conteúdo autoridade sobre R/D/O.
+
+## 21. Resultado esperado
+
+Uma boa memória deve permitir responder positivamente:
+
+> Uma nova LLM, recebendo o protocolo, FINDINGS atual e ancestrais autorizados, consegue reconstruir o significado do namespace sem reler toda a implementação?
+
+> Se o humano editar materialmente R/D/O, a LLM consegue apontar o que é sustentado, contradito, não sustentado ou ambíguo e reabrir investigação quando necessário?
+
+> Se surgir V2, V3 ou V19, a LLM consegue atualizar o estado atual do conhecimento sem transformar FINDINGS em histórico crescente por versão?
+
+Se não, a memória está incompleta, excessivamente abstrata ou mal reconciliada.

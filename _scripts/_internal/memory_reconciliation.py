@@ -138,6 +138,11 @@ def upsert_human_clarification(
                 raise ValueError("finding semantica must be a mapping")
             semantics["estado"] = "nao_resolvido"
             semantics["motivo"] = "Clarificação humana preserva incerteza material ou reabre relação com R/D/O autoritativo."
+            if reopened:
+                rdo = target.setdefault("rdo", {})
+                if not isinstance(rdo, dict):
+                    raise ValueError("finding rdo must be a mapping")
+                rdo["disposicao"] = "revisao"
         else:
             target["status"] = "active"
             semantic_status = target.setdefault("semantic_status", {})

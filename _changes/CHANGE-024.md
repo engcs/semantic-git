@@ -1,5 +1,5 @@
 change: CHANGE-024
-status: IN_PROGRESS
+status: RECONCILED
 base_commit: a49e7004172c33bc76d9ddef0cc1dc26685a1fdd
 approved_semantic_commit: 6716e7d76c10e7a97e54ddf321deda1db33bd522
 approval_scope:
@@ -124,6 +124,22 @@ A implementação só pode ser considerada reconciliada quando demonstrar, no m�
 13. cenário V1…V19 sem genealogia embutida por versão e com Git suficiente para recuperar a evolução descartada do estado corrente;
 14. `docs/FINDINGS.md` autocontido, referenciado pelo `README.md` e explicitamente subordinado a `SEMANTIC_GIT.md`;
 15. `SEMANTIC_GIT.md` definindo FINDINGS como capacidade nativa do protocolo, enquanto cada `FINDINGS.yaml` permanece memória analítica não autoritativa perante R/D/O.
+
+## Reconciliação final
+
+A implementação foi reconciliada em 2026-09-29 após validação humana explícita do resultado funcional e do experimento de reconstrução do EXEC_PROG.
+
+Evidências de fechamento:
+
+- o responsável humano declarou a implementação aprovada e validada e autorizou a conclusão da reconciliação;
+- o teste de reconstrução do EXEC_PROG foi revisado pelo humano e aceito como evidência suficiente para este CHANGE; ressalvas metodológicas identificadas durante a revisão foram conhecidas e não foram consideradas bloqueantes pela autoridade humana;
+- `python _scripts/semantic_git.py validate --json` retornou `PASS` no estado implementado;
+- a suíte completa `_scripts/test_*.py` executou com sucesso, incluindo schema PT-BR, `risco` opcional, amostra verificável, referência promovida órfã, índice e reconciliação;
+- a branch permaneceu sem commits pendentes da `main` no recheck de reconciliação;
+- não foram criados IES, `ESSENCE.yaml`, `EVIDENCE_MAP.yaml`, `BEHAVIOR_MODEL.yaml` ou nova dimensão semântica persistente;
+- o escopo implementado permanece limitado à especificação, documentação, skills, validação, índice, reconciliação e testes de FINDINGS previstos por esta CHANGE.
+
+Resultado: os critérios de aceitação foram considerados satisfeitos ou explicitamente resolvidos por validação humana governada, permitindo a transição para `RECONCILED`.
 
 ## Fora de escopo
 

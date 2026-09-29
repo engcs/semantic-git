@@ -2870,6 +2870,11 @@ A IA deve:
 - nunca inventar `reason` nem identidade de aprovador;
 - consolidar conhecimento duradouro de PRD/SPEC/TODO em R/D/O quando aplicável;
 - reconciliar Semantic Diff, Git Diff(s), AS-IS e snapshot aprovado;
+- tratar FINDINGS como capacidade nativa do protocolo e `_memory/FINDINGS.yaml` como conteúdo analítico não autoritativo perante R/D/O;
+- reconciliar nova investigação com FINDINGS por UPSERT, preservando identidade, evidência, aplicabilidade e findings não examinados;
+- representar em FINDINGS o estado atual do conhecimento e usar Git para a evolução histórica, mantendo variantes antigas somente enquanto continuarem materialmente aplicáveis;
+- confrontar R/D/O novo ou editado com FINDINGS aplicáveis, distinguindo sustentação, cobertura parcial, contradição, ausência de sustentação, ambiguidade e evidência desatualizada;
+- orientar reinvestigação por hipótese sem viés confirmatório, buscando evidência favorável, refutadora e interpretações concorrentes;
 - localizar e reconciliar findings promovidos quando R/D/O por eles referenciado for materialmente modificado, removido ou substituído, preservando findings não relacionados;
 - verificar integridade referencial mesmo quando não houver promoção de IDs;
 - detectar referências órfãs, ambíguas, relativas irresolvíveis e dependências semanticamente incompatíveis;
@@ -2968,6 +2973,9 @@ A IA não deve:
 - perder snapshots obrigatórios por estratégia Git;
 - duplicar o mesmo significado em múltiplos lugares sem necessidade;
 - usar `_memory` como espelho textual de R/D/O ou reescrever findings não relacionados apenas porque R/D/O mudou;
+- tratar o conteúdo de FINDINGS como autoridade concorrente a R/D/O;
+- embutir genealogia V1…Vn em FINDINGS apenas porque versões históricas existiram;
+- aceitar proposição R/D/O sem evidência como verdadeira apenas porque nenhum finding a contradiz;
 - deixar sem reconciliação finding promovido deterministicamente ligado a R/D/O materialmente afetado por um CHANGE;
 - criar arquivos ou subdiretórios adicionais em `_memory` sem evolução normativa explícita do protocolo;
 - criar árvores profundas sem necessidade;
@@ -3304,9 +3312,9 @@ Humano
 90. `CHANGE-INIT` é único por namespace, não consome `CHANGE-001` e segue o fluxo normal de CHANGE.
 91. `CHANGE-INIT` pode estar no caminho do namespace alvo mesmo quando ele estiver ausente do AS-IS do `base_commit`; o namespace pai não precisa de CHANGE.
 92. Em `CHANGE-INIT`, a ausência de predecessor não deve ser materializada como arquivo, entidade ou baseline vazio; a RECONCILIATION confronta o Semantic Diff aprovado com o primeiro AS-IS adicionado e valida a ausência de alterações ancestrais.
-93. Requirements registram somente verdades, necessidades e invariantes estáveis do domínio.
-94. Decisions registram escolhas conceituais e não podem conter detalhes de materialização física.
-95. Regras matemáticas em Decisions devem usar conceitos abstratos; sua composição física pertence a Operations.
+93. Requirements registram verdades, necessidades e invariantes estáveis do domínio e podem conter a fórmula humana definidora de um indicador calculável quando ela expressar diretamente o significado do próprio objeto por componentes semânticos.
+94. Decisions registram escolhas conceituais, definem os componentes e convenções necessários à fórmula quando aplicável e não podem conter detalhes de materialização física.
+95. Regras matemáticas complementares em Decisions devem usar conceitos abstratos; a composição física das regras e fórmulas pertence a Operations.
 96. Operations registram cálculo, transformação e materialização sem criar regra semântica nova.
 97. O R/D/O de um namespace contém somente conhecimento comum ao namespace; detalhes específicos permanecem nos consumidores ou subdomínios.
 98. Antes de concluir R/D/O, a IA deve executar o gate de separação e listar itens materialmente ambíguos como REVIEW.
@@ -3340,7 +3348,7 @@ Humano
 126. `FINDINGS.yaml` representa o estado atual do conhecimento descoberto; sua evolução histórica pertence ao Git.
 127. Estado histórico em FINDINGS só permanece materializado enquanto continuar necessário à interpretação, reprodução, verificação ou auditoria atual.
 128. O schema canônico de FINDINGS usa PT-BR, `risco` opcional, evidência amostral verificável e `nivel_abstracao` de `0.0` a `1.0` em passos de `0.1`, padrão `0.7`.
-129. Findigs equivalentes evoluem por UPSERT; evidência incompatível produz drift/REVIEW e não sobrescrita silenciosa.
+129. Findings equivalentes evoluem por UPSERT; evidência incompatível produz drift/REVIEW e não sobrescrita silenciosa.
 130. Referência R/D/O promovida em FINDINGS deve existir; endpoint órfão produz `FAIL` determinístico.
 131. Ausência de evidência, contradição, ambiguidade e evidência desatualizada são estados distintos na verificação R/D/O↔FINDINGS.
 132. Investigação dirigida por hipótese deve procurar evidência favorável, refutadora e interpretações concorrentes.

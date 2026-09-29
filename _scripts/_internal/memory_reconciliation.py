@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministically locate promoted findings impacted by a CHANGE Semantic Diff."""
+"""Deterministically locate and update FINDINGS relationships affected by semantic change."""
 from __future__ import annotations
 
 import argparse
@@ -43,12 +43,11 @@ def impacted_promoted_findings(root: Path, change_path: Path) -> dict[str, Any]:
         if relation.get("type") != "semantic_ref" or relation.get("to") not in affected:
             continue
         node = nodes.get(str(relation.get("from")))
-        if not node or node.get("type") != "finding" or node.get("status") != "promoted":
+        if not node or node.get("type") != "finding" or node.get("status") not in {"promovido", "promoted"}:
             continue
         impacted.append({"finding": str(node["id"]), "semantic_ref": str(relation["to"]), "source": str(node.get("source", {}).get("path", ""))})
     impacted.sort(key=lambda item: (item["finding"], item["semantic_ref"]))
     return {"change": change_path.relative_to(root).as_posix(), "controller_namespace": namespace, "affected_rdo": sorted(affected), "impacted_promoted_findings": impacted}
-
 
 
 def _compact_human_text(value: str, *, field: str, limit: int) -> str:
@@ -60,11 +59,20 @@ def _compact_human_text(value: str, *, field: str, limit: int) -> str:
     return compact
 
 
+def _rdo_refs(target: dict[str, Any]) -> list[str]:
+    rdo = target.get("rdo")
+    if isinstance(rdo, dict) and isinstance(rdo.get("referencias"), list):
+        return [str(item) for item in rdo["referencias"]]
+    legacy = target.get("semantic_refs")
+    return [str(item) for item in legacy] if isinstance(legacy, list) else []
+
+
 def upsert_human_clarification(
     findings: list[dict[str, Any]],
     finding_id: str,
     *,
-    summary: str,
+    statement: str | None = None,
+    summary: str | None = None,
     human_provenance: str,
     uncertain: bool = False,
     normative_intent: bool = False,
@@ -72,11 +80,14 @@ def upsert_human_clarification(
 ) -> dict[str, Any]:
     """Apply a human clarification after semantic equivalence resolved an existing F-*.
 
-    This helper is deliberately deterministic: it does not decide whether two
-    findings are semantically equivalent. The caller supplies the already-resolved
-    finding identity; the function preserves that identity and unrelated findings.
+    Semantic equivalence is intentionally not decided here. The caller supplies
+    the stable finding identity. Current PT-BR FINDINGS are updated in-place;
+    the legacy English shape remains readable for historical test/recovery paths.
     """
-    summary = _compact_human_text(summary, field="summary", limit=1200)
+    material = statement if statement is not None else summary
+    if material is None:
+        raise ValueError("statement must be provided")
+    material = _compact_human_text(material, field="statement", limit=1200)
     provenance = _compact_human_text(human_provenance, field="human_provenance", limit=400)
     updated = deepcopy(findings)
     matches = [item for item in updated if str(item.get("id", "")) == finding_id]
@@ -84,32 +95,56 @@ def upsert_human_clarification(
         raise ValueError(f"expected exactly one finding {finding_id}, found {len(matches)}")
 
     target = matches[0]
-    previous_status = str(target.get("status", ""))
-    semantic_refs = target.get("semantic_refs")
-    has_semantic_refs = isinstance(semantic_refs, list) and bool(semantic_refs)
+    current_shape = "afirmacao" in target or "evidencias" in target or "estado" in target
+    previous_status = str(target.get("estado" if current_shape else "status", ""))
+    refs = _rdo_refs(target)
 
-    target["summary"] = summary
-    evidence = target.setdefault("evidence", {})
-    if not isinstance(evidence, dict):
-        raise ValueError("finding evidence must be a mapping")
-    sources = evidence.setdefault("sources", [])
-    if not isinstance(sources, list):
-        raise ValueError("finding evidence.sources must be a list when present")
-    source = {"type": "human_clarification", "locator": provenance}
-    if source not in sources:
-        sources.append(source)
+    if current_shape:
+        target["afirmacao"] = material
+        evidence = target.setdefault("evidencias", {})
+        if not isinstance(evidence, dict):
+            raise ValueError("finding evidencias must be a mapping")
+        samples = evidence.setdefault("amostras", [])
+        if not isinstance(samples, list):
+            raise ValueError("finding evidencias.amostras must be a list when present")
+        sample = {
+            "tipo": "clarificacao_humana",
+            "fonte": "humano",
+            "localizador": provenance,
+            "amostra": material,
+        }
+        if sample not in samples:
+            samples.append(sample)
+    else:
+        target["summary"] = material
+        evidence = target.setdefault("evidence", {})
+        if not isinstance(evidence, dict):
+            raise ValueError("finding evidence must be a mapping")
+        sources = evidence.setdefault("sources", [])
+        if not isinstance(sources, list):
+            raise ValueError("finding evidence.sources must be a list when present")
+        source = {"type": "human_clarification", "locator": provenance}
+        if source not in sources:
+            sources.append(source)
 
-    reopened = previous_status == "promoted" and has_semantic_refs and potential_rdo_conflict
+    promoted = previous_status in {"promovido", "promoted"}
+    reopened = promoted and bool(refs) and potential_rdo_conflict
     review_required = bool(uncertain or reopened)
     if review_required:
-        target["status"] = "active"
-        semantic_status = target.setdefault("semantic_status", {})
-        if not isinstance(semantic_status, dict):
-            raise ValueError("finding semantic_status must be a mapping")
-        semantic_status["state"] = "unresolved"
-        semantic_status["reason"] = (
-            "Human clarification leaves a material uncertainty or reopens the relationship with authoritative R/D/O."
-        )
+        if current_shape:
+            target["estado"] = "ativo"
+            semantics = target.setdefault("semantica", {})
+            if not isinstance(semantics, dict):
+                raise ValueError("finding semantica must be a mapping")
+            semantics["estado"] = "nao_resolvido"
+            semantics["motivo"] = "Clarificação humana preserva incerteza material ou reabre relação com R/D/O autoritativo."
+        else:
+            target["status"] = "active"
+            semantic_status = target.setdefault("semantic_status", {})
+            if not isinstance(semantic_status, dict):
+                raise ValueError("finding semantic_status must be a mapping")
+            semantic_status["state"] = "unresolved"
+            semantic_status["reason"] = "Human clarification leaves a material uncertainty or reopens the relationship with authoritative R/D/O."
 
     return {
         "findings": updated,

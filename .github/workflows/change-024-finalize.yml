@@ -1,0 +1,70 @@
+name: CHANGE-024 temporary finalization
+
+on:
+  push:
+    branches:
+      - change/root/CHANGE-024-reconstructable-memory
+    paths:
+      - .github/workflows/change-024-finalize.yml
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: change/root/CHANGE-024-reconstructable-memory
+          fetch-depth: 0
+
+      - name: Align final tests and guide wording
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          test = Path('_scripts/test_memory_reconciliation.py')
+          text = test.read_text(encoding='utf-8')
+          old = '''        self.assertEqual(finding["semantica"]["estado"], "nao_resolvido")
+          self.assertEqual(finding["rdo"]["referencias"], ["root:D-001"])
+          self.assertTrue(result["review_required"])'''
+          new = '''        self.assertEqual(finding["semantica"]["estado"], "nao_resolvido")
+          self.assertEqual(finding["rdo"]["referencias"], ["root:D-001"])
+          self.assertEqual(finding["rdo"]["disposicao"], "revisao")
+          self.assertTrue(result["review_required"])'''
+          if old not in text:
+              raise SystemExit('reopen assertion block not found')
+          test.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          guide = Path('docs/FINDINGS.md')
+          text = guide.read_text(encoding='utf-8')
+          old = '''## 1. O que é FINDINGS
+
+          `_memory/FINDINGS.yaml` é a memória analítica materializada de um namespace.'''
+          new = '''## 1. O que é FINDINGS
+
+          FINDINGS é um **componente nativo do Semantic Git**. O protocolo define normativamente sua finalidade, estrutura, ciclo de vida, evidência, abstração e reconciliação; este guia apenas explica essa capacidade.
+
+          `_memory/FINDINGS.yaml` é a memória analítica materializada de um namespace e seu conteúdo permanece não autoritativo perante R/D/O.'''
+          if old not in text:
+              raise SystemExit('guide introduction block not found')
+          guide.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
+      - name: Canonical validation
+        run: python _scripts/semantic_git.py validate --json
+
+      - name: Full Python test suite
+        run: python -m unittest discover -s _scripts -p 'test_*.py' -v
+
+      - name: Commit final verified adjustments and remove temporary workflow
+        shell: bash
+        run: |
+          git rm .github/workflows/change-024-finalize.yml
+          git config user.name "Semantic Git Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/FINDINGS.md _scripts/test_memory_reconciliation.py
+          git commit -m "test: close FINDINGS reopen disposition contract"
+          git push origin HEAD:change/root/CHANGE-024-reconstructable-memory

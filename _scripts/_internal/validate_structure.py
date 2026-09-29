@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import re
 import subprocess
@@ -38,15 +39,34 @@ H2_RE = re.compile(r"^##(?!#)\s+(.+?)\s*$")
 ITEM_RE = re.compile(r"^- \*\*([RDO]-\d{3,})\*\* - (.+\S)\s*$")
 FIELD_RE = re.compile(r"^([a-z][a-z0-9_]*)\s*:\s*(.*?)\s*$")
 FINDING_ID_RE = re.compile(r"^F-\d{3,}$")
-FINDING_STATUS_VALUES = {"active", "resolved", "superseded", "promoted"}
-FINDING_REQUIRED_FIELDS = {"id", "status", "category", "summary", "evidence", "risk", "semantic_status"}
+FINDING_STATUS_VALUES = {"ativo", "resolvido", "substituido", "promovido"}
+FINDING_REQUIRED_FIELDS = {
+    "id",
+    "chave",
+    "estado",
+    "tipo",
+    "aplica_se_a",
+    "afirmacao",
+    "evidencias",
+    "semantica",
+    "rdo",
+}
 FINDING_START_RE = re.compile(r"^  - id:\s*(\S.*?)\s*$")
 FINDING_FIELD_RE = re.compile(r"^    ([a-z][a-z0-9_]*)\s*:\s*(.*?)\s*$")
-FINDING_REF_ITEM_RE = re.compile(r"^      -\s+(\S.*?)\s*$")
 CANONICAL_RDO_REF_RE = re.compile(r"^(?:root|[A-Za-z0-9][\w.-]*(?:/[A-Za-z0-9][\w.-]*)*):[RDO]-\d{3,}$")
+MEMORY_SCHEMA = "semantic-git-achados-v2"
+MEMORY_AUTHORITY = "memoria_analitica_nao_autoritativa"
+TRANSPARENT_NAMESPACE_PARTS = {"_applications"}
 INDEX_FILENAME = "SEMANTIC_INDEX.json"
 INDEX_NODE_TYPES = {"namespace", "requirement", "decision", "operation", "change", "finding"}
 INDEX_EDGE_TYPES = {"contains", "parent_namespace", "references", "satisfies", "depends_on", "semantic_ref"}
+
+
+def _scalar(value: str) -> str:
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+        return value[1:-1]
+    return value
 
 
 class Validator:
@@ -59,12 +79,24 @@ class Validator:
         self.memory_count = 0
         self.index_count = 0
         self.rdo_ids: dict[tuple[Path, str], dict[str, Path]] = {}
+        self.canonical_rdo_ids: set[str] = set()
 
     def relative_path(self, path: Path) -> str:
         try:
             return path.resolve().relative_to(self.root).as_posix()
         except ValueError:
             return path.resolve().as_posix()
+
+    def namespace_identity(self, path: Path) -> str:
+        resolved = path.resolve()
+        if resolved == self.root.resolve():
+            return "root"
+        try:
+            parts = resolved.relative_to(self.root.resolve()).parts
+        except ValueError:
+            return self.relative_path(path)
+        semantic = [part for part in parts if part not in TRANSPARENT_NAMESPACE_PARTS]
+        return "/".join(semantic) or "root"
 
     def add(self, rule: str, path: Path, message: str, line: int | None = None) -> None:
         finding: dict[str, Any] = {
@@ -82,6 +114,8 @@ class Validator:
         files, directories = self.inventory()
         self.validate_names(files)
 
+        # R/D/O is validated first so FINDINGS references can be closed directly
+        # by the canonical validator without depending on a separately built index.
         for path in files:
             if path.name in CANONICAL_DOCUMENTS:
                 self.validate_rdo(path)
@@ -180,7 +214,7 @@ class Validator:
             self.add("RDO_HEADINGS", path, "document must contain exactly one ## Corpo section")
 
         all_heading_lines = [number for number, line in enumerate(lines, 1) if re.match(r"^#{1,6}\s", line)]
-        allowed_heading_lines = {number for number, _ in h1} | {number for number, _ in h2 if _ in {"Cabeçalho", "Corpo"}}
+        allowed_heading_lines = {number for number, _ in h1} | {number for number, title in h2 if title in {"Cabeçalho", "Corpo"}}
         for number in all_heading_lines:
             if number not in allowed_heading_lines:
                 self.add("RDO_HEADINGS", path, "additional headings are not allowed", number)
@@ -223,6 +257,7 @@ class Validator:
                         self.add("RDO_ID_DUPLICATE", path, f"{item_id} is duplicated in the same namespace and type; first occurrence: {self.relative_path(previous)}", number)
                     else:
                         self.rdo_ids[namespace_key][item_id] = path
+                        self.canonical_rdo_ids.add(f"{self.namespace_identity(path.parent)}:{item_id}")
 
                 if items == 0:
                     self.add("RDO_ITEMS", path, "Corpo must contain at least one entity item", body_line)
@@ -299,10 +334,6 @@ class Validator:
             approved_commit = metadata.get("approved_semantic_commit", "")
             approval_scope_present = "approval_scope" in metadata or "approval_scope" in lists
             if archived:
-                # Archived CHANGEs are immutable historical records. Metadata rules
-                # introduced later must not force retroactive edits. When modern
-                # approval anchors are present, validate them; when they are absent,
-                # preserve the historical artifact as-is.
                 if approved_commit not in {"", "null"} and not COMMIT_RE.fullmatch(approved_commit):
                     self.add("CHANGE_APPROVAL", path, "approved_semantic_commit is invalid", self.metadata_line(lines, "approved_semantic_commit"))
                 if approval_scope_present and not lists.get("approval_scope"):
@@ -376,6 +407,35 @@ class Validator:
 
         self.validate_memory_file(findings_file)
 
+    @staticmethod
+    def _top_fields(lines: list[str], stop_line: int) -> dict[str, tuple[int, str]]:
+        out: dict[str, tuple[int, str]] = {}
+        for number, line in enumerate(lines[: stop_line - 1], 1):
+            match = FIELD_RE.fullmatch(line)
+            if match:
+                out[match.group(1)] = (number, _scalar(match.group(2)))
+        return out
+
+    @staticmethod
+    def _nested_refs(lines: list[str], start_line: int, end_line: int) -> list[tuple[int, str]]:
+        refs: list[tuple[int, str]] = []
+        refs_line: int | None = None
+        for number in range(start_line, end_line + 1):
+            if re.fullmatch(r"^      referencias:\s*$", lines[number - 1]):
+                refs_line = number
+                continue
+            if refs_line is None or number <= refs_line:
+                continue
+            current = lines[number - 1]
+            # another key at the same or shallower indentation closes referencias
+            if re.match(r"^ {0,6}\S", current) and not current.startswith("        - "):
+                refs_line = None
+                continue
+            match = re.fullmatch(r"^        -\s+(.+?)\s*$", current)
+            if match:
+                refs.append((number, _scalar(match.group(1))))
+        return refs
+
     def validate_memory_file(self, path: Path) -> None:
         self.memory_count += 1
         lines = self.read_lines(path, "MEMORY_ENCODING")
@@ -385,29 +445,57 @@ class Validator:
             self.add("MEMORY_EMPTY", path, "FINDINGS.yaml must contain at least one material finding")
             return
 
-        namespace_lines = [(number, line.split(":", 1)[1].strip()) for number, line in enumerate(lines, 1) if line.startswith("namespace:")]
-        if len(namespace_lines) != 1 or not namespace_lines[0][1]:
-            self.add("MEMORY_CONTRACT", path, "FINDINGS.yaml must contain exactly one non-empty top-level namespace field")
-
-        findings_lines = [number for number, line in enumerate(lines, 1) if line.strip() == "findings:"]
-        if len(findings_lines) != 1:
-            self.add("MEMORY_CONTRACT", path, "FINDINGS.yaml must contain exactly one top-level findings sequence")
+        achados_lines = [number for number, line in enumerate(lines, 1) if line == "achados:"]
+        if len(achados_lines) != 1:
+            self.add("MEMORY_CONTRACT", path, "FINDINGS.yaml must contain exactly one top-level achados sequence")
             return
+        achados_start = achados_lines[0]
+        top = self._top_fields(lines, achados_start)
 
-        findings_start = findings_lines[0]
+        for required in ("esquema", "espaco_semantico", "autoridade", "nivel_abstracao"):
+            if required not in top or not top[required][1]:
+                self.add("MEMORY_CONTRACT", path, f"FINDINGS.yaml must contain non-empty top-level field {required}")
+
+        if top.get("esquema") and top["esquema"][1] != MEMORY_SCHEMA:
+            self.add("MEMORY_SCHEMA", path, f"esquema must be {MEMORY_SCHEMA}", top["esquema"][0])
+        if top.get("autoridade") and top["autoridade"][1] != MEMORY_AUTHORITY:
+            self.add("MEMORY_AUTHORITY", path, f"autoridade must be {MEMORY_AUTHORITY}", top["autoridade"][0])
+
+        expected_namespace = self.namespace_identity(path.parent.parent)
+        if top.get("espaco_semantico") and top["espaco_semantico"][1] != expected_namespace:
+            self.add(
+                "MEMORY_NAMESPACE",
+                path,
+                f"espaco_semantico must match the containing Semantic Namespace ({expected_namespace})",
+                top["espaco_semantico"][0],
+            )
+
+        if top.get("nivel_abstracao"):
+            number, raw = top["nivel_abstracao"]
+            try:
+                abstraction = float(raw)
+            except ValueError:
+                self.add("MEMORY_ABSTRACTION", path, "nivel_abstracao must be a number from 0.0 to 1.0", number)
+            else:
+                if not (0.0 <= abstraction <= 1.0) or not math.isclose(abstraction * 10, round(abstraction * 10), abs_tol=1e-9):
+                    self.add("MEMORY_ABSTRACTION", path, "nivel_abstracao must be between 0.0 and 1.0 in steps of 0.1", number)
+
         starts: list[tuple[int, str]] = []
-        for number, line in enumerate(lines[findings_start:], findings_start + 1):
+        for number, line in enumerate(lines[achados_start:], achados_start + 1):
             match = FINDING_START_RE.fullmatch(line)
             if match:
-                starts.append((number, match.group(1)))
+                starts.append((number, _scalar(match.group(1))))
 
         if not starts:
-            self.add("MEMORY_EMPTY", path, "FINDINGS.yaml must contain at least one finding in the form '  - id: F-001'", findings_start)
+            self.add("MEMORY_EMPTY", path, "FINDINGS.yaml must contain at least one finding in the form '  - id: F-001'", achados_start)
             return
 
         seen_ids: dict[str, int] = {}
+        seen_keys: dict[str, int] = {}
         for index, (start_line, finding_id) in enumerate(starts):
             end_line = starts[index + 1][0] - 1 if index + 1 < len(starts) else len(lines)
+            block = lines[start_line - 1 : end_line]
+
             if not FINDING_ID_RE.fullmatch(finding_id):
                 self.add("MEMORY_ID", path, "finding id must use F-NNN with at least three decimal digits", start_line)
             elif finding_id in seen_ids:
@@ -424,47 +512,73 @@ class Validator:
                 if key in fields:
                     self.add("MEMORY_CONTRACT", path, f"finding {finding_id} duplicates field {key}", number)
                 else:
-                    fields[key] = (number, value)
+                    fields[key] = (number, _scalar(value))
 
             missing = sorted(FINDING_REQUIRED_FIELDS - set(fields))
             for field in missing:
                 self.add("MEMORY_CONTRACT", path, f"finding {finding_id} is missing required field {field}", start_line)
 
-            status = fields.get("status")
-            if status is not None and status[1] not in FINDING_STATUS_VALUES:
-                self.add("MEMORY_STATUS", path, f"finding {finding_id} status must be one of {sorted(FINDING_STATUS_VALUES)}", status[0])
-
-            semantic_refs = fields.get("semantic_refs")
-            if semantic_refs is not None:
-                refs: list[tuple[int, str]] = []
-                if semantic_refs[1]:
-                    self.add("MEMORY_SEMANTIC_REF", path, f"finding {finding_id} semantic_refs must be a YAML sequence", semantic_refs[0])
-                else:
-                    for number in range(semantic_refs[0] + 1, end_line + 1):
-                        current = lines[number - 1]
-                        if FINDING_FIELD_RE.fullmatch(current):
-                            break
-                        if not current.strip():
-                            continue
-                        match = FINDING_REF_ITEM_RE.fullmatch(current)
-                        if match is None:
-                            self.add("MEMORY_SEMANTIC_REF", path, f"finding {finding_id} semantic_refs must contain only direct list items", number)
-                            continue
-                        refs.append((number, match.group(1).strip("\"'")))
-                if not refs:
-                    self.add("MEMORY_SEMANTIC_REF", path, f"finding {finding_id} semantic_refs must contain at least one canonical reference", semantic_refs[0])
-                seen_refs: set[str] = set()
-                for number, ref in refs:
-                    if CANONICAL_RDO_REF_RE.fullmatch(ref) is None:
-                        self.add("MEMORY_SEMANTIC_REF", path, f"finding {finding_id} semantic_ref must be a canonical R/D/O identity: {ref}", number)
-                    if ref in seen_refs:
-                        self.add("MEMORY_SEMANTIC_REF", path, f"finding {finding_id} duplicates semantic_ref {ref}", number)
-                    seen_refs.add(ref)
-
-            for required_scalar in ("category", "summary"):
+            for required_scalar in ("chave", "estado", "tipo", "afirmacao"):
                 field = fields.get(required_scalar)
                 if field is not None and not field[1]:
                     self.add("MEMORY_CONTRACT", path, f"finding {finding_id} field {required_scalar} must not be empty", field[0])
+
+            key_field = fields.get("chave")
+            if key_field is not None and key_field[1]:
+                previous = seen_keys.get(key_field[1])
+                if previous is not None:
+                    self.add("MEMORY_KEY_DUPLICATE", path, f"finding key {key_field[1]} is duplicated; first occurrence is line {previous}", key_field[0])
+                else:
+                    seen_keys[key_field[1]] = key_field[0]
+
+            status = fields.get("estado")
+            if status is not None and status[1] not in FINDING_STATUS_VALUES:
+                self.add("MEMORY_STATUS", path, f"finding {finding_id} estado must be one of {sorted(FINDING_STATUS_VALUES)}", status[0])
+
+            tipo = fields.get("tipo", (start_line, ""))[1]
+            has_amostras = any(re.fullmatch(r"^      amostras:\s*$", line) for line in block)
+            has_sample_content = any(
+                re.fullmatch(r"^          (?:amostra|witness|expressao|resultado):\s*(?:\S.*|[>|][+-]?)?\s*$", line)
+                for line in block
+            )
+            has_provenance = any(
+                re.fullmatch(r"^          (?:artefato|fonte|localizador|linhas|trilha_codigo):\s*\S.*$", line)
+                for line in block
+            )
+            explicit_unavailable = any(re.fullmatch(r"^      indisponibilidade:\s*\S.*$", line) for line in block)
+            if not (has_amostras and has_sample_content and has_provenance):
+                if not (tipo == "lacuna_evidencia" and explicit_unavailable):
+                    self.add(
+                        "MEMORY_EVIDENCE",
+                        path,
+                        f"finding {finding_id} must contain evidencias.amostras with sample content and provenance/localizer, or explicit indisponibilidade for lacuna_evidencia",
+                        fields.get("evidencias", (start_line, ""))[0],
+                    )
+
+            disposicao_match = next(
+                (
+                    (number, _scalar(match.group(1)))
+                    for number in range(start_line, end_line + 1)
+                    if (match := re.fullmatch(r"^      disposicao:\s*(\S.*?)\s*$", lines[number - 1]))
+                ),
+                None,
+            )
+            if disposicao_match is None:
+                self.add("MEMORY_RDO_DISPOSITION", path, f"finding {finding_id} must contain rdo.disposicao", fields.get("rdo", (start_line, ""))[0])
+
+            refs = self._nested_refs(lines, start_line, end_line)
+            seen_refs: set[str] = set()
+            for number, ref in refs:
+                if CANONICAL_RDO_REF_RE.fullmatch(ref) is None:
+                    self.add("MEMORY_SEMANTIC_REF", path, f"finding {finding_id} rdo.referencias item must be a canonical R/D/O identity: {ref}", number)
+                elif ref not in self.canonical_rdo_ids:
+                    self.add("MEMORY_SEMANTIC_REF_ENDPOINT", path, f"finding {finding_id} references R/D/O identity that does not exist: {ref}", number)
+                if ref in seen_refs:
+                    self.add("MEMORY_SEMANTIC_REF", path, f"finding {finding_id} duplicates R/D/O reference {ref}", number)
+                seen_refs.add(ref)
+
+            if disposicao_match is not None and disposicao_match[1] == "promovido" and not refs:
+                self.add("MEMORY_SEMANTIC_REF", path, f"promoted finding {finding_id} must contain at least one rdo.referencias item", disposicao_match[0])
 
     def validate_index_directory(self, index_dir: Path) -> None:
         if index_dir.name != "_index":
@@ -478,11 +592,11 @@ class Validator:
             if entry.is_dir():
                 self.add("INDEX_PATH", entry, "_index may contain only SEMANTIC_INDEX.json")
             elif entry.name != INDEX_FILENAME:
-                self.add("INDEX_PATH", entry, "_index may contain only the canonical SEMANTIC_INDEX.json file")
+                self.add("INDEX_PATH", entry, f"_index may contain only the canonical {INDEX_FILENAME} file")
 
         index_file = index_dir / INDEX_FILENAME
         if not index_file.is_file():
-            self.add("INDEX_FILE", index_dir, "_index must contain SEMANTIC_INDEX.json")
+            self.add("INDEX_FILE", index_dir, f"_index must contain {INDEX_FILENAME}")
             return
 
         self.index_count += 1

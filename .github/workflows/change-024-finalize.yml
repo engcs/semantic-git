@@ -27,30 +27,27 @@ jobs:
 
           test = Path('_scripts/test_memory_reconciliation.py')
           text = test.read_text(encoding='utf-8')
-          old = '''        self.assertEqual(finding["semantica"]["estado"], "nao_resolvido")
-          self.assertEqual(finding["rdo"]["referencias"], ["root:D-001"])
-          self.assertTrue(result["review_required"])'''
-          new = '''        self.assertEqual(finding["semantica"]["estado"], "nao_resolvido")
-          self.assertEqual(finding["rdo"]["referencias"], ["root:D-001"])
-          self.assertEqual(finding["rdo"]["disposicao"], "revisao")
-          self.assertTrue(result["review_required"])'''
-          if old not in text:
-              raise SystemExit('reopen assertion block not found')
-          test.write_text(text.replace(old, new, 1), encoding='utf-8')
+          needle = '        self.assertEqual(finding["rdo"]["referencias"], ["root:D-001"])\n'
+          addition = '        self.assertEqual(finding["rdo"]["disposicao"], "revisao")\n'
+          if addition not in text:
+              if needle not in text:
+                  raise SystemExit('RDO reference assertion not found')
+              text = text.replace(needle, needle + addition, 1)
+          test.write_text(text, encoding='utf-8')
 
           guide = Path('docs/FINDINGS.md')
           text = guide.read_text(encoding='utf-8')
-          old = '''## 1. O que é FINDINGS
-
-          `_memory/FINDINGS.yaml` é a memória analítica materializada de um namespace.'''
-          new = '''## 1. O que é FINDINGS
-
-          FINDINGS é um **componente nativo do Semantic Git**. O protocolo define normativamente sua finalidade, estrutura, ciclo de vida, evidência, abstração e reconciliação; este guia apenas explica essa capacidade.
-
-          `_memory/FINDINGS.yaml` é a memória analítica materializada de um namespace e seu conteúdo permanece não autoritativo perante R/D/O.'''
-          if old not in text:
-              raise SystemExit('guide introduction block not found')
-          guide.write_text(text.replace(old, new, 1), encoding='utf-8')
+          sentence = '`_memory/FINDINGS.yaml` é a memória analítica materializada de um namespace.'
+          native = 'FINDINGS é um **componente nativo do Semantic Git**.'
+          if native not in text:
+              if sentence not in text:
+                  raise SystemExit('guide FINDINGS sentence not found')
+              replacement = (
+                  'FINDINGS é um **componente nativo do Semantic Git**. O protocolo define normativamente sua finalidade, estrutura, ciclo de vida, evidência, abstração e reconciliação; este guia apenas explica essa capacidade.\n\n'
+                  '`_memory/FINDINGS.yaml` é a memória analítica materializada de um namespace e seu conteúdo permanece não autoritativo perante R/D/O.'
+              )
+              text = text.replace(sentence, replacement, 1)
+          guide.write_text(text, encoding='utf-8')
           PY
 
       - name: Canonical validation

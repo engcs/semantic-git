@@ -1,5 +1,5 @@
 change: CHANGE-024
-status: RECONCILED
+status: MERGED
 base_commit: a49e7004172c33bc76d9ddef0cc1dc26685a1fdd
 approved_semantic_commit: 6716e7d76c10e7a97e54ddf321deda1db33bd522
 approval_scope:

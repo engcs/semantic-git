@@ -1,8 +1,3 @@
-# CHANGE-024 - Memória reconstruível e verificável
-
-## Metadados
-
-```yaml
 change: CHANGE-024
 status: IN_PROGRESS
 base_commit: a49e7004172c33bc76d9ddef0cc1dc26685a1fdd
@@ -12,7 +7,8 @@ approval_scope:
 reason: Evoluir FINDINGS para preservar conhecimento reconstruível, verificável e atual sem transformar a memória em histórico concorrente ao Git ou em autoridade concorrente ao R/D/O.
 namespace: root
 branch: change/root/CHANGE-024-reconstructable-memory
-```
+
+# CHANGE-024 - Memória reconstruível e verificável
 
 ## Escopo
 

@@ -122,6 +122,25 @@ def _block_scalar(lines: list[str], folded: bool) -> str:
     return "\n".join(parts).strip()
 
 
+def _finding_rdo_refs(lines: list[str], start: int, end: int) -> list[str]:
+    refs: list[str] = []
+    in_refs = False
+    for i in range(start, end):
+        line = lines[i]
+        if re.fullmatch(r"^      referencias:\s*$", line):
+            in_refs = True
+            continue
+        if not in_refs:
+            continue
+        item = re.fullmatch(r"^        -\s+(.+?)\s*$", line)
+        if item:
+            refs.append(_yaml_scalar(item.group(1)))
+            continue
+        if line.strip() and not line.startswith("        "):
+            in_refs = False
+    return refs
+
+
 def parse_findings(root: Path, ns: dict[str,Any], nodes: dict[str,Any], edges: list[dict[str,str]]) -> None:
     path = ns["path"] / "_memory/FINDINGS.yaml"
     if not path.is_file(): return
@@ -131,7 +150,7 @@ def parse_findings(root: Path, ns: dict[str,Any], nodes: dict[str,Any], edges: l
         if m: starts.append((i,m.group(1)))
     for pos,(start,fid) in enumerate(starts):
         end = starts[pos+1][0] if pos+1 < len(starts) else len(lines)
-        fields: dict[str,str]={}; refs=[]
+        fields: dict[str,str]={}
         i = start + 1
         while i < end:
             line = lines[i]
@@ -140,13 +159,6 @@ def parse_findings(root: Path, ns: dict[str,Any], nodes: dict[str,Any], edges: l
                 i += 1
                 continue
             key, raw = m.groups(); raw = raw.strip()
-            if key == "semantic_refs" and not raw:
-                i += 1
-                while i < end and not FINDING_FIELD.fullmatch(lines[i]):
-                    item = re.fullmatch(r"^      -\s+(.+?)\s*$", lines[i])
-                    if item: refs.append(_yaml_scalar(item.group(1)))
-                    i += 1
-                continue
             if raw in {">", ">-", ">+", "|", "|-", "|+"}:
                 folded = raw.startswith(">")
                 block=[]; i += 1
@@ -158,8 +170,31 @@ def parse_findings(root: Path, ns: dict[str,Any], nodes: dict[str,Any], edges: l
                 continue
             fields[key] = _yaml_scalar(raw)
             i += 1
+        refs = _finding_rdo_refs(lines, start, end)
+        # Historical compatibility: pre-v2 findings used semantic_refs at the
+        # finding root. Current files are structurally validated as PT-BR v2,
+        # but the parser remains able to read a historical snapshot when needed.
+        if not refs:
+            in_legacy = False
+            for i in range(start, end):
+                line = lines[i]
+                if re.fullmatch(r"^    semantic_refs:\s*$", line):
+                    in_legacy = True
+                    continue
+                if in_legacy:
+                    item = re.fullmatch(r"^      -\s+(.+?)\s*$", line)
+                    if item:
+                        refs.append(_yaml_scalar(item.group(1))); continue
+                    if FINDING_FIELD.fullmatch(line):
+                        in_legacy = False
+        estado = fields.get("estado", fields.get("status"))
+        tipo = fields.get("tipo", fields.get("category"))
+        texto = fields.get("afirmacao", fields.get("summary", ""))
+        chave = fields.get("chave")
         node_id=f"{ns['id']}:{fid}"
-        nodes[node_id]={"id":node_id,"type":"finding","namespace":ns["id"],"status":fields.get("status"),"category":fields.get("category"),"text":fields.get("summary", ""),"source":{"path":rel(root,path),"locator":fid}}
+        node={"id":node_id,"type":"finding","namespace":ns["id"],"status":estado,"category":tipo,"text":texto,"source":{"path":rel(root,path),"locator":fid}}
+        if chave: node["finding_key"] = chave
+        nodes[node_id]=node
         edge(edges,f"namespace:{ns['id']}","contains",node_id)
         for refid in refs: edge(edges,node_id,"semantic_ref",refid)
 
@@ -225,7 +260,7 @@ def in_scope(ident: str, scope: str) -> bool:
 
 def external(node: dict[str,Any]) -> dict[str,Any]:
     out={"id":node["id"],"type":node["type"],"namespace":node.get("namespace"),"source":node["source"],"external":True}
-    for k in ("status","category"):
+    for k in ("status","category","finding_key"):
         if node.get(k) is not None: out[k]=node[k]
     return out
 

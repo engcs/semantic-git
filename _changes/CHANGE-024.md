@@ -4,7 +4,7 @@
 
 ```yaml
 change: CHANGE-024
-status: IN_PROGRESS
+status: DRAFT
 base_commit: a49e7004172c33bc76d9ddef0cc1dc26685a1fdd
 approved_semantic_commit: 1ade263c5f3c13565eb3a79305c8541fd1c7d2ee
 approval_scope:
@@ -18,6 +18,8 @@ branch: change/root/CHANGE-024-reconstructable-memory
 
 Evoluir `_memory/FINDINGS.yaml` de uma memória predominantemente orientada a exceções, riscos e lacunas para uma memória reconstruível do **estado atual do conhecimento descoberto** sobre o namespace.
 
+**FINDINGS é um componente nativo do Semantic Git.** O mecanismo FINDINGS — sua finalidade, estrutura, ciclo de vida, regras de evidência, UPSERT, abstração, reconciliação e relação com R/D/O — é definido normativamente por `SEMANTIC_GIT.md`. O que não é autoritativo perante R/D/O é o conteúdo analítico de um `FINDINGS.yaml` específico: ele registra conhecimento descoberto e evidências, não substitui a verdade semântica aprovada em Requirements, Decisions e Operations.
+
 FINDINGS deve permanecer:
 
 - mínimo;
@@ -26,7 +28,7 @@ FINDINGS deve permanecer:
 - reconciliável por UPSERT;
 - verificável por humano e LLM;
 - suficiente para reconstruir e auditar R/D/O dentro do nível de abstração escolhido;
-- não normativo;
+- analítico e não autoritativo perante R/D/O;
 - não histórico por padrão.
 
 A evolução histórica do conhecimento pertence ao Git. FINDINGS só preserva estados históricos quando eles continuam materialmente necessários para compreender, reproduzir, verificar ou auditar a realidade atual.
@@ -58,6 +60,7 @@ A mudança não cria IES, ESSENCE.yaml, EVIDENCE_MAP.yaml, BEHAVIOR_MODEL.yaml o
 - **R-Q** - Um estado histórico só deve permanecer materializado no FINDINGS atual quando ainda for necessário para compreender, reproduzir, verificar ou auditar alguma realidade atualmente relevante. A existência passada de uma proposição, por si só, não justifica sua retenção.
 - **R-R** - O repositório deve fornecer documentação autocontida, legível por humano e LLM, explicando a filosofia, estrutura, evidência, abstração, evolução entre versões, UPSERT e verificação RDO↔FINDINGS, sem criar fonte normativa concorrente a `SEMANTIC_GIT.md`.
 - **R-S** - Quando R/D/O novo ou editado não for sustentado pelos findings atuais, o protocolo deve distinguir ausência de evidência de evidência contraditória e permitir investigação dirigida à proposição alterada, procurando confirmação, refutação e interpretações concorrentes.
+- **R-T** - FINDINGS deve ser tratado como capacidade nativa do Semantic Git: sua estrutura, ciclo de vida, regras de reconciliação, abstração e papel na verificação são normativos no protocolo, embora o conteúdo de cada `FINDINGS.yaml` permaneça memória analítica não autoritativa perante R/D/O.
 
 ### DECISIONS
 
@@ -81,6 +84,7 @@ A mudança não cria IES, ESSENCE.yaml, EVIDENCE_MAP.yaml, BEHAVIOR_MODEL.yaml o
 - **D-P** - Mudança semântica da mesma identidade atualiza o finding corrente; o estado anterior fica no Git. Se o estado anterior ainda governar dados, reprocessamentos, auditoria ou outra realidade atual, ele permanece materializado com aplicabilidade explícita.
 - **D-Q** - FINDINGS não deve crescer proporcionalmente ao número de versões históricas. Depois de V19, deve conter prioritariamente o conhecimento necessário ao estado atual, mais variantes históricas ainda materialmente vigentes.
 - **D-R** - Criar `docs/FINDINGS.md` como guia explicativo autocontido. O documento deve declarar explicitamente que `SEMANTIC_GIT.md` continua normativo e prevalece em caso de divergência.
+- **D-S** - Tratar `docs/FINDINGS.md` como guia didático de uma capacidade nativa do Semantic Git, e não como definição externa do mecanismo: toda regra necessária para operar FINDINGS deve permanecer derivável de `SEMANTIC_GIT.md`.
 
 ### OPERATIONS
 
@@ -103,6 +107,7 @@ A mudança não cria IES, ESSENCE.yaml, EVIDENCE_MAP.yaml, BEHAVIOR_MODEL.yaml o
 - **O-O** - Criar e manter `docs/FINDINGS.md` com definição, estado atual versus história, retenção histórica, atomicidade, UPSERT, evidência verificável, PT-BR, RDO↔FINDINGS, investigação dirigida, evolução entre versões, abstração, cadeias de decisão e invariantes.
 - **O-P** - Adicionar referência a `docs/FINDINGS.md` no `README.md`, deixando claro que é guia explicativo e não fonte normativa.
 - **O-Q** - Não criar IES, ESSENCE.yaml, EVIDENCE_MAP.yaml, BEHAVIOR_MODEL.yaml ou qualquer novo arquivo canônico de memória.
+- **O-R** - Atualizar `SEMANTIC_GIT.md` e as skills para declarar explicitamente FINDINGS como capacidade nativa do protocolo, separando a normatividade do mecanismo da não autoridade do conteúdo analítico perante R/D/O.
 
 ## Critérios de aceitação semântica
 
@@ -121,11 +126,12 @@ A implementação só pode ser considerada reconciliada quando demonstrar, no m�
 11. V1→V2 com finding inalterado não duplicado e finding semanticamente alterado representando apenas o estado atual quando o anterior não for mais materialmente necessário;
 12. estado histórico preservado no arquivo apenas quando ainda necessário à realidade atual;
 13. cenário V1…V19 sem genealogia embutida por versão e com Git suficiente para recuperar a evolução descartada do estado corrente;
-14. `docs/FINDINGS.md` autocontido, referenciado pelo `README.md` e explicitamente subordinado a `SEMANTIC_GIT.md`.
+14. `docs/FINDINGS.md` autocontido, referenciado pelo `README.md` e explicitamente subordinado a `SEMANTIC_GIT.md`;
+15. `SEMANTIC_GIT.md` definindo FINDINGS como capacidade nativa do protocolo, enquanto cada `FINDINGS.yaml` permanece memória analítica não autoritativa perante R/D/O.
 
 ## Fora de escopo
 
-- transformar FINDINGS em autoridade semântica;
+- transformar o conteúdo de FINDINGS em autoridade semântica sobre R/D/O;
 - armazenar chain-of-thought ou transcript de investigação;
 - copiar integralmente evidence map para `_memory`;
 - manter histórico V1…Vn dentro de cada finding apenas porque versões existiram;

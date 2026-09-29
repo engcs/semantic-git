@@ -4,9 +4,9 @@
 
 ```yaml
 change: CHANGE-024
-status: DRAFT
+status: IN_PROGRESS
 base_commit: a49e7004172c33bc76d9ddef0cc1dc26685a1fdd
-approved_semantic_commit: 1ade263c5f3c13565eb3a79305c8541fd1c7d2ee
+approved_semantic_commit: 6716e7d76c10e7a97e54ddf321deda1db33bd522
 approval_scope:
   - _changes/CHANGE-024.md
 reason: Evoluir FINDINGS para preservar conhecimento reconstruível, verificável e atual sem transformar a memória em histórico concorrente ao Git ou em autoridade concorrente ao R/D/O.

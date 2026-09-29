@@ -4,9 +4,11 @@ Especificação standalone de governança semântica.
 
 A fonte normativa é [`SEMANTIC_GIT.md`](SEMANTIC_GIT.md).
 
-## Guia de FINDINGS
+## FINDINGS — capacidade nativa
 
-[`docs/FINDINGS.md`](docs/FINDINGS.md) explica de forma autocontida como a memória `_memory/FINDINGS.yaml` deve ser entendida por humanos e LLMs: estado atual versus história Git, atomicidade, UPSERT, evidência verificável, abstração, evolução entre versões e verificação RDO↔FINDINGS.
+FINDINGS é um componente nativo do Semantic Git para materializar o estado atual do conhecimento analítico descoberto de um namespace. Sua estrutura, ciclo de vida, evidência, abstração e reconciliação são definidos normativamente por `SEMANTIC_GIT.md`; o conteúdo de cada `_memory/FINDINGS.yaml` permanece memória analítica não autoritativa perante R/D/O.
+
+[`docs/FINDINGS.md`](docs/FINDINGS.md) é o guia autocontido para humanos e LLMs: explica estado atual versus história Git, atomicidade, UPSERT, evidência verificável, abstração, evolução entre versões e verificação RDO↔FINDINGS.
 
 O guia é explicativo. Ele não substitui nem modifica a fonte normativa `SEMANTIC_GIT.md`.
 
@@ -77,6 +79,8 @@ semantic-git://
 └── skills/{extraction,reconstruction,conceptual-review,mathematical-review,memory}
 ```
 
+FINDINGS é capacidade normativa do protocolo; `semantic-memory` é a skill cognitiva que a operacionaliza, não sua fonte de autoridade.
+
 ## Validação estrutural
 
 ```powershell
@@ -145,10 +149,10 @@ Sem `--namespace`, esses comandos operam sobre o namespace `root`.
 As capacidades agênticas atuais ficam em `.opencode/skills/`:
 
 - `semantic-extraction` — conhecimento humano já expresso → candidato R/D/O;
-- `semantic-reconstruction` — implementação existente → significado de negócio;
+- `semantic-reconstruction` — implementação existente → significado de negócio + UPSERT do conhecimento reconstruível em FINDINGS;
 - `semantic-conceptual-review` — revisão conceitual sênior de R/D/O candidato;
 - `semantic-mathematical-review` — análise de regras quantitativas e gaps matemáticos;
-- `semantic-memory` — gestão de `_memory/FINDINGS.yaml` sem criar autoridade normativa.
+- `semantic-memory` — operação cognitiva da capacidade nativa FINDINGS sem substituir a autoridade de R/D/O.
 
 As skills são capacidades cognitivas; os comandos da CLI são capacidades
 determinísticas.

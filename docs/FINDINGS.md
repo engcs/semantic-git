@@ -4,7 +4,9 @@
 
 ## 1. O que é FINDINGS
 
-`_memory/FINDINGS.yaml` é a memória analítica materializada de um namespace.
+FINDINGS é um **componente nativo do Semantic Git**. O protocolo define normativamente sua finalidade, estrutura, ciclo de vida, evidência, abstração e reconciliação; este guia apenas explica essa capacidade.
+
+`_memory/FINDINGS.yaml` é a memória analítica materializada de um namespace e seu conteúdo permanece não autoritativo perante R/D/O.
 
 Seu objetivo é preservar o **conjunto mínimo de descobertas materiais necessário para reconstruir, verificar e reavaliar o entendimento semântico atual do namespace sem repetir a investigação original**.
 

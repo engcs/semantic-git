@@ -199,6 +199,7 @@ class MemoryReconciliationTests(unittest.TestCase):
         self.assertEqual(finding["estado"], "ativo")
         self.assertEqual(finding["semantica"]["estado"], "nao_resolvido")
         self.assertEqual(finding["rdo"]["referencias"], ["root:D-001"])
+        self.assertEqual(finding["rdo"]["disposicao"], "revisao")
         self.assertTrue(result["review_required"])
         self.assertTrue(result["rdo_reconciliation_required"])
 

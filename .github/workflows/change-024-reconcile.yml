@@ -1,6 +1,6 @@
-name: CHANGE-024 reconciliation
+name: reconcile-change-024
 
-on:
+"on":
   push:
     branches:
       - change/root/CHANGE-024-reconstructable-memory
@@ -11,63 +11,40 @@ permissions:
   contents: write
 
 jobs:
-  reconcile:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: change/root/CHANGE-024-reconstructable-memory
           fetch-depth: 0
-
-      - name: Verify branch and implementation gates
-        shell: bash
+      - name: Validate implementation
         run: |
           git fetch origin main
           test "$(git rev-list --count HEAD..origin/main)" = "0"
           python _scripts/semantic_git.py validate --json
           python -m unittest discover -s _scripts -p 'test_*.py' -v
-
-      - name: Record reconciliation and transition CHANGE
-        shell: bash
+      - name: Mark reconciled
+        env:
+          REC_B64: IyMgUmVjb25jaWxpYcOnw6NvIGZpbmFsCgpBIGltcGxlbWVudGHDp8OjbyBmb2kgcmVjb25jaWxpYWRhIGVtIDIwMjYtMDktMjkgYXDDs3MgdmFsaWRhw6fDo28gaHVtYW5hIGV4cGzDrWNpdGEgZG8gcmVzdWx0YWRvIGZ1bmNpb25hbCBlIGRvIGV4cGVyaW1lbnRvIGRlIHJlY29uc3RydcOnw6NvIGRvIEVYRUNfUFJPRy4KCkV2aWTDqm5jaWFzIGRlIGZlY2hhbWVudG86CgotIG8gcmVzcG9uc8OhdmVsIGh1bWFubyBkZWNsYXJvdSBhIGltcGxlbWVudGHDp8OjbyBhcHJvdmFkYSBlIHZhbGlkYWRhIGUgYXV0b3Jpem91IGEgY29uY2x1c8OjbyBkYSByZWNvbmNpbGlhw6fDo287Ci0gbyB0ZXN0ZSBkZSByZWNvbnN0cnXDp8OjbyBkbyBFWEVDX1BST0cgZm9pIHJldmlzYWRvIHBlbG8gaHVtYW5vIGUgYWNlaXRvIGNvbW8gZXZpZMOqbmNpYSBzdWZpY2llbnRlIHBhcmEgZXN0ZSBDSEFOR0U7IHJlc3NhbHZhcyBtZXRvZG9sw7NnaWNhcyBpZGVudGlmaWNhZGFzIGR1cmFudGUgYSByZXZpc8OjbyBmb3JhbSBjb25oZWNpZGFzIGUgbsOjbyBmb3JhbSBjb25zaWRlcmFkYXMgYmxvcXVlYW50ZXMgcGVsYSBhdXRvcmlkYWRlIGh1bWFuYTsKLSBgcHl0aG9uIF9zY3JpcHRzL3NlbWFudGljX2dpdC5weSB2YWxpZGF0ZSAtLWpzb25gIHJldG9ybm91IGBQQVNTYCBubyBlc3RhZG8gaW1wbGVtZW50YWRvOwotIGEgc3XDrXRlIGNvbXBsZXRhIGBfc2NyaXB0cy90ZXN0XyoucHlgIGV4ZWN1dG91IGNvbSBzdWNlc3NvLCBpbmNsdWluZG8gc2NoZW1hIFBULUJSLCBgcmlzY29gIG9wY2lvbmFsLCBhbW9zdHJhIHZlcmlmaWPDoXZlbCwgcmVmZXLDqm5jaWEgcHJvbW92aWRhIMOzcmbDoywgw61uZGljZSBlIHJlY29uY2lsaWHDp8OjbzsKLSBhIGJyYW5jaCBwZXJtYW5lY2V1IHNlbSBjb21taXRzIHBlbmRlbnRlcyBkYSBgbWFpbmAgbm8gcmVjaGVjayBkZSByZWNvbmNpbGlhw6fDo287Ci0gbsOjbyBmb3JhbSBjcmlhZG9zIElFUywgYEVTU0VOQ0UueWFtbGAsIGBFVklERU5DRV9NQVAueWFtbGAsIGBCRUhBVklPUl9NT0RFTC55YW1sYCBvdSBub3ZhIGRpbWVuc8OjbyBzZW3Dom50aWNhIHBlcnNpc3RlbnRlOwotIG8gZXNjb3BvIGltcGxlbWVudGFkbyBwZXJtYW5lY2UgbGltaXRhZG8gw6AgZXNwZWNpZmljYcOnw6NvLCBkb2N1bWVudGHDp8Ojbywgc2tpbGxzLCB2YWxpZGHDp8Ojbywgw61uZGljZSwgcmVjb25jaWxpYcOnw6NvIGUgdGVzdGVzIGRlIEZJTkRJTkdTIHByZXZpc3RvcyBwb3IgZXN0YSBDSEFOR0UuCgpSZXN1bHRhZG86IG9zIGNyaXTDqXJpb3MgZGUgYWNlaXRhw6fDo28gZm9yYW0gY29uc2lkZXJhZG9zIHNhdGlzZmVpdG9zIG91IGV4cGxpY2l0YW1lbnRlIHJlc29sdmlkb3MgcG9yIHZhbGlkYcOnw6NvIGh1bWFuYSBnb3Zlcm5hZGEsIHBlcm1pdGluZG8gYSB0cmFuc2nDp8OjbyBwYXJhIGBSRUNPTkNJTEVEYC4K
         run: |
           python - <<'PY'
+          import base64, os
           from pathlib import Path
-
           p = Path('_changes/CHANGE-024.md')
           text = p.read_text(encoding='utf-8')
           if 'status: IN_PROGRESS' not in text:
-              raise SystemExit('CHANGE-024 is not IN_PROGRESS')
+              raise SystemExit('unexpected CHANGE status')
           text = text.replace('status: IN_PROGRESS', 'status: RECONCILED', 1)
-
           marker = '\n## Fora de escopo\n'
+          rec = base64.b64decode(os.environ['REC_B64']).decode('utf-8')
           if marker not in text:
-              raise SystemExit('out-of-scope marker not found')
-
-          reconciliation = '''
-## Reconciliação final
-
-A implementação foi reconciliada em 2026-09-29 após validação humana explícita do resultado funcional e do experimento de reconstrução do EXEC_PROG.
-
-Evidências de fechamento:
-
-- o responsável humano declarou a implementação aprovada e validada e autorizou a conclusão da reconciliação;
-- o teste de reconstrução do EXEC_PROG foi revisado pelo humano e aceito como evidência suficiente para este CHANGE; ressalvas metodológicas identificadas durante a revisão foram conhecidas e não foram consideradas bloqueantes pela autoridade humana;
-- `python _scripts/semantic_git.py validate --json` retornou `PASS` no estado implementado;
-- a suíte completa `_scripts/test_*.py` executou com sucesso, incluindo schema PT-BR, `risco` opcional, amostra verificável, referência promovida órfã, índice e reconciliação;
-- a branch permaneceu sem commits pendentes da `main` no recheck de reconciliação;
-- não foram criados IES, `ESSENCE.yaml`, `EVIDENCE_MAP.yaml`, `BEHAVIOR_MODEL.yaml` ou nova dimensão semântica persistente;
-- o escopo implementado permanece limitado à especificação, documentação, skills, validação, índice, reconciliação e testes de FINDINGS previstos por esta CHANGE.
-
-Resultado: os critérios de aceitação foram considerados satisfeitos ou explicitamente resolvidos por validação humana governada, permitindo a transição para `RECONCILED`.
-'''
-          text = text.replace(marker, '\n' + reconciliation + marker, 1)
+              raise SystemExit('marker not found')
+          text = text.replace(marker, '\n' + rec + '\n## Fora de escopo\n', 1)
           p.write_text(text, encoding='utf-8')
           PY
-
           python _scripts/semantic_git.py validate --json
-
-      - name: Commit reconciled state and remove temporary workflow
-        shell: bash
+      - name: Commit reconciliation
         run: |
           git rm .github/workflows/change-024-reconcile.yml
           git config user.name "Semantic Git Automation"
